@@ -1,0 +1,21 @@
+PREFIX ex: <http://example.com/>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+DECLARE ex:ontology: Example Ontology
+type> Ontology
+
+DECLARE ex:foo: Foo
+type> Class
+comment: A comment on 'Foo'.@en
+> comment: An annotation on the comment^^xsd:string
+>> comment: An annotation on the annotation
+comment: Values can span multiple lines,
+  and include blank lines...
+
+  as long as each line is indented two spaces.
+subClassOf> 'has part' some 'Bar'
+# Comment: Class expressions use Manchester Syntax.
+
+DECLARE ex:bar: Bar
+type> Class
