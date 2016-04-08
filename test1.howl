@@ -1,21 +1,27 @@
-PREFIX ex: <http://example.com/>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX ex: <http://example.com/>
 
-DECLARE ex:ontology: Example Ontology
-type> Ontology
+LABEL rdf:type: type
+LABEL rdfs:comment: comment
+LABEL rdfs:subClassOf: subClassOf
 
-DECLARE ex:foo: Foo
-type> Class
+TYPE comment: xsd:string
+
+SUBJECT ex:ontology: Example Ontology
+type:> owl:Ontology
+
+SUBJECT ex:foo: Foo
+type:> owl:Class
 comment: A comment on 'Foo'.@en
-> comment: An annotation on the comment^^xsd:string
->> comment: An annotation on the annotation
+comment: A comment on 'BAR'.^^xsd:string
 comment: Values can span multiple lines,
   and include blank lines...
 
-  as long as each line is indented two spaces.
-subClassOf> 'has part' some 'Bar'
-# Comment: Class expressions use Manchester Syntax.
+  as long as each non-blank line is indented two spaces.
+subClassOf: 'has part' some 'Bar'
 
-DECLARE ex:bar: Bar
-type> Class
+SUBJECT ex:bar: Bar
+type:> Foo
