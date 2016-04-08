@@ -51,31 +51,39 @@
       "foo" "http://example.com/foo"
       "/foo" "http://example.com/foo")))
 
-(deftest test-add-prefix
+
+(deftest test-parse-prefix
   (testing "Basic case"
-    (is (= (add-prefix {} 1 "PREFIX foo: <http://example.com/>")
-           {:prefixes
-            {"foo" "http://example.com/"}}))))
+    (is (= (unit-parser
+            "PREFIX rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+           [:PREFIX]))))
 
-(deftest test-add-label
-  (testing "Basic case"
-    (is (= (add-label test-prefixes 1 "LABEL ex:foo: Foo")
-           (merge
-            test-prefixes
-            {:labels
-             {"Foo" "http://example.com/foo"}})))))
 
-(def lines
-  "not indented
-not indented
-  indented
-not indented
-  indented
-
-  after blank
-  indented last")
-
-(deftest test-collect-lines
-  (testing "Basic case"))
+;(deftest test-add-prefix
+;  (testing "Basic case"
+;    (is (= (add-prefix {} 1 "PREFIX foo: <http://example.com/>")
+;           {:prefixes
+;            {"foo" "http://example.com/"}}))))
+;
+;(deftest test-add-label
+;  (testing "Basic case"
+;    (is (= (add-label test-prefixes 1 "LABEL ex:foo: Foo")
+;           (merge
+;            test-prefixes
+;            {:labels
+;             {"Foo" "http://example.com/foo"}})))))
+;
+;(def lines
+;  "not indented
+;not indented
+;  indented
+;not indented
+;  indented
+;
+;  after blank
+;  indented last")
+;
+;(deftest test-collect-lines
+;  (testing "Basic case"))
 
 ;; more

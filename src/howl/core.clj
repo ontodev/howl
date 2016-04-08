@@ -1,5 +1,6 @@
 (ns howl.core
   (:require [clojure.string :as string]
+            [clojure.java.io :as io]
             [instaparse.core :as insta])
   (:import [java.net URI])
   (:gen-class))
@@ -7,6 +8,192 @@
 (def plain-literal "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
 (def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
 (def xsd-string "http://www.w4.org/2001/XMLSchema#string")
+
+;; Parsing works like this:
+;;
+;; 1. loop over files
+;; 2. loop over lines in file
+;; 3. merge indented lines into a single "unit"
+;; 4. parse the unit and emit a vector
+;;
+;; Serializing works like this:
+;;
+;; 1. reduce over a sequence of parse vectors
+;; 2. usually normalize it into a map
+;; 3. process the map
+
+(def unit-parser
+  (insta/parser
+   "BLOCK = PREFIX_BLOCK / LABEL_BLOCK / TYPE_BLOCK / SUBJECT_BLOCK /
+            LINK_BLOCK / LITERAL_BLOCK
+    PREFIX_BLOCK  = 'PREFIX' SPACES PREFIX ':' SPACES IRI EOL
+    LABEL_BLOCK   = 'LABEL' SPACES PREFIXED_OR_IRI ':' SPACES LABEL EOL
+    TYPE_BLOCK    = 'TYPE' SPACES PREDICATE ':' SPACES NAME EOL
+    SUBJECT_BLOCK = 'SUBJECT' SPACES SUBJECT ':' SPACES LABEL EOL
+    LITERAL_BLOCK = PREDICATE ':' SPACES LITERAL EOL
+    LINK_BLOCK    = PREDICATE ':>' SPACES NAME EOL
+
+    PREFIXED_OR_IRI = PREFIXED_NAME / IRI
+    NAME            = PREFIXED_NAME / IRI / LABEL
+    PREDICATE       = PREFIXED_NAME / IRI / LABEL
+    SUBJECT         = PREFIXED_NAME / IRI / LABEL
+
+    PREFIXED_NAME = PREFIX ':' LOCAL_NAME
+    SPACES = ' '+
+    PREFIX = #'\\w+'
+    LOCAL_NAME = #'\\w+'
+    WRAPPED_IRI = <'<'> IRI <'>'>
+    IRI = #'[^>\\s]+'
+    LANG = #'@\\w+'
+    DATATYPE = '^^' (PREFIXED_NAME | IRI)
+    LABEL = #'[^:]+'
+    LITERAL = #'(\n|.)+'
+    EOL = #'(\n|\\s*)'"))
+
+(defn print-reason
+  "Provides special case for printing negative lookahead reasons"
+  [r]
+  (cond
+    (:NOT r)
+    (str "NOT " (:NOT r))
+    (:char-range r)
+    (instaparse.print/char-range->str r)
+    (instance? java.util.regex.Pattern r)
+    (instaparse.print/regexp->str r)
+    :else
+    (str r)))
+
+(defn message
+  [file-name line-number {:keys [column text reason]}]
+  (string/join
+   "\n"
+   (concat
+    [(format "Parse error in '%s' at line %d:" file-name line-number)
+     text
+     (instaparse.failure/marker column)
+     "Expected:"]
+    (->> reason
+         (filter :full)
+         (map :expecting)
+         (map (fn [r] (str (print-reason r) " (followed by end-of-string)"))))
+    [""])))
+
+(defn parse-unit
+  "Given a [file-name line-number line] vector
+   return the parse result as a vector
+   or throws an Exception."
+  [[file-name line-number unit]]
+  (let [parse-result (unit-parser unit)]
+    (if (insta/failure? parse-result)
+      (throw (Exception. (message file-name line-number parse-result)))
+      (concat [file-name line-number] (second parse-result)))))
+
+(defn merge-lines
+  "Given a file name,
+   return a stateful transducer
+   that takes a sequence of lines,
+   merges indented and blank lines,
+   then emits a sequence of vectors:
+   [file-name line-number merged-line]"
+  [file-name]
+  (fn [xf]
+    (let [number (volatile! 0)
+          length (volatile! 1)
+          unit   (volatile! nil)]
+      (fn
+        ([] (xf))
+        ([result] (xf result [file-name @number @unit]))
+        ([result line]
+         (cond
+           (.startsWith line "  ")
+           (do
+             (vswap! length inc)
+             (vreset! unit (str @unit "\n" (subs line 2)))
+             result)
+
+           (string/blank? line)
+           (do
+             (vswap! length inc)
+             (vreset! unit (str @unit "\n" line))
+             result)
+
+           :else
+           (let [current-line @number
+                 current-unit @unit]
+             (vreset! number (+ current-line @length))
+             (vreset! length 1)
+             (vreset! unit line)
+             (if current-unit
+               (xf result [file-name current-line current-unit])
+               result))))))))
+
+(defn parse-file
+  "Given a file name,
+   return a lazy sequence of parse results."
+  [file-name]
+  (with-open [reader (io/reader file-name)]
+    (transduce
+     (comp
+      (merge-lines file-name)
+      (map parse-unit))
+     conj
+     (line-seq reader))))
+
+(defn parse-files
+  "Given a sequence of file names,
+   return a lazy sequence of parse results."
+  [& file-names]
+  (mapcat parse-file file-names))
+
+
+(defn parse-vector-to-map
+  [results]
+  (->> results
+       (remove keyword?)
+       (remove string?)
+       (remove #(contains? #{:SPACES :EOL} (first %)))
+       (map (juxt first #(if (= 1 (count (rest %))) (second %) (rest %))))
+       (into {})))
+
+(defn parse-map
+  "Given a parse result vector,
+   return a map with just relevant information."
+  [[file-name line-number unit-type & results :as parse-vector]]
+  (try
+    (merge
+     (parse-vector-to-map results)
+     {:type        unit-type
+      :line-number line-number
+      :file-name   file-name
+      ;:parse-vector parse-vector
+      })
+    (catch Exception e
+      (println parse-vector)
+      (throw e))))
+
+
+(defmulti format-block :type)
+
+(defmethod format-block :PREFIX_BLOCK
+  [{:keys [PREFIX IRI]}]
+  (format "PREFIX %s: %s" PREFIX IRI))
+
+(defmethod format-block :default
+  [block]
+  (str block))
+
+(defn print-files
+  [& file-names]
+  (doseq [line (apply parse-files file-names)]
+    (println (format-block (parse-map line)))))
+
+
+
+
+
+
+
+
 
 ;; The state map contains:
 ;;
@@ -52,282 +239,91 @@
       (resolve-prefixed-name state name)
       (resolve-relative-iri  state name)))
 
-
-;; Prefixes
-
-(defn colon-split
-  [line]
-  (->> (string/split line #": " 2)
-       (map string/trim)))
-
-(defn unwrap-iri
-  [iri]
-  (-> iri
-      string/trim
-      (string/replace #"^<" "")
-      (string/replace #">$" "")))
-
-(defn add-prefix
-  "Given a HOWL state and a PREFIX line,
-   update and return the HOWL state."
-  [state number line]
-  (let [[prefix iri]
-        (colon-split (string/replace line "PREFIX" ""))
-        iri (unwrap-iri iri)]
-    (when (find (:prefixes state) prefix)
-      (throw
-       (Exception.
-        (format "PREFIX '%s' already defined at line %d" prefix number))))
-    (assoc-in state [:prefixes prefix] iri)))
-
-(defn add-label
-  "Given a HOWL state and a LABEL line,
-   update and return the HOWL state."
-  [state number line]
-  (let [[iri label]
-        (colon-split (string/replace line "LABEL" ""))
-        iri (or (resolve-prefixed-name state iri)
-                (resolve-relative-iri  state iri))]
-    (when (find (:labels state) label)
-      (throw
-       (Exception.
-        (format "LABEL '%s' already defined at line %d" label number))))
-    (assoc-in state [:labels label] iri)))
-
-(defn add-type
-  "Given a HOWL state and a TYPE line,
-   update and return the HOWL state."
-  [state number line]
-  (let [[predicate iri]
-        (colon-split (string/replace line "TYPE" ""))
-        predicate (resolve-name state predicate)
-        iri (resolve-name state iri)]
-    (when (find (:types state) predicate)
-      (throw
-       (Exception.
-        (format "TYPE for predicate '%s' already set at line %d" predicate number))))
-    (assoc-in state [:types predicate] iri)))
-
-(def subject-parser
-  (insta/parser
-   "S = <'SUBJECT' SPACES> NAME <':' SPACES> LABEL <EOL>
-    SPACES = ' '+
-    <NAME> = PREFIXED_NAME | WRAPPED_IRI | IRI
-    PREFIXED_NAME = PREFIX ':' LOCAL_NAME
-    <PREFIX> = #'\\w+'
-    <LOCAL_NAME> = #'\\w+'
-    WRAPPED_IRI = <'<'> IRI <'>'>
-    <IRI> = #'[^>\\s]+'
-    <LABEL> = #'[^:]+'
-    EOL = ' '*"))
-
-(defn add-quad
-  [state graph subject predicate object datatype]
-  (update-in
-   state
-   [:quads]
-   (fnil conj [])
-   [graph subject predicate object datatype]))
-
-(defn add-subject
-  "Given a HOWL state and a SUBJECT line,
-   update and return the HOWL state."
-  [state number line]
-  (let [[subject label]
-        (colon-split (string/replace line "SUBJECT" ""))
-        iri (or (resolve-prefixed-name state subject)
-                (resolve-relative-iri  state subject))]
-    (when (find (:labels state) label)
-      (throw
-       (Exception.
-        (format "Label '%s' already defined at line %d" label number))))
-    (-> state
-        (assoc-in [:labels label] iri)
-        (assoc-in [:subject] iri)
-        (add-quad (:graph state) iri rdfs-label label xsd-string))))
-
-(defn process-literal-object
-  [state literal]
-  (let [[_ lang-content lang]  (re-matches #"^(.*)(@\w+)\s*$" literal)
-        [_ type-content curie] (re-matches #"^(.*)\^\^(\S+)\s*$" literal)
-        iri (when curie (resolve-prefixed-name state curie))]
-    [(or lang-content type-content literal)
-     (or lang iri)]))
-
-(defn process-literal-statement
-  [state number line]
-  (let [[predicate object]       (string/split line #": " 2)
-        predicate                (resolve-name state (string/trim predicate))
-        [object object-datatype] (process-literal-object state object)]
-    (add-quad
-     state
-     (:graph state)
-     (:subject state)
-     predicate
-     object
-     (or object-datatype
-         (get-in state [:types predicate])
-         plain-literal))))
-
-(defn process-iri-statement
-  [state number line]
-  (let [graph     (:graph state)
-        subject   (:subject state)
-        [predicate object] (string/split line #":> " 2)
-        predicate (resolve-name state (string/trim predicate))
-        object    (resolve-name state (string/trim object))]
-    (add-quad state graph subject predicate object nil)))
-
-(defn process-statement
-  [state number line]
-  (cond
-    (.contains line ": ")
-    (process-literal-statement state number line)
-
-    (.contains line ":> ")
-    (process-iri-statement state number line)
-
-    :else
-    (throw (Exception. (str "Unhandled line: " number " " line)))))
-
-(defn process-line
-  "Given a HOWL collection and a line of HOWL,
-   update the collection."
-  [state number line]
-  (try
+(defn resolve-name-2
+  [state block name]
+  (let [LABEL (second name)
+        {:keys [PREFIX LOCAL_NAME IRI] :as name-map}
+        (parse-vector-to-map name)]
     (cond
-      ; TODO
-      (.startsWith line "BASE ")
-      (throw (Exception. (str "BASE not yet supported: " number " " line)))
-
-      (.startsWith line "PREFIX ")
-      (add-prefix state number line)
-
-      (.startsWith line "LABEL ")
-      (add-label state number line)
-
-      (.startsWith line "TYPE ")
-      (add-type state number line)
-
-      (.startsWith line "GRAPH ")
-      (throw (Exception. (str "GRAPH not yet supported: " number " " line)))
-
-      (.startsWith line "SUBJECT ")
-      (add-subject state number line)
-
-      ; TODO: ANNOTATION
-      (.startsWith line ">")
-      (throw (Exception. (str "Annotations not yet supported: " number " " line)))
-
-      ; STATEMENT
+      (and PREFIX LOCAL_NAME)
+      (str (get-in state [:prefixes PREFIX]) LOCAL_NAME)
+      IRI
+      IRI
+      LABEL
+      (get-in state [:labels LABEL])
       :else
-      (process-statement state number line))
+      (throw
+       (Exception.
+        (format "Could not resolve name '%s'" name))))))
 
-    (catch Exception e
-      (do (println state)
-          (throw e)))))
+(defn to-triples
+  "Given a reducing function,
+   return a stateful transducer
+   that takes parse maps
+   and returns NTriple statement strings."
+  [xf]
+  (let [state (volatile! {})] 
+    (fn
+      ([] (xf))
+      ([result] (xf result))
+      ([result block]
+       (case (:type block)
+         :PREFIX_BLOCK
+         (do
+           (vswap! state assoc-in [:prefixes (:PREFIX block)] (:IRI block))
+           result)
 
-(defn print-triples!
-  [state]
-  (doseq [[graph subject predicate object datatype] (:quads state)]
-    ;(println subject predicate object datatype)
-    (println
-     (cond
-       (not (string? datatype))
-       (format "<%s> <%s> <%s> ."
-               subject
-               predicate
-               object)
+         :LABEL_BLOCK
+         (let [iri (resolve-name-2 @state block (:PREFIXED_OR_IRI block))]
+           (vswap! state assoc-in [:labels (:LABEL block)] iri)
+           result)
 
-       (.startsWith datatype "@")
-       (format "<%s> <%s> \"%s\"%s ."
-               subject
-               predicate
-               object
-               datatype)
+         :TYPE_BLOCK
+         (let [predicate-iri (resolve-name-2 @state block (:PREDICATE block))
+               datatype-iri  (resolve-name-2 @state block (:NAME block))]
+           (vswap! state assoc-in [:types predicate-iri] datatype-iri)
+           result)
 
-       (= datatype plain-literal)
-       (format "<%s> <%s> \"%s\" ."
-               subject
-               predicate
-               object)
-       
-       :else
-       (format "<%s> <%s> \"%s\"^^<%s> ."
-               subject
-               predicate
-               object
-               datatype))))
+         :SUBJECT_BLOCK
+         (let [subject (resolve-name-2 @state block (:SUBJECT block))]
+           (vswap! state assoc :subject subject)
+           (xf result
+               (format "<%s> <%s> \"%s\" ."
+                       subject
+                       rdfs-label
+                       (:LABEL block))))
 
-  (dissoc state :quads))
+         :LITERAL_BLOCK
+         (xf result
+             (format "<%s> <%s> \"%s\" ."
+                     (get @state :subject)
+                     (resolve-name-2 @state block (:PREDICATE block))
+                     (:LITERAL block)))
 
-(defn merge-lines
-  [lines number line]
-  (cond
-    (.startsWith line "  ")
-    (update-in lines [(dec (count lines)) 1] str "\\n" (subs line 2))
-    (string/blank? line)
-    (update-in lines [(dec (count lines)) 1] str "\\n" line)
-    :else
-    (conj lines [(inc number) line])))
+         :LINK_BLOCK
+         (xf result
+             (format "<%s> <%s> <%s> ."
+                     (get @state :subject)
+                     (resolve-name-2 @state block (:PREDICATE block))
+                     (resolve-name-2 @state block (:NAME block))))
 
-(defn trim-line
-  [line]
-  (-> line
-      (string/replace #"^(\\n)+" "")
-      (string/replace #"(\\n)+$" "")))
+         ; else
+         result)))))
 
-
-#_(defn howl2n3
-    "Convert a HOWL string to N3"
-    [text]
-    (->> text
-         string/split-lines
-         (take-while #(not (.startsWith % ">")))
-         vec
-         (reduce-kv merge-lines [])
-         (map trim-line)
-         (reduce process-line {})
-         println))
-
-(defn howl2n3
-  [lines]
-  (loop [state  {}
-         number 1
-         current-line (first lines)
-         lines  (rest lines)]
-    (let [next-line (first lines)]
-      ;(println number current-line)
-      (cond
-        (not (string? next-line))
-        (print-triples!
-         (process-line state number (trim-line current-line)))
-
-        (.startsWith next-line "  ")
-        (recur
-         state
-         (inc number)
-         (str current-line "\\n" (subs next-line 2))
-         (rest lines))
-
-        (string/blank? next-line)
-        (recur
-         state
-         (inc number)
-         (str current-line "\\n" next-line)
-         (rest lines))
-
-        :else
-        (recur
-         (print-triples!
-          (process-line state number (trim-line current-line)))
-         (inc number)
-         next-line
-         (rest lines))))))
-
-;(def test1 (slurp "test1.howl"))
-
+(defn print-triples
+  [file-name]
+  (with-open [reader (io/reader file-name)]
+    (->> (line-seq reader)
+         (transduce
+          (comp
+           (merge-lines file-name)
+           (map parse-unit)
+           (map parse-map)
+           to-triples)
+          conj)
+         (map println)
+         doall)))
 
 (defn -main
   [& args]
-  (->> args first slurp string/split-lines howl2n3))
+  (apply print-triples args))
