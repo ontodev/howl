@@ -1,7 +1,9 @@
 (ns howl.core
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
-            [instaparse.core :as insta])
+            clojure.set
+            [instaparse.core :as insta]
+            [clojure.tools.cli :refer [parse-opts]])
   (:import [java.net URI])
   (:gen-class))
 
@@ -14,41 +16,66 @@
 ;; 1. loop over files
 ;; 2. loop over lines in file
 ;; 3. merge indented lines into a single "unit"
-;; 4. parse the unit and emit a vector
-;;
-;; Serializing works like this:
-;;
-;; 1. reduce over a sequence of parse vectors
-;; 2. usually normalize it into a map
-;; 3. process the map
+;; 4. parse the unit and emit a map
 
-(def unit-parser
+(def block-parser
   (insta/parser
-   "BLOCK = PREFIX_BLOCK / LABEL_BLOCK / TYPE_BLOCK / SUBJECT_BLOCK /
+   "BLOCK = BASE_BLOCK / PREFIX_BLOCK /
+            LABEL_BLOCK / TYPE_BLOCK /
+            GRAPH_BLOCK / SUBJECT_BLOCK /
             LINK_BLOCK / LITERAL_BLOCK
-    PREFIX_BLOCK  = 'PREFIX' SPACES PREFIX ':' SPACES IRI EOL
-    LABEL_BLOCK   = 'LABEL' SPACES PREFIXED_OR_IRI ':' SPACES LABEL EOL
-    TYPE_BLOCK    = 'TYPE' SPACES PREDICATE ':' SPACES NAME EOL
-    SUBJECT_BLOCK = 'SUBJECT' SPACES SUBJECT ':' SPACES LABEL EOL
-    LITERAL_BLOCK = PREDICATE ':' SPACES LITERAL EOL
-    LINK_BLOCK    = PREDICATE ':>' SPACES NAME EOL
 
-    PREFIXED_OR_IRI = PREFIXED_NAME / IRI
-    NAME            = PREFIXED_NAME / IRI / LABEL
-    PREDICATE       = PREFIXED_NAME / IRI / LABEL
-    SUBJECT         = PREFIXED_NAME / IRI / LABEL
+    BASE_BLOCK       = 'BASE'   SPACES IRI EOL
+    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON IRI EOL
+    LABEL_BLOCK      = 'LABEL'  SPACES IDENTIFIER COLON LABEL EOL
+    TYPE_BLOCK       = 'TYPE'   SPACES PREDICATE  COLON DATATYPE EOL
+    GRAPH_BLOCK      = 'GRAPH'  EOL /
+                       'GRAPH'  SPACES GRAPH EOL
+    SUBJECT_BLOCK    = SUBJECT EOL
+    LITERAL_BLOCK    = ARROWS PREDICATE COLON LITERAL EOL
+    LINK_BLOCK       = ARROWS PREDICATE ARROW_COLON OBJECT EOL
 
-    PREFIXED_NAME = PREFIX ':' LOCAL_NAME
-    SPACES = ' '+
-    PREFIX = #'\\w+'
-    LOCAL_NAME = #'\\w+'
-    WRAPPED_IRI = <'<'> IRI <'>'>
-    IRI = #'[^>\\s]+'
-    LANG = #'@\\w+'
-    DATATYPE = '^^' (PREFIXED_NAME | IRI)
-    LABEL = #'[^:]+'
-    LITERAL = #'(\n|.)+'
-    EOL = #'(\n|\\s*)'"))
+    IDENTIFIER = BLANK_NODE / PREFIXED_NAME / IRI
+    GRAPH      = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
+    SUBJECT    = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
+    PREDICATE  = PREFIXED_NAME / IRI / LABEL
+    OBJECT     = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
+    DATATYPE   = PREFIXED_NAME / IRI / LABEL
+    LITERAL    = #'.+(?=@(\\w|-)+)' LANG /
+                 #'.+(?=\\^\\^\\S+)' '^^' DATATYPE /
+                 #'(\n|.)+.+'
+
+    PREFIX        = #'(\\w|-)+'
+    BLANK_NODE    = '_:' #'(\\w|-)+'
+    PREFIXED_NAME = #'(\\w|-)+' ':' #'(\\w|-)+'
+    IRI           = '<' #'[^>\\s]+' '>'
+    LANG          = #'@(\\w|-)+'
+    COLON       = #' *' ':'  #' +'
+    ARROW_COLON = #' *' ':>' #' +'
+    SPACES      = #' +'
+    ARROWS      = #'>*' #'\\s*'
+    LABEL       = #'[^:\n]+'
+    EOL         = #'(\r|\n|\\s)*'
+    "))
+
+(defn valid-label?
+  "Given a string, check whether it can be a HOWL label."
+  [label]
+  (cond
+    (not (string? label)) false
+    (.startsWith label ">") false
+    (.startsWith label " ") false
+    (.startsWith label "BASE") false
+    (.startsWith label "PREFIX") false
+    (.startsWith label "LABEL") false
+    (.startsWith label "TYPE") false
+    (.startsWith label "GRAPH") false
+    (.contains   label "\n") false
+    (.contains   label "\t") false
+    (.contains   label ": ") false
+    (.contains   label ":> ") false
+    (.endsWith   label " ") false
+    :else true))
 
 (defn print-reason
   "Provides special case for printing negative lookahead reasons"
@@ -64,6 +91,8 @@
     (str r)))
 
 (defn message
+  "Given a file-name, line-number, and failed parse map,
+   throw an Exception with an informative message."
   [file-name line-number {:keys [column text reason]}]
   (string/join
    "\n"
@@ -78,15 +107,73 @@
          (map (fn [r] (str (print-reason r) " (followed by end-of-string)"))))
     [""])))
 
-(defn parse-unit
-  "Given a [file-name line-number line] vector
-   return the parse result as a vector
-   or throws an Exception."
-  [[file-name line-number unit]]
-  (let [parse-result (unit-parser unit)]
-    (if (insta/failure? parse-result)
-      (throw (Exception. (message file-name line-number parse-result)))
-      (concat [file-name line-number] (second parse-result)))))
+(defn annotate-parse
+  "Given a parse vector,
+   return a map with the special key-value pairs
+   for this type of parse."
+  [parse]
+  (case (first parse)
+    :BASE_BLOCK
+    {:iri (get-in parse [3 2])}
+
+    :PREFIX_BLOCK
+    {:prefix (get-in parse [3 1])
+     :iri    (get-in parse [5 2])}
+
+    :LABEL_BLOCK
+    {:identifier (get-in parse [3 1])
+     :label      (get-in parse [5 1])}
+
+    :TYPE_BLOCK
+    {:predicate (get-in parse [3 1])
+     :datatype  (get-in parse [5 1])}
+
+    :GRAPH_BLOCK
+    (case (count parse)
+      3 {}
+      5 {:graph (get-in parse [3 1])}
+      {})
+
+    :SUBJECT_BLOCK
+    {:subject (get-in parse [1 1])}
+
+    :LINK_BLOCK
+    {:arrows    (get-in parse [1 1])
+     :predicate (get-in parse [2 1])
+     :object    (get-in parse [4 1])}
+
+    :LITERAL_BLOCK
+    (merge
+     {:arrows    (get-in parse [1 1])
+      :predicate (get-in parse [2 1])
+      :content   (get-in parse [4 1])}
+     (case (count (get-in parse [4]))
+       2 {}
+       3 {:language (get-in parse [4 2 1])}
+       4 {:datatype (get-in parse [4 3 1])}
+       {}))
+
+    ; else
+    {}))
+
+(defn parse-block
+  "Given a file-name, line-number, and block to parse,
+   return a map with the parse information
+   or throw a parsing exception."
+  ([[file-name line-number block]]
+   (let [parse (block-parser block)]
+     (if (insta/failure? parse)
+       (throw (Exception. (message file-name line-number parse)))
+       (merge
+        {:file-name   file-name
+         :line-number line-number
+         :block       block
+         :block-type  (-> parse second first)
+         :parse       (second parse)
+         :eol         (-> parse second last last)}
+        (annotate-parse (second parse))))))
+  ([file-name line-number block]
+   (parse-block [file-name line-number block])))
 
 (defn merge-lines
   "Given a file name,
@@ -135,7 +222,7 @@
     (transduce
      (comp
       (merge-lines file-name)
-      (map parse-unit))
+      (map parse-block))
      conj
      (line-seq reader))))
 
@@ -146,33 +233,9 @@
   (mapcat parse-file file-names))
 
 
-(defn parse-vector-to-map
-  [results]
-  (->> results
-       (remove keyword?)
-       (remove string?)
-       (remove #(contains? #{:SPACES :EOL} (first %)))
-       (map (juxt first #(if (= 1 (count (rest %))) (second %) (rest %))))
-       (into {})))
+;; TODO: Reformat HOWL
 
-(defn parse-map
-  "Given a parse result vector,
-   return a map with just relevant information."
-  [[file-name line-number unit-type & results :as parse-vector]]
-  (try
-    (merge
-     (parse-vector-to-map results)
-     {:type        unit-type
-      :line-number line-number
-      :file-name   file-name
-      ;:parse-vector parse-vector
-      })
-    (catch Exception e
-      (println parse-vector)
-      (throw e))))
-
-
-(defmulti format-block :type)
+(defmulti format-block :block-type)
 
 (defmethod format-block :PREFIX_BLOCK
   [{:keys [PREFIX IRI]}]
@@ -182,11 +245,49 @@
   [block]
   (str block))
 
-(defn print-files
-  [& file-names]
-  (doseq [line (apply parse-files file-names)]
-    (println (format-block (parse-map line)))))
 
+
+(defn print-parses
+  "Given a sequence of file names,
+   print a sequence of parse maps."
+  [file-names]
+  (->> (apply parse-files file-names)
+       (map println)
+       doall))
+
+
+;; TODO: extract labels
+
+;(defn collect-labels
+;  [parse-vector]
+;  (tree-seq #(= (first %) :LABEL) identity parse-vector))
+
+;(defn defined-labels
+;  [parse-vectors]
+;  (->> parse-vectors
+;       (filter #(contains? #{:LABEL_BLOCK :SUBJECT_BLOCK} (:type %)))
+;       (map :LABEL)
+;       set))
+
+;(defn used-labels
+;  [parse-vectors]
+;  (->> parse-vectors
+;       flatten
+;       (partition 2 1)
+;       (filter #(= :LABEL (first %)))
+;       (map second)
+;       set))
+
+;(defn print-labels
+;  [file-names]
+;  (let [parse-vectors (apply parse-files file-names)]
+;    (->> (clojure.set/difference
+;          (used-labels parse-vectors)
+;          (defined-labels parse-vectors))
+;         ;(used-labels parse-vectors)
+;         sort
+;         (map println)
+;         doall)))
 
 
 
@@ -239,22 +340,61 @@
       (resolve-prefixed-name state name)
       (resolve-relative-iri  state name)))
 
-(defn resolve-name-2
+;(defn resolve-name-2
+;  [state block name]
+;  (let [LABEL (second name)
+;        {:keys [PREFIX LOCAL_NAME IRI] :as name-map}
+;        (parse-vector-to-map name)]
+;    (cond
+;      (and PREFIX LOCAL_NAME)
+;      (str (get-in state [:prefixes PREFIX]) LOCAL_NAME)
+;      IRI
+;      IRI
+;      LABEL
+;      (get-in state [:labels LABEL])
+;      :else
+;      (throw
+;       (Exception.
+;        (format "Could not resolve name '%s' in '%s' at line %d:\n%s"
+;                name
+;                (:file-name block)
+;                (:line-number block)
+;                (:line block)))))))
+
+(defn resolve-name-3
   [state block name]
-  (let [LABEL (second name)
-        {:keys [PREFIX LOCAL_NAME IRI] :as name-map}
-        (parse-vector-to-map name)]
+  (case (first name)
+    :IRI
+    (nth name 3)
+    :PREFIXED_NAME
+    (let [[type prefix colon local-name] name]
+      (str (get-in state [:prefixes prefix]) local-name))
+    :LABEL
+    (get-in state [:labels (second name)])
+    :else
+    (throw
+     (Exception.
+      (format "Could not resolve name '%s' in '%s' at line %d:\n%s"
+              name
+              (:file-name block)
+              (:line-number block)
+              (:line block))))))
+
+(defn format-literal
+  [state {:keys [content language datatype] :as block}]
+  (let [content (string/replace content "\n" "\\n")]
     (cond
-      (and PREFIX LOCAL_NAME)
-      (str (get-in state [:prefixes PREFIX]) LOCAL_NAME)
-      IRI
-      IRI
-      LABEL
-      (get-in state [:labels LABEL])
+      language
+      (format "\"%s\"%s" content language)
+      datatype
+      (format "\"%s\"^^<%s>"
+              content
+              (resolve-name-3 state block datatype))
       :else
-      (throw
-       (Exception.
-        (format "Could not resolve name '%s'" name))))))
+      (format "\"%s\"" content))))
+
+(def default-state
+  {:labels {"label" rdfs-label}})
 
 (defn to-triples
   "Given a reducing function,
@@ -262,68 +402,98 @@
    that takes parse maps
    and returns NTriple statement strings."
   [xf]
-  (let [state (volatile! {})] 
+  (let [state (volatile! default-state)]
     (fn
       ([] (xf))
       ([result] (xf result))
       ([result block]
-       (case (:type block)
-         :PREFIX_BLOCK
-         (do
-           (vswap! state assoc-in [:prefixes (:PREFIX block)] (:IRI block))
-           result)
+       (try
+         (case (:block-type block)
+           :PREFIX_BLOCK
+           (do
+             (vswap! state assoc-in [:prefixes (:prefix block)] (:iri block))
+             result)
 
-         :LABEL_BLOCK
-         (let [iri (resolve-name-2 @state block (:PREFIXED_OR_IRI block))]
-           (vswap! state assoc-in [:labels (:LABEL block)] iri)
-           result)
+           :LABEL_BLOCK
+           (let [iri (resolve-name-3 @state block (:identifier block))]
+             (vswap! state assoc-in [:labels (:label block)] iri)
+             result)
 
-         :TYPE_BLOCK
-         (let [predicate-iri (resolve-name-2 @state block (:PREDICATE block))
-               datatype-iri  (resolve-name-2 @state block (:NAME block))]
-           (vswap! state assoc-in [:types predicate-iri] datatype-iri)
-           result)
+           :TYPE_BLOCK
+           (let [predicate-iri (resolve-name-3 @state block (:predicate block))
+                 datatype-iri  (resolve-name-3 @state block (:datatype block))]
+             (vswap! state assoc-in [:types predicate-iri] datatype-iri)
+             result)
 
-         :SUBJECT_BLOCK
-         (let [subject (resolve-name-2 @state block (:SUBJECT block))]
-           (vswap! state assoc :subject subject)
+           :GRAPH_BLOCK
+           (let [graph (resolve-name-3 @state block (:graph block))]
+             (vswap! state assoc :subject [graph])
+             (.println ; TODO: better logging
+              *err*
+              (format "WARN: Graphs are not supported by the NTriples serializer.\n%s line %d: %s"
+                      (:file-name block)
+                      (:line-number block)
+                      (:block block)))
+             result)
+           
+           :SUBJECT_BLOCK
+           (let [subject (resolve-name-3 @state block (:subject block))]
+             (vswap! state assoc :subject [subject])
+             result)
+
+           :LITERAL_BLOCK
+           (let [predicate-iri (resolve-name-3 @state block (:predicate block))
+                 label         (:content block)]
+             (when (and (= predicate-iri rdfs-label)
+                        (valid-label? label))
+               (vswap! state assoc-in [:labels label] (get-in @state [:subject 0])))
+             (xf result
+                 (format "<%s> <%s> %s ."
+                         (get-in @state [:subject 0])
+                         predicate-iri
+                         (format-literal @state block))))
+           
+           :LINK_BLOCK
            (xf result
-               (format "<%s> <%s> \"%s\" ."
-                       subject
-                       rdfs-label
-                       (:LABEL block))))
+               (format "<%s> <%s> <%s> ."
+                       (get-in @state [:subject 0])
+                       (resolve-name-3 @state block (:predicate block))
+                       (resolve-name-3 @state block (:object block))))
 
-         :LITERAL_BLOCK
-         (xf result
-             (format "<%s> <%s> \"%s\" ."
-                     (get @state :subject)
-                     (resolve-name-2 @state block (:PREDICATE block))
-                     (:LITERAL block)))
+           ; else
+           result)
 
-         :LINK_BLOCK
-         (xf result
-             (format "<%s> <%s> <%s> ."
-                     (get @state :subject)
-                     (resolve-name-2 @state block (:PREDICATE block))
-                     (resolve-name-2 @state block (:NAME block))))
-
-         ; else
-         result)))))
+         (catch Exception e
+           (throw
+            (Exception.
+             (format "Error while serializing to Ntriples:\n%s line %d: %s\n%s"
+                     (:file-name block)
+                     (:line-number block)
+                     (:block block)
+                     (.getMessage e))))))))))
 
 (defn print-triples
-  [file-name]
-  (with-open [reader (io/reader file-name)]
-    (->> (line-seq reader)
-         (transduce
-          (comp
-           (merge-lines file-name)
-           (map parse-unit)
-           (map parse-map)
-           to-triples)
-          conj)
-         (map println)
-         doall)))
+  [file-names]
+  (->> (apply parse-files file-names)
+       (transduce to-triples conj)
+       (map println)
+       doall))
+
+(def cli-options
+  ;; An option with a required argument
+  [["-o" "--output FORMAT" "Output format"
+    :default "ntriples"]
+   ; TODO: replacement character, default "-"
+   ; TODO: replacement regex, default "\\W"
+   ; TODO: statement sorting
+   ["-h" "--help"]])
 
 (defn -main
   [& args]
-  (apply print-triples args))
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (case (:output options)
+      "ntriples"   (print-triples arguments)
+      "parses"     (print-parses arguments)
+      ;"labels"     (print-labels arguments)
+      
+      (throw (Exception. "Unknown output format")))))

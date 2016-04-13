@@ -5,41 +5,68 @@ HOWL is (an idea for) a new concrete syntax for RDF and OWL, designed for human 
 
 ## Example
 
-    PREFIX ex: <http://example.com/>
-    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX ex: <http://example.com/>
 
-    DECLARE ex:ontology: Example Ontology
-    type> Ontology
+    LABEL rdf:type: type
+    LABEL rdfs:label: label
+    LABEL rdfs:comment: comment
+    TYPE comment: xsd:string
 
-    DECLARE ex:foo: Foo
-    type> Class
+    ex:ontology
+    label: Example Ontology
+    type:> owl:Ontology
+
+    ex:foo
+    label: Foo
+    type:> owl:Class
     comment: A comment on 'Foo'.@en
-    > comment: An annotation on the comment^^xsd:string
-    >> comment: An annotation on the annotation
+    > comment: An annotation on the comment.^^xsd:string
+    >> comment: An annotation on the annotation.
     comment: Values can span multiple lines,
       and include blank lines...
 
-      as long as each line is indented two spaces.
-    subClassOf> 'has part' some 'Bar'
-    # Comment: Class expressions use Manchester Syntax.
+      as long as each line after the first
+      is indented with two spaces.
+    subClassOf:> 'has part' some Bar
 
-    DECLARE ex:bar: Bar
+    ex:bar
+    label: Bar
     type> Class
 
-Overview:
 
-- SPARQL-style PREFIXes
-- DECLARE the IRI and rdfs:label in one line
-- use a label, QName, or IRI for any named resource
-- assert triples: subject (from previous DECLARE), predicate, and object
-    - indicate that the object is a resource using `> `
-    - indicate that the object is a literal using `: `
-    - literals can end with datatype or language tag
-- OWL annotations start with `>` and can be nested
-- multi-line values use indentation
-- class expressions use Manchester Syntax and labels
-- lines starting with `#` are comments (not idempotent)
+## Features
+
+Features in this example:
+
+- line 1: SPARQL-style PREFIXes
+- line 7: LABELs -- like PREFIXes for single terms
+- line 10: TYPEs to set default language tag or datatype for a predicate
+- line 12: specify the current subject by its prefixed name, IRI, or label
+- line 13:
+  - specify a predicate by its prefixed name, IRI, or label
+  - use ":" for literal statements
+  - literals without quotation marks
+- line 14:
+  - use ":>" for link statements
+  - specify an object by its prefixed name, IRI, or label
+- line 20: OWL annotations start with `>`
+- line 21: OWL annotations can be nested
+- line 22: multi-line values using indentation
+- line 27: class expressions use Manchester Syntax and labels
+
+Other features, not in this example:
+
+- RDF dataset support for a default graph and zero or more named graphs
+- BASE IRI
+
+Behind the scenes:
+
+- line-based format for stream processing
+- JSON format for parse information, for language agnostic tooling
 
 
 ## Goals
@@ -89,11 +116,12 @@ Since IRIs are cumbersome, Turtle introduces prefixes and QNames. You can use a 
 
 Since many QNames and IRIs are not easy for human to read and remember, we introduce the HLabel. In HOWL syntax you can use an HLabel anywhere you can use an IRI. HLabels are strings that:
 
+- do not begin or end with whitespace
 - do not contain newlines or tabs
-- do not contain `:`
-- do not contain `>`
-- do not begin with `#`
-- do not begin with spaces
+- do not begin with a reserved word (case sensitive): BASE, PREFIX, LABEL, TYPE, GRAPH
+- do not begin with `>`
+- do not contain `: ` (colon space)
+- do not contain `:> ` (colon arrow space)
 
 HLabels are defined by the rdfs:label predicate. When multiple rdfs:labels are available, HOWL uses the first valid HLabel in a alphanumeric sort of their lexical values.
 
@@ -157,35 +185,355 @@ HOWL has a deterministic, idempotent serialization order:
   - within these types, as above
 
 
-## External Context
+## Syntax and Parsing
 
-To avoid repetition within a project, shared context can be stored in separate files.
-
-The prefixes can be defined in a separate file.
-
-The ID-label mappings can be defined in a separate file, in which case the `DECLARE` statements can omit the ID.
+Each block consists of a line of text, followed by zero or more indented lines. The block is the level at which HOWL is parsed. HOWL is designed for streaming, so a sequence of files is transformed into a sequence of parsed blocks. Each parsed block can be represented as a JSON object.
 
 
-### External Example
+### BASE
 
-The same example as above, using an external set of prefixes and ID-label mappings.
+Base blocks set the current base IRI for resolving relative IRIs. Multiple base blocks can occur, each changing the current base from that point until the next base block.
 
-    DECLARE: Example Ontology
-    type> Ontology
+This prefix block:
 
-    DECLARE: Foo
-    type> Class
-    comment: A comment on 'Foo'.@en
-    > comment: An annotation on the comment^^xsd:string
-    >> comment: An annotation on the annotation
-    comment: Values can span multiple lines,
-      and include blank lines...
+    BASE <http://example.com/>
 
-      as long as each lines is indented two spaces.
-    subClassOf> 'has part' some 'Bar'
-    # Comment: Class expressions use Manchester Syntax.
+is parsed into this JSON object:
 
-    DECLARE: Bar
-    type> Class
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "BASE <http://example.com/>\n",
+     "block-type": "BASE_BLOCK",
+     "parse": ["BASE_BLOCK"
+               "BASE"
+               ["SPACES" " "]
+               ["IRI" "<" "http://example.com/" ">"]
+               ["EOL" "\n"]],
+     "iri": "http://example.com/",
+     "eol": "\n"}
+
+
+### PREFIX
+
+Prefix blocks are identical to SPARQL prefix lines.
+
+This prefix block:
+
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
+     "block-type": "PREFIX_BLOCK",
+     "parse": ["PREFIX_BLOCK"
+               "PREFIX"
+               ["SPACES" " "]
+               ["PREFIX" "rdf"]
+               ["COLON" "" ":" " "]
+               ["IRI" "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]
+               ["EOL" "\n"]],
+     "prefix": "rdf",
+     "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     "eol": "\n"}
+
+
+### LABEL
+
+HOWL makes RDF more readable by using labels rather than IRIs and prefixed names whenever possible. Label blocks allow you to associate a label to an identifier, without making any other assertions about it -- no triple will be generated. If you want to assert that a subject has a label, use the special `label:` predicate shown below.
+
+This label block:
+
+    LABEL rdfs:comment: comment
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "LABEL rdfs:comment: comment\n",
+     "block-type": "LABEL_BLOCK",
+     "parse": ["LABEL_BLOCK"
+               "LABEL"
+               ["SPACES" " "]
+               ["IDENTIFIER" ["PREFIXED_NAME" "rdfs" ":" "comment"]]
+               ["COLON" "" ":" " "]
+               ["LABEL" "comment"]
+               ["EOL" "\n"]],
+     "identifier": ["PREFIXED_NAME" "rdfs" ":" "comment"],
+     "label": "comment",
+     "eol": "\n"}
+
+
+### TYPE
+
+Like JSON-LD, HOWL allows you to associate a default datatype (or language tag) with a predicate. Unless they specify a datatype (or language tag), any literal object for that predicate will use that datatype (or language tag). No triple is generated for a type block.
+
+This type block:
+
+    TYPE comment: xsd:string
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "TYPE comment: xsd:string\n",
+     "block-type": "TYPE_BLOCK",
+     "parse": ["TYPE_BLOCK"
+               "TYPE"
+               ["SPACES" " "]
+               ["PREDICATE" ["LABEL" "comment"]]
+               ["COLON" "" ":" " "]
+               ["DATATYPE" ["PREFIXED_NAME" "xsd" ":" "string"]]
+               ["EOL" "\n"]],
+     "predicate": ["LABEL" "comment"],
+     "datatype": ["PREFIXED_NAME" "xsd" ":" "string"],
+     "eol": "\n"}
+
+
+### GRAPH
+
+A HOWL file specifies an RDF dataset, with a default RDF graph and zero or more named RDF graphs. For each block there is a current graph, starting with the default graph, and changed whenever a graph block occurs. Every subject and statement block is assigned to the current graph.
+
+Graph blocks have two forms:
+
+1. `GRAPH IDENTIFIER` specifies a named graph; the IDENTIFIER will also be the subject, so it can be followed by statements about the named graph
+2. `GRAPH` specifies the default graph; the default graph cannot be a subject
+
+This graph block:
+
+    GRAPH ex:graph
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "GRAPH ex:graph\n",
+     "block-type": "GRAPH_BLOCK",
+     "parse": ["GRAPH_BLOCK"
+               "GRAPH"
+               ["SPACES" " "]
+               ["GRAPH" ["PREFIXED_NAME" "ex" ":" "graph"]]
+               ["EOL" "\n"]],
+     "graph": ["PREFIXED_NAME" "ex" ":" "graph"],
+     "eol": "\n"}
+
+This graph block:
+
+    GRAPH
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "GRAPH\n",
+     "block-type": "GRAPH_BLOCK",
+     "parse": ["GRAPH_BLOCK"
+               "GRAPH"
+               ["EOL" "\n"]],
+     "eol": "\n"}
+
+
+### Subject
+
+A subject block is just the identifier or label for a subject. It specifies the current 
+
+This subject block:
+
+    ex:subject
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "ex:subject\n",
+     "block-type": "SUBJECT_BLOCK",
+     "parse": ["SUBJECT_BLOCK"
+               ["SUBJECT" ["PREFIXED_NAME" "ex" ":" "subject"]]
+               ["EOL" "\n"]],
+     "subject": ["PREFIXED_NAME" "ex" ":" "subject"],
+     "eol": "\n"}
+
+
+### Link
+
+To express a triple where the object is an IRI, we use a link block. The subject for the link block will be whatever the current subject is, as specified in a previous subject block or graph block. The link block consists of a predicate, a "arrow colon" separator, and an object. The predicate can be a prefixed name, IRI, or label. The object can be any of these, or a blank node.
+
+This link block:
+
+    rdf:type:> owl:Class
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "rdf:type:> owl:Class\n",
+     "block-type": "LINK_BLOCK",
+     "parse": ["LINK_BLOCK"
+               ["ARROWS" "" ""]
+               ["PREDICATE" ["PREFIXED_NAME" "rdf" ":" "type"]]
+               ["ARROW_COLON" "" ":>" " "]
+               ["OBJECT" ["PREFIXED_NAME" "owl" ":" "Class"]]
+               ["EOL" "\n"]],
+     "arrows": "",
+     "predicate": ["PREFIXED_NAME" "rdf" ":" "type"],
+     "object": ["PREFIXED_NAME" "owl" ":" "Class"],
+     "eol": "\n"}
+
+So these HOWL blocks:
+
+```
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX ex: <http://example.com>
+GRAPH ex:graph
+ex:subject
+rdf:type:> owl:Class
+```
+
+specify this NQuad (with newlines added for readability):
+
+```
+<http://example.com/graph>
+<http://example.com/subject>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+<http://www.w3.org/2002/07/owl#Class> .
+```
+
+
+### Literal
+
+The key difference between the HOWL syntax for literals and the Turtle or NTriples syntax is that HOWL does not require quotation marks. A literal block consists of a predicate, a colon and one or more spaces, followed by the literal content, and optionally ending with a language tag or datatype.
+
+This literal block:
+
+    comment: This comment has a datatype.^^xsd:string
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "comment: This comment has a datatype.^^xsd:string\n",
+     "block-type": "LITERAL_BLOCK",
+     "parse": ["LITERAL_BLOCK"
+               ["ARROWS" "" ""]
+               ["PREDICATE" ["LABEL" "comment"]]
+               ["COLON" "" ":" " "]
+               ["LITERAL"
+                "This comment has a datatype."
+                "^^"
+                ["DATATYPE" ["PREFIXED_NAME" "xsd" ":" "string"]]]
+               ["EOL" "\n"]],
+     "arrows": "",
+     "predicate": ["LABEL" "comment"],
+     "content": "This comment has a datatype.",
+     "datatype": ["PREFIXED_NAME" "xsd" ":" "string"],
+     "eol": "\n"}
+
+So these HOWL blocks:
+
+```
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+PREFIX ex: <http://example.com>
+LABEL rdfs:comment: comment
+GRAPH ex:graph
+ex:subject
+comment: This comment has a datatype.^^xsd:string
+```
+
+specify this NQuad (with newlines added for readability):
+
+```
+<http://example.com/graph>
+<http://example.com/subject>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
+"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+```
+
+
+### Annotations
+
+HOWL includes a convenient syntax for OWL annotations: one or more `>` "arrows" preceding a link block or literal block changes the subject to a previous statement.
+
+This literal block:
+
+    > comment: A comment on a comment.
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "> comment: A comment on a comment.\n"
+     "block-type": "LITERAL_BLOCK",
+     "parse": ["LITERAL_BLOCK"
+               ["ARROWS" ">" " "]
+               ["PREDICATE" ["LABEL" "comment"]]
+               ["COLON" "" ":" " "]
+               ["LITERAL"
+                "A comment on a comment."]
+               ["EOL" "\n"]],
+     "arrows": ">",
+     "predicate": ["LABEL" "comment"],
+     "content": "A comment on a comment.",
+     "eol": "\n"}
+
+So these HOWL blocks:
+
+```
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+PREFIX ex: <http://example.com>
+LABEL rdfs:comment: comment
+GRAPH ex:graph
+ex:subject
+comment: This comment has a datatype.^^xsd:string
+> comment: A comment on a comment.
+```
+
+specify these six NTriples (with newlines added for readability):
+
+1. the target statement
+2. the type of annotation: `owl:Axiom`
+3. the subject of the target: `owl:annotatedSource`
+4. the predicate of the target: `owl:annotatedProperty`
+5. the object of the target: `owl:annotatedTarget`
+6. the annotation statement
+
+```
+<http://example.com/subject>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
+"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+
+_:b1
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+<http://www.w3.org/2002/07/owl#Axiom> .
+
+_:b1
+<http://www.w3.org/2002/07/owl#annotatedSource>
+<http://example.com/subject> .
+
+_:b1
+<http://www.w3.org/2002/07/owl#annotatedProperty>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#comment> .
+
+_:b1
+<http://www.w3.org/2002/07/owl#annotatedTarget>
+"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+
+_:b1
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
+"A comment on a comment." .
+```
+
+Nesting is allowed. The number of arrows specifies the depth of the nesting:
+
+```
+comment: A -- original comment
+> comment: B -- comment on A
+>> comment: C -- comment on B
+> comment: D -- another comment on A
+```
+
 
 

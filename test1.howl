@@ -1,8 +1,8 @@
-PREFIX rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
-PREFIX rdfs: http://www.w3.org/2000/01/rdf-schema#
-PREFIX xsd: http://www.w4.org/2001/XMLSchema#
-PREFIX owl: http://www.w3.org/2002/07/owl#
-PREFIX ex: http://example.com/
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX ex: <http://example.com/>
 
 LABEL rdf:type: type
 LABEL rdfs:comment: comment
@@ -10,10 +10,12 @@ LABEL rdfs:subClassOf: subClassOf
 
 TYPE comment: xsd:string
 
-SUBJECT ex:ontology: Example Ontology
+ex:ontology
+label: Example Ontology
 type:> owl:Ontology
 
-SUBJECT ex:foo: Foo
+ex:foo
+label: Foo
 type:> owl:Class
 comment: A comment on 'Foo'.@en
 comment: A comment on 'BAR'.^^xsd:string
@@ -23,5 +25,6 @@ comment: Values can span multiple lines,
   as long as each non-blank line is indented two spaces.
 subClassOf: 'has part' some 'Bar'
 
-SUBJECT ex:bar: Bar
+ex:bar
+label: Bar
 type:> Foo

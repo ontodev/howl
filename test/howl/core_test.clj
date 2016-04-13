@@ -52,12 +52,11 @@
       "/foo" "http://example.com/foo")))
 
 
-(deftest test-parse-prefix
-  (testing "Basic case"
-    (is (= (unit-parser
-            "PREFIX rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-           [:PREFIX]))))
-
+;(deftest test-parse-prefix
+;  (testing "Basic case"
+;    (is (= (unit-parser
+;            "PREFIX rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+;           [:PREFIX]))))
 
 ;(deftest test-add-prefix
 ;  (testing "Basic case"
