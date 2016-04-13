@@ -7,7 +7,9 @@
   (:import [java.net URI])
   (:gen-class))
 
+(def owl "http://www.w3.org/2002/07/owl#")
 (def plain-literal "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
+(def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 (def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
 (def xsd-string "http://www.w4.org/2001/XMLSchema#string")
 
@@ -393,8 +395,13 @@
       :else
       (format "\"%s\"" content))))
 
+(defn unwrap-iri
+  [iri]
+  (string/replace iri #"^<|>$" ""))
+
 (def default-state
-  {:labels {"label" rdfs-label}})
+  {:blank-node-count 0
+   :labels {"label" rdfs-label}})
 
 (defn to-triples
   "Given a reducing function,
@@ -427,7 +434,7 @@
 
            :GRAPH_BLOCK
            (let [graph (resolve-name-3 @state block (:graph block))]
-             (vswap! state assoc :subject [graph])
+             (vswap! state assoc :subjects [[(format "<%s>" graph)]])
              (.println ; TODO: better logging
               *err*
               (format "WARN: Graphs are not supported by the NTriples serializer.\n%s line %d: %s"
@@ -438,27 +445,80 @@
            
            :SUBJECT_BLOCK
            (let [subject (resolve-name-3 @state block (:subject block))]
-             (vswap! state assoc :subject [subject])
+             (vswap! state assoc :subjects [[(format "<%s>" subject)]])
              result)
 
            :LITERAL_BLOCK
-           (let [predicate-iri (resolve-name-3 @state block (:predicate block))
-                 label         (:content block)]
-             (when (and (= predicate-iri rdfs-label)
-                        (valid-label? label))
-               (vswap! state assoc-in [:labels label] (get-in @state [:subject 0])))
-             (xf result
-                 (format "<%s> <%s> %s ."
-                         (get-in @state [:subject 0])
-                         predicate-iri
-                         (format-literal @state block))))
+           (let [{:keys [arrows predicate content]} block
+                 subject   (if (string/blank? arrows)
+                             (-> @state :subjects first first)
+                             (do
+                               (vswap! state update-in [:blank-node-count] inc)
+                               (str "_:b" (:blank-node-count @state))))
+                 predicate (format "<%s>" (resolve-name-3 @state block predicate))
+                 object    (format-literal @state block)]
+
+             ; When this is a HOWL-valid rdfs:label, add it to the map of labels.
+             (when (and (string/blank? arrows)
+                        (= predicate (format "<%s>" rdfs-label))
+                        (valid-label? content))
+               (vswap! state assoc-in [:labels content] (unwrap-iri subject)))
+
+             ; Add this triple to the stack of subjects.
+             (vswap! state
+                     assoc
+                     :subjects
+                     (conj (vec (take (count arrows) (:subjects @state)))
+                           [subject predicate object]))
+
+             ; Two cases
+             (if (string/blank? arrows)
+               ; normal literal node
+               (xf result (format "%s %s %s ." subject predicate object))
+               ; annotation (maybe nested)
+               (let [[annotatedSource annotatedProperty annotatedTarget]
+                     (get-in @state [:subjects (dec (count arrows))])]
+                 (apply
+                  xf
+                  result
+                  [(format "%s <%s> <%s> ." subject rdf-type (str owl "Axiom"))
+                   (format "%s <%s> %s ."   subject (str owl "annotatedSource") annotatedSource)
+                   (format "%s <%s> %s ."   subject (str owl "annotatedProperty") annotatedProperty)
+                   (format "%s <%s> %s ."   subject (str owl "annotatedTarget") annotatedTarget)
+                   (format "%s %s %s ."     subject predicate object)]))))
            
            :LINK_BLOCK
-           (xf result
-               (format "<%s> <%s> <%s> ."
-                       (get-in @state [:subject 0])
-                       (resolve-name-3 @state block (:predicate block))
-                       (resolve-name-3 @state block (:object block))))
+           (let [{:keys [arrows predicate object]} block
+                 subject   (if (string/blank? arrows)
+                             (-> @state :subjects first first)
+                             (do
+                               (vswap! state update-in [:blank-node-count] inc)
+                               (str "_:b" (:blank-node-count @state))))
+                 predicate (format "<%s>" (resolve-name-3 @state block predicate))
+                 object    (format "<%s>" (resolve-name-3 @state block object))]
+
+             ; Add this triple to the stack of subjects.
+             (vswap! state
+                     assoc
+                     :subjects
+                     (conj (vec (take (count arrows) (:subjects @state)))
+                           [subject predicate object]))
+
+             ; Two cases
+             (if (string/blank? arrows)
+               ; normal literal node
+               (xf result (format "%s %s %s ." subject predicate object))
+               ; annotation (maybe nested)
+               (let [[annotatedSource annotatedProperty annotatedTarget]
+                     (get-in @state [:subjects (dec (count arrows))])]
+                 (apply
+                  xf
+                  result
+                  [(format "%s <%s> <%s> ." subject rdf-type (str owl "Axiom"))
+                   (format "%s <%s> %s ."   subject (str owl "annotatedSource") annotatedSource)
+                   (format "%s <%s> %s ."   subject (str owl "annotatedProperty") annotatedProperty)
+                   (format "%s <%s> %s ."   subject (str owl "annotatedTarget") annotatedTarget)
+                   (format "%s %s %s ."     subject predicate object)]))))
 
            ; else
            result)
