@@ -20,6 +20,110 @@
 ;; 3. merge indented lines into a single "unit"
 ;; 4. parse the unit and emit a map
 
+(def ce-parser
+  (insta/parser
+   "MN_CE = '(' SPACES? MN_CE SPACES? ')'
+      / MN_DISJUNCTION
+      / MN_CONJUNCTION
+      / MN_NEGATION
+      / MN_RESTRICTION
+      / MN_NAME
+
+    MN_DISJUNCTION = MN_CE (SPACES 'or' SPACES MN_CE)*
+    MN_CONJUNCTION = MN_CE (SPACES 'and' SPACES MN_CE)*
+    MN_NEGATION = 'not' SPACES (MN_RESTRICTION | MN_NAME)
+                     
+    <MN_RESTRICTION> = MN_SOME | MN_ONLY
+    MN_SOME = MN_OPE SPACES 'some' SPACES MN_CE
+    MN_ONLY = MN_OPE SPACES 'only' SPACES MN_CE
+
+    MN_OPE = 'inverse' SPACES MN_NAME | MN_NAME
+
+    MN_NAME = QUOTED_LABEL | LABEL
+
+    SPACES = #'\\s+'
+    LABEL = #'\\w+'
+    QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
+    BLANK_NODE    = '_:' #'(\\w|-)+'
+    PREFIXED_NAME = #'(\\w|-)+' ':' #'(\\w|-)+'
+    IRI           = '<' #'[^>\\s]+' '>'
+    "))
+
+(defn clean-ce
+  [parse]
+  (cond
+    (and (vector? parse) (= :MN_NAME (first parse)))
+    parse
+
+    (vector? parse)
+    (->> parse
+         (remove string?)
+         (remove #(and (vector? %) (= :SPACES (first %))))
+         (map clean-ce)
+         vec)
+
+    :else parse))
+
+(def wip "
+
+    restriction = objectPropertyExpression 'some' primary
+         | objectPropertyExpression 'only' primary
+         | objectPropertyExpression 'value' individual
+         | objectPropertyExpression 'Self'
+         | objectPropertyExpression 'min' nonNegativeInteger primary?
+         | objectPropertyExpression 'max' nonNegativeInteger primary?
+         | objectPropertyExpression 'exactly' nonNegativeInteger primary?
+         | dataPropertyExpression 'some' dataPrimary
+         | dataPropertyExpression 'only' dataPrimary
+         | dataPropertyExpression 'value' literal
+         | dataPropertyExpression 'min' nonNegativeInteger dataPrimary?
+         | dataPropertyExpression 'max' nonNegativeInteger dataPrimary?
+         | dataPropertyExpression 'exactly' nonNegativeInteger dataPrimary?
+    atomic = classIRI
+         | '{' individualList '}'  
+         | '(' description ')'
+    objectPropertyExpression = objectPropertyIRI | inverseObjectProperty
+    inverseObjectProperty = 'inverse' objectPropertyIRI 
+    dataPropertyExpression = dataPropertyIRI
+
+    dataRange = dataConjunction ('or' dataConjunction)+
+         | dataConjunction
+    dataConjunction = dataPrimary ('and' dataPrimary)+
+         | dataPrimary
+    dataPrimary = 'not'? dataAtomic
+    dataAtomic = Datatype
+         | '{' literalList '}'
+         | datatypeRestriction | '(' dataRange ')'
+    datatypeRestriction = Datatype '[' facet restrictionValue { ',' facet restrictionValue } ']'
+    facet = 'length' | 'minLength' | 'maxLength' | 'pattern' | 'langRange' | '<=' | '<' | '>=' | '>'
+    restrictionValue = literal
+
+    individualList = individual+
+    individual = individualIRI | nodeID
+    individualIRI = IRI
+    nodeID = BLANK_NODE
+
+    literalList = literal+
+    literal = typedLiteral | stringLiteralNoLanguage | stringLiteralWithLanguage
+    typedLiteral = lexicalValue '^^' Datatype
+    stringLiteralNoLanguage = quotedString
+    stringLiteralWithLanguage = quotedString languageTag
+    languageTag = #'@(\\w|-)+'
+    lexicalValue = quotedString
+    quotedString = #'\"[^\"]+\"'
+
+    objectPropertyIRI = BLANK_NODE / PREFIXED_NAME / IRI
+    dataPropertyIRI = BLANK_NODE / PREFIXED_NAME / IRI
+    Datatype = datatypeIRI | 'integer' | 'decimal' | 'float' | 'string'
+    datatypeIRI = IRI
+
+    nonNegativeInteger = #'\\d+'
+    BLANK_NODE    = '_:' #'(\\w|-)+'
+    PREFIXED_NAME = #'(\\w|-)+' ':' #'(\\w|-)+'
+    IRI           = '<' #'[^>\\s]+' '>' | \"'\" #\"[^']+\" \"'\" | #'\\w+'
+    SPACES      = #' +'
+   ")
+
 (def block-parser
   (insta/parser
    "BLOCK = BASE_BLOCK / PREFIX_BLOCK /
@@ -394,6 +498,146 @@
               (resolve-name-3 state block datatype))
       :else
       (format "\"%s\"" content))))
+
+
+(defn render-restriction
+  [{:keys [ope-node ce-node] :as state} predicate]
+  (let [blank-node-count (inc (get state :blank-node-count 0))
+        bnode            (str "_:b" blank-node-count)]
+    (-> state
+        (dissoc :ope-node :ce-node)
+        (assoc :blank-node-count blank-node-count)
+        (assoc :node bnode)
+        (update
+         :triples
+         concat
+         [[bnode "rdf:type"       "owl:Restriction"]
+          [bnode "owl:onProperty" ope-node]
+          [bnode predicate        ce-node]]))))
+
+(defn filter-ce
+  [parse]
+  (->> parse
+       (filter vector?)
+       (remove #(= :SPACES (first %)))))
+
+(defn process-list
+  [block state element]
+  (let [state (ce-triples state block element)]
+    (update state :rdf-list (fnil conj []) (:node state))))
+
+(defn rdf-list-element
+  "Given the triple of a blank node, a 'first' node, and a 'rest' node,
+   return triples representing an RDF list item."
+  [[bnode rdf-first rdf-rest]]
+  [[bnode "rdf:first" rdf-first]
+   [bnode "rdf:rest" rdf-rest]])
+
+(defn rdf-list
+  "Given a state map and a sequence of nodes,
+   update the statement with an RDF list of the nodes."
+  [state nodes]
+  (let [blank-node-count (inc (get state :blank-node-count 0))
+        final-count      (+ blank-node-count (count nodes))
+        bnodes (for [b (range blank-node-count final-count)]
+                 (str "_:b" b))
+        lists (map vector bnodes nodes (concat (rest bnodes) ["rdf:nil"]))]
+    (-> state
+        (assoc :node (first bnodes))
+        (assoc :blank-node-count (dec final-count))
+        (update :triples concat (mapcat rdf-list-element lists)))))
+
+(defn ce-triples
+  [state block parse]
+  (case (first parse)
+    :MN_NEGATION
+    (let [state (ce-triples state block (->> parse filter-ce first))
+          blank-node-count (inc (get state :blank-node-count 0))
+          bnode            (str "_:b" blank-node-count)]
+      (-> state
+          (assoc :blank-node-count blank-node-count)
+          (assoc :node bnode)
+          (update
+           :triples
+           concat
+           [[bnode "rdf:type"         "owl:Class"]
+            [bnode "owl:complementOf" (:node state)]])))
+
+    :MN_DISJUNCTION
+    (let [state (reduce (partial process-list block) state (filter-ce parse))
+          state (rdf-list state (:rdf-list state))
+          blank-node-count (inc (get state :blank-node-count 0))
+          bnode            (str "_:b" blank-node-count)]
+      (-> state
+          (dissoc :rdf-list)
+          (assoc :blank-node-count blank-node-count)
+          (assoc :node bnode)
+          (update
+           :triples
+           concat
+           [[bnode "rdf:type"   "owl:Class"]
+            [bnode "owl:unionOf" (:node state)]])))
+
+    :MN_CONJUNCTION
+    (let [state (reduce (partial process-list block) state (filter-ce parse))
+          state (rdf-list state (:rdf-list state))
+          blank-node-count (inc (get state :blank-node-count 0))
+          bnode            (str "_:b" blank-node-count)]
+      (-> state
+          (dissoc :rdf-list)
+          (assoc :blank-node-count blank-node-count)
+          (assoc :node bnode)
+          (update
+           :triples
+           concat
+           [[bnode "rdf:type"   "owl:Class"]
+            [bnode "owl:intersectionOf" (:node state)]])))
+
+    :MN_SOME
+    (-> state
+        (ce-triples block (->> parse filter-ce first))
+        (clojure.set/rename-keys {:node :ope-node})
+        (ce-triples block (->> parse filter-ce second))
+        (clojure.set/rename-keys {:node :ce-node})
+        (render-restriction "owl:someValuesFrom"))
+
+    :MN_CE
+    (ce-triples state block (->> parse filter-ce first))
+    
+    :MN_OPE
+    (ce-triples state block (->> parse filter-ce first))
+
+    :MN_NAME
+    (ce-triples state block (->> parse filter-ce first))
+
+    :LABEL
+    (assoc state :node (resolve-name-3 state block parse))
+
+    :QUOTED_LABEL
+    (assoc state :node (resolve-name-3 state block [:LABEL (nth parse 2)]))
+
+    ; else
+    state))
+
+
+[:MN_CE
+ [:MN_SOME
+  [:MN_OPE [:MN_NAME [:QUOTED_LABEL "'" "has part" "'"]]]
+  [:SPACES " "]
+  "some"
+  [:SPACES " "]
+  [:MN_CE [:MN_NAME [:LABEL "bar"]]]]]
+
+[:MN_CE [:MN_SOME [:MN_OPE [:MN_NAME [:QUOTED_LABEL "'" "has part" "'"]]] [:SPACES " "] "some" [:SPACES " "] [:MN_CE [:MN_NAME [:LABEL "bar"]]]]]
+
+[:MN_CE [:MN_SOME [:MN_OPE [:MN_NAME [:QUOTED_LABEL "'" "has part" "'"]]] [:MN_CE [:MN_NAME [:LABEL "bar"]]]]]
+
+
+; _:genid118 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> .
+; _:genid118 <http://www.w3.org/2002/07/owl#onProperty> <http://purl.obolibrary.org/obo/OBI_0000417> .
+; _:genid118 <http://www.w3.org/2002/07/owl#someValuesFrom> <http://purl.obolibrary.org/obo/OBI_0000441> .
+; <http://purl.obolibrary.org/obo/OBI_0000070> <http://www.w3.org/2002/07/owl#equivalentClass> _:genid118 .
+
 
 (defn unwrap-iri
   [iri]
