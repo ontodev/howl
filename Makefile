@@ -11,22 +11,18 @@ SHELL := bash
 .SUFFIXES:
 .SECONDARY:
 
-# Convert Excel spreadsheets to tab-separated values (TSV).
-XLSX := xlsx2csv --delimiter tab --escape --ignoreempty
-
-# Use awk with tabs.
-AWK := awk -F "	" -v "OFS=	"
-
 
 ### Build Binary
 
 build:
 	mkdir -p $@
 
-target/howl-0.1.0-SNAPSHOT-standalone.jar: src
+VERSION := $(shell lein project-version)
+
+target/howl-$(VERSION)-standalone.jar: src
 	lein uberjar
 
-build/howl-0.1.jar: src/stub.sh target/howl-0.1.0-SNAPSHOT-standalone.jar | build
+build/howl-$(VERSION).jar: src/stub.sh target/howl-$(VERSION)-standalone.jar | build
 	cat $^ > $@
 	chmod +x $@
 
@@ -73,6 +69,10 @@ build/core.howl: ontology/core.md | build
 build/terms.howl: ontology/template.py ontology/terms.tsv | build
 	$^ > $@
 
+
+
+.PHONY: all
+all: build/howl-$(VERSION).jar
 
 .PHONY: clean
 clean:

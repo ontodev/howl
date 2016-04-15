@@ -7,5 +7,6 @@
                  [instaparse "1.4.1"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]]
+  :plugins [[lein-project-version "0.1.0"]]
   :main howl.cli
   :aot [howl.cli])
