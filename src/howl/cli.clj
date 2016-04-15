@@ -40,7 +40,11 @@
   [file-names]
   (->> (apply parse-files file-names)
        (transduce nq/render-quads conj)
-       (map (partial apply format "%s %s %s %s ."))
+       (map
+        (fn [[g s p o]]
+          (if (nil? g)
+            (format "%s %s %s ."      s p o)
+            (format "%s %s %s %s ." g s p o))))
        (map println)
        doall))
 
@@ -74,8 +78,7 @@
 ; TODO: statement sorting
 
 (def cli-options
-  [["-o" "--output FORMAT" "Output format: N-Triples, N-Quads, JSON parses"
-    :default "N-Triples"]
+  [["-o" "--output FORMAT" "Output format: N-Triples (default), N-Quads, parses (JSON)"]
    ["-h" "--help"]])
 
 (defn usage [options-summary]
@@ -107,7 +110,7 @@
       (not= (count arguments) 1) (exit 1 (usage summary))
       errors (exit 1 (error-msg errors)))
     ;; Execute program with options
-    (case (->> options :output string/lower-case (get format-map))
+    (case (-> options (get :output "ntriples") string/lower-case format-map)
       "ntriples" (print-triples arguments)
       "nquads"   (print-quads arguments)
       "parses"   (print-parses arguments)
