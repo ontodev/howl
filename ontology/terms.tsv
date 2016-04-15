@@ -1,0 +1,19 @@
+SUBJECT	label:	type:>
+BFO:0000040	material entity	owl:Class
+BFO:0000051	has part	owl:ObjectProperty
+BFO:0000055	realizes	owl:ObjectProperty
+IAO:0000030	information content entity	owl:Class
+IAO:0000112	example of usage	owl:AnnotationProperty
+IAO:0000115	definition	owl:AnnotationProperty
+IAO:0000117	term editor	owl:AnnotationProperty
+IAO:0000118	alternative term	owl:AnnotationProperty
+IAO:0000119	definition source	owl:AnnotationProperty
+IAO:0000136	is about	owl:ObjectProperty
+OBI:0000011	planned process	owl:Class
+OBI:0000067	evaluant role	owl:Class
+OBI:0000070	assay	owl:Class
+OBI:0000293	has_specified_input	owl:ObjectProperty
+OBI:0000299	has_specified_output	owl:ObjectProperty
+OBI:0000417	achieves_planned_objective	owl:ObjectProperty
+OBI:0000441	assay objective	owl:Class
+RO:0000087	has role	owl:ObjectProperty

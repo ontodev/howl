@@ -1,0 +1,4 @@
+LABEL rdf:type: type
+LABEL rdfs:label: label
+LABEL rdfs:subClassOf: subclass of
+LABEL owl:equivalentClass: equivalent to
