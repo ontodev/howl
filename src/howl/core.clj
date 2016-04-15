@@ -61,7 +61,7 @@
 
     PREFIX        = #'(\\w|-)+'
     BLANK_NODE    = '_:' #'(\\w|-)+'
-    PREFIXED_NAME = #'(\\w|-)+' ':' #'(\\w|-)+'
+    PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s|:]+'
     IRI           = '<' #'[^>\\s]+' '>'
     LANG          = #'@(\\w|-)+'
     COLON         = #' *' ':'  #' +'
@@ -251,4 +251,3 @@
               (:file-name block)
               (:line-number block)
               (:line block))))))
-
