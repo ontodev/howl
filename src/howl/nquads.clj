@@ -1,4 +1,4 @@
-(ns howl.ntriples
+(ns howl.nquads
   (:require [clojure.string :as string]
             [howl.core :as core :refer [resolve-name valid-label?]]))
 
@@ -19,7 +19,7 @@
 
 (defn format-literal
   "Given a state map and a block map for a LITERAL_BLOCK,
-   return a concrete triple string."
+   return a concrete literal string."
   [state {:keys [content language datatype] :as block}]
   (let [content (string/replace content "\n" "\\n")]
     (cond
@@ -49,27 +49,28 @@
 
 ;; First get a new blank node for the complementOf class.
 ;; Then clear the state (s2) and render the negated class expression.
-;; Update that result (s3) with triples for the complement and s3.
+;; Update that result (s3) with quads for the complement and s3.
 
 (defn render-negation
   "Given a state, a block, and a parse vector,
    render the first elements in the parse vector
-   and update the state with new triples for the
+   and update the state with new quads for the
    complement class and first element."
   [s1 block parse]
-  (let [bs (get s1 :blank-node-count 0)
+  (let [g  (:graph s1)
+        bs (get s1 :blank-node-count 0)
         b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :triples [])
+        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
         s3 (render-expression s2 block (->> parse filter-ce first))]
     (assoc
      s3
      :node b1
-     :triples
+     :quads
      (concat
-      (:triples s1)
-      [[b1 (iri rdf "type")         (iri owl "Class")]
-       [b1 (iri owl "complementOf") (:node s3)]]
-      (:triples s3)))))
+      (:quads s1)
+      [[g b1 (iri rdf "type")         (iri owl "Class")]
+       [g b1 (iri owl "complementOf") (:node s3)]]
+      (:quads s3)))))
 
 ;; Like render-negation, but with two elements:
 ;; the object property expression and the class expression.
@@ -77,66 +78,68 @@
 (defn render-restriction
   "Given a state, a block, a parse vector, and a predicate IRI string,
    render the first and second elements in the parse vector
-   and update the state with new triples for the:
+   and update the state with new quads for the:
    restriction class, and first and second elements."
   [s1 block parse predicate]
-  (let [bs (get s1 :blank-node-count 0)
+  (let [g  (:graph s1)
+        bs (get s1 :blank-node-count 0)
         b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :triples [])
+        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
         s3 (render-expression s2 block (->> parse filter-ce first))
         s4 (render-expression s3 block (->> parse filter-ce second))]
     (assoc
      s4
      :node b1
-     :triples
+     :quads
      (concat
-      (:triples s1)
-      [[b1 (iri rdf "type")       (iri owl "Restriction")]
-       [b1 (iri owl "onProperty") (:node s3)]
-       [b1 predicate              (:node s4)]]
-      (:triples s4)))))
+      (:quads s1)
+      [[g b1 (iri rdf "type")       (iri owl "Restriction")]
+       [g b1 (iri owl "onProperty") (:node s3)]
+       [g b1 predicate              (:node s4)]]
+      (:quads s4)))))
 
 ;; Unions and intersections are trickier because they include an RDF list.
 ;; First generate some blank nodes for the combination class and RDF list.
 ;; Then clear the state, and render the first and second elements,
 ;; storing the results in new states.
 ;; Then update the state resulting from the second element (s4)
-;; with previous triples,
+;; with previous quads,
 ;; the combination element and RDF list,
-;; and the triples from s4, which include the first and second elements.
+;; and the quads from s4, which include the first and second elements.
 
 (defn render-combination
   "Given a state, a block, a parse vector, and a predicate IRI string,
    render the first and second elements in the parse vector
-   and update the state with new triples for the:
+   and update the state with new quads for the:
    combination class (i.e. unionOf, intersectionOf),
    RDF list of elements,
    first and second elements."
   [s1 block parse predicate]
-  (let [bs (get s1 :blank-node-count 0)
+  (let [g  (:graph s1)
+        bs (get s1 :blank-node-count 0)
         b1 (str "_:b" (+ bs 1))
         b2 (str "_:b" (+ bs 2))
         b3 (str "_:b" (+ bs 3))
-        s2 (assoc s1 :blank-node-count (+ bs 3) :triples [])
+        s2 (assoc s1 :blank-node-count (+ bs 3) :quads [])
         s3 (render-expression s2 block (->> parse filter-ce first))
         s4 (render-expression s3 block (->> parse filter-ce second))]
     (assoc
      s4
      :node b1
-     :triples
+     :quads
      (concat
-      (:triples s1)
-      [[b1 (iri rdf "type")  (iri owl "Class")]
-       [b1 predicate         b2]
-       [b2 (iri rdf "first") (:node s3)]
-       [b2 (iri rdf "rest")  b3]
-       [b3 (iri rdf "first") (:node s4)]
-       [b3 (iri rdf "rest")  (iri rdf "nil")]]
-      (:triples s4)))))
+      (:quads s1)
+      [[g b1 (iri rdf "type")  (iri owl "Class")]
+       [g b1 predicate         b2]
+       [g b2 (iri rdf "first") (:node s3)]
+       [g b2 (iri rdf "rest")  b3]
+       [g b3 (iri rdf "first") (:node s4)]
+       [g b3 (iri rdf "rest")  (iri rdf "nil")]]
+      (:quads s4)))))
 
 (defn render-expression
   "Given a state map, a block map, and a parse vector with a Manchester expression
-   return an updated state with triples for the expression."
+   return an updated state with quads for the expression."
   [state block parse]
   (case (first parse)
     :MN_CLASS_EXPRESSION
@@ -177,11 +180,12 @@
    a reference to a state map,
    a block map, and a concrete object string.
    mutate the state to update the :subjects key,
-   and apply the reducing function to all the generated triples."
+   and apply the reducing function to all the generated quads."
   [xf result state block object]
   (let [{:keys [arrows predicate content]} block
+        graph     (:graph state)
         subject   (if (string/blank? arrows)
-                    (-> @state :subjects first first)
+                    (-> @state :subjects first second)
                     (do
                       (vswap! state update-in [:blank-node-count] inc)
                       (str "_:b" (:blank-node-count @state))))
@@ -193,37 +197,38 @@
                (valid-label? content))
       (vswap! state assoc-in [:labels content] (unwrap-iri subject)))
 
-    ; Add this triple to the stack of subjects.
+    ; Add this quad to the stack of subjects.
     (vswap! state
             assoc
             :subjects
             (conj (vec (take (count arrows) (:subjects @state)))
-                  [subject predicate object]))
+                  [graph subject predicate object]))
 
     ; Two cases
     (if (string/blank? arrows)
       ; normal literal node
-      (xf result [subject predicate object])
+      (xf result [graph subject predicate object])
       ; annotation (maybe nested)
-      (let [[annotatedSource annotatedProperty annotatedTarget]
+      (let [[_ annotatedSource annotatedProperty annotatedTarget]
             (get-in @state [:subjects (dec (count arrows))])]
         (apply
          xf
          result
-         [[subject (iri rdf "type") (iri owl "Axiom")]
-          [subject (iri owl "annotatedSource") annotatedSource]
-          [subject (iri owl "annotatedProperty") annotatedProperty]
-          [subject (iri owl "annotatedTarget") annotatedTarget]
-          [subject predicate object]])))))
+         [[graph subject (iri rdf "type") (iri owl "Axiom")]
+          [graph subject (iri owl "annotatedSource") annotatedSource]
+          [graph subject (iri owl "annotatedProperty") annotatedProperty]
+          [graph subject (iri owl "annotatedTarget") annotatedTarget]
+          [graph subject predicate object]])))))
 
 (def default-state
   {:blank-node-count 0
+   :graph nil
    :labels {"label" (str rdfs "label")}})
 
-(defn to-triples
+(defn render-quads
   "Given a reducing function,
    return a stateful transducer
-   that takes parse maps and returns triples (vectors of strings)."
+   that takes parse maps and returns quads (vectors of strings)."
   [xf]
   (let [state (volatile! default-state)]
     (fn
@@ -250,18 +255,12 @@
 
            :GRAPH_BLOCK
            (let [graph (resolve-name @state block (:graph block))]
-             (vswap! state assoc :subjects [[(iri graph)]])
-             (.println ; TODO: better logging
-              *err*
-              (format "WARN: Graphs are not supported by the NTriples serializer.\n%s line %d: %s"
-                      (:file-name block)
-                      (:line-number block)
-                      (:block block)))
+             (vswap! state assoc :subjects [[(iri graph) (iri graph)]])
              result)
            
            :SUBJECT_BLOCK
            (let [subject (resolve-name @state block (:subject block))]
-             (vswap! state assoc :subjects [[(iri subject)]])
+             (vswap! state assoc :subjects [[(iri (:graph state)) (iri subject)]])
              result)
 
            :LITERAL_BLOCK
@@ -283,20 +282,21 @@
            :EXPRESSION_BLOCK
            (let [new-state (render-expression @state block (:expression block))
                  {:keys [arrows predicate content]} block
-                 subject   (-> @state :subjects first first)
+                 graph     (:graph state)
+                 subject   (-> @state :subjects first second)
                  predicate (iri (resolve-name @state block predicate))
                  object    (:node new-state)]
              (vreset!
               state
               (-> new-state
-                  (dissoc :node :triples)
-                  (assoc :subjects [[subject predicate object]])))
+                  (dissoc :node :quads)
+                  (assoc :subjects [[graph subject predicate object]])))
              (apply
               xf
               result
               (concat
-               (:triples new-state)
-               [[subject predicate object]])))
+               [[graph subject predicate object]]
+               (:quads new-state))))
 
            ; else
            result)
@@ -304,7 +304,7 @@
          (catch Exception e
            (throw
             (Exception.
-             (format "Error while serializing to Ntriples:\n%s line %d: %s\n%s"
+             (format "Error while serializing to Nquads:\n%s line %d: %s\n%s"
                      (:file-name block)
                      (:line-number block)
                      (:block block)

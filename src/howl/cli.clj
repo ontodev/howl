@@ -1,9 +1,10 @@
 (ns howl.cli
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
+            [clojure.data.json :as json]
             [clojure.tools.cli :refer [parse-opts]]
             [howl.core :as core]
-            [howl.ntriples :as nt])
+            [howl.nquads :as nq])
   (:gen-class))
 
 (defn parse-file
@@ -26,35 +27,88 @@
 
 (defn print-parses
   "Given a sequence of file names,
-   print a sequence of parse maps."
+   print a sequence of JSON parse maps."
   [file-names]
   (->> (apply parse-files file-names)
+       (map json/write-str)
+       (map println)
+       doall))
+
+(defn print-quads
+  "Given a sequence of file names
+   print a sequence of N-Quads."
+  [file-names]
+  (->> (apply parse-files file-names)
+       (transduce nq/render-quads conj)
+       (map (partial apply format "%s %s %s %s ."))
        (map println)
        doall))
 
 (defn print-triples
+  "Given a sequence of file names
+   print a sequence of N-Triples from the default graph."
   [file-names]
   (->> (apply parse-files file-names)
-       (transduce nt/to-triples conj)
+       (transduce nq/render-quads conj)
+       (filter #(nil? (first %)))
+       (map rest)
        (map (partial apply format "%s %s %s ."))
        (map println)
        doall))
 
+(def format-synonyms
+  {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
+   "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
+   "parses"   ["parse"]})
+
+(def format-map
+  (->> format-synonyms
+       (mapcat
+        (fn [[format synonyms]]
+          (for [synonym (conj synonyms format)]
+            [synonym format])))
+       (into {})))
+
+; TODO: replacement character, default "-"
+; TODO: replacement regex, default "\\W"
+; TODO: statement sorting
+
 (def cli-options
-  ;; An option with a required argument
-  [["-o" "--output FORMAT" "Output format"
-    :default "ntriples"]
-   ; TODO: replacement character, default "-"
-   ; TODO: replacement regex, default "\\W"
-   ; TODO: statement sorting
+  [["-o" "--output FORMAT" "Output format: N-Triples, N-Quads, JSON parses"
+    :default "N-Triples"]
    ["-h" "--help"]])
+
+(defn usage [options-summary]
+  (->> ["Process HOWL files, writing to STDOUT."
+        ""
+        "Usage: howl [OPTIONS] INPUT-FILE+"
+        ""
+        "Options:"
+        options-summary
+        ""
+        "WARN: This is an early development version."
+        "Please see https://github.com/ontodev/howl for more information."]
+       (string/join \newline)))
+
+(defn error-msg [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (string/join \newline errors)))
+
+(defn exit [status msg]
+  (println msg)
+  (System/exit status))
 
 (defn -main
   [& args]
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    (case (:output options)
-      "ntriples"   (print-triples arguments)
-      "parses"     (print-parses arguments)
-      ;"labels"     (print-labels arguments)
-      
-      (throw (Exception. "Unknown output format")))))
+    ;; Handle help and error conditions
+    (cond
+      (:help options) (exit 0 (usage summary))
+      (not= (count arguments) 1) (exit 1 (usage summary))
+      errors (exit 1 (error-msg errors)))
+    ;; Execute program with options
+    (case (->> options :output string/lower-case (get format-map))
+      "ntriples" (print-triples arguments)
+      "nquads"   (print-quads arguments)
+      "parses"   (print-parses arguments)
+      (exit 1 (usage summary)))))

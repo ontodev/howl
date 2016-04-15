@@ -1,6 +1,6 @@
 (ns howl.manchester-test
   (:require [clojure.test :refer :all]
-            [howl.ntriples :refer [render-expression iri rdf owl]]
+            [howl.nquads :refer [render-expression iri rdf owl]]
             [howl.core :refer [block-parser]]))
 
 (def example-state
@@ -77,9 +77,9 @@
               example-state
               {:blank-node-count 1
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "complementOf") "<foo>"]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b1" (iri owl "complementOf") "<foo>"]]})))))
 
   (testing "Disjunction"
     (let [mn-string "foo or bar"
@@ -97,13 +97,13 @@
               example-state
               {:blank-node-count 3
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "unionOf") "_:b2"]
-                ["_:b2" (iri rdf "first") "<foo>"]
-                ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "<bar>"]
-                ["_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b1" (iri owl "unionOf") "_:b2"]
+                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "rest") "_:b3"]
+                [nil "_:b3" (iri rdf "first") "<bar>"]
+                [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Conjunction"
     (let [mn-string "foo and bar"
@@ -121,13 +121,13 @@
               example-state
               {:blank-node-count 3
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "intersectionOf") "_:b2"]
-                ["_:b2" (iri rdf "first") "<foo>"]
-                ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "<bar>"]
-                ["_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b1" (iri owl "intersectionOf") "_:b2"]
+                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "rest") "_:b3"]
+                [nil "_:b3" (iri rdf "first") "<bar>"]
+                [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Some"
     (let [mn-string "'has part' some foo"
@@ -146,10 +146,10 @@
               example-state
               {:blank-node-count 1
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") "<part>"]
-                ["_:b1" (iri owl "someValuesFrom") "<foo>"]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b1" (iri owl "onProperty") "<part>"]
+                [nil "_:b1" (iri owl "someValuesFrom") "<foo>"]]})))))
 
   (testing "Some Not"
     (let [mn-string "'has part' some not foo"
@@ -172,12 +172,12 @@
               example-state
               {:blank-node-count 2
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") "<part>"]
-                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
-                ["_:b2" (iri rdf "type") (iri owl "Class")]
-                ["_:b2" (iri owl "complementOf") "<foo>"]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b1" (iri owl "onProperty") "<part>"]
+                [nil "_:b1" (iri owl "someValuesFrom") "_:b2"]
+                [nil "_:b2" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b2" (iri owl "complementOf") "<foo>"]]})))))
 
   (testing "And not"
     (let [mn-string "foo and not bar"
@@ -199,15 +199,15 @@
               example-state
               {:blank-node-count 4
                :node "_:b1"
-               :triples
-               [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "intersectionOf") "_:b2"]
-                ["_:b2" (iri rdf "first") "<foo>"]
-                ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "_:b4"]
-                ["_:b3" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b4" (iri rdf "type") (iri owl "Class")]
-                ["_:b4" (iri owl "complementOf") "<bar>"]]})))))
+               :quads
+               [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b1" (iri owl "intersectionOf") "_:b2"]
+                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "rest") "_:b3"]
+                [nil "_:b3" (iri rdf "first") "_:b4"]
+                [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]
+                [nil "_:b4" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b4" (iri owl "complementOf") "<bar>"]]})))))
 
   (testing "Complex axiom"
     (let [mn-string
@@ -250,24 +250,24 @@
               bigger-state
               {:blank-node-count 5
                :node "_:b1"
-               :triples
+               :quads
                [; 'is about' some X
-                ["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") (iri obo "IAO_0000136")]
-                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
+                [nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b1" (iri owl "onProperty") (iri obo "IAO_0000136")]
+                [nil "_:b1" (iri owl "someValuesFrom") "_:b2"]
 
                 ; 'material entity' and X
-                ["_:b2" (iri rdf "type") (iri owl "Class")]
-                ["_:b2" (iri owl "intersectionOf") "_:b3"]
-                ["_:b3" (iri rdf "first") (iri obo "BFO_0000040")]
-                ["_:b3" (iri rdf "rest") "_:b4"]
-                ["_:b4" (iri rdf "first") "_:b5"]
-                ["_:b4" (iri rdf "rest") (iri rdf "nil")]
+                [nil "_:b2" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b2" (iri owl "intersectionOf") "_:b3"]
+                [nil "_:b3" (iri rdf "first") (iri obo "BFO_0000040")]
+                [nil "_:b3" (iri rdf "rest") "_:b4"]
+                [nil "_:b4" (iri rdf "first") "_:b5"]
+                [nil "_:b4" (iri rdf "rest") (iri rdf "nil")]
 
                 ; 'has role' some 'evaluant role'
-                ["_:b5" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b5" (iri owl "onProperty") (iri obo "RO_0000087")]
-                ["_:b5" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
+                [nil "_:b5" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b5" (iri owl "onProperty") (iri obo "RO_0000087")]
+                [nil "_:b5" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
 
   (testing "More complex axiom"
     (let [mn-string
@@ -332,36 +332,36 @@
               bigger-state
               {:blank-node-count 9
                :node "_:b1"
-               :triples
-               [; has_specfied_output somme X
-                ["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") (iri obo "OBI_0000299")]
-                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
+               :quads
+               [; has_specified_output somme X
+                [nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b1" (iri owl "onProperty") (iri obo "OBI_0000299")]
+                [nil "_:b1" (iri owl "someValuesFrom") "_:b2"]
 
                 ; ('information content entity' and X)
-                ["_:b2" (iri rdf "type") (iri owl "Class")]
-                ["_:b2" (iri owl "intersectionOf") "_:b3"]
-                ["_:b3" (iri rdf "first") (iri obo "IAO_0000030")]
-                ["_:b3" (iri rdf "rest") "_:b4"]
-                ["_:b4" (iri rdf "first") "_:b5"]
-                ["_:b4" (iri rdf "rest") (iri rdf "nil")]
+                [nil "_:b2" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b2" (iri owl "intersectionOf") "_:b3"]
+                [nil "_:b3" (iri rdf "first") (iri obo "IAO_0000030")]
+                [nil "_:b3" (iri rdf "rest") "_:b4"]
+                [nil "_:b4" (iri rdf "first") "_:b5"]
+                [nil "_:b4" (iri rdf "rest") (iri rdf "nil")]
                 
                 ; 'is about' some X
-                ["_:b5" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b5" (iri owl "onProperty") (iri obo "IAO_0000136")]
-                ["_:b5" (iri owl "someValuesFrom") "_:b6"]
+                [nil "_:b5" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b5" (iri owl "onProperty") (iri obo "IAO_0000136")]
+                [nil "_:b5" (iri owl "someValuesFrom") "_:b6"]
 
                 ; 'material entity' and X
-                ["_:b6" (iri rdf "type") (iri owl "Class")]
-                ["_:b6" (iri owl "intersectionOf") "_:b7"]
-                ["_:b7" (iri rdf "first") (iri obo "BFO_0000040")]
-                ["_:b7" (iri rdf "rest") "_:b8"]
-                ["_:b8" (iri rdf "first") "_:b9"]
-                ["_:b8" (iri rdf "rest") (iri rdf "nil")]
+                [nil "_:b6" (iri rdf "type") (iri owl "Class")]
+                [nil "_:b6" (iri owl "intersectionOf") "_:b7"]
+                [nil "_:b7" (iri rdf "first") (iri obo "BFO_0000040")]
+                [nil "_:b7" (iri rdf "rest") "_:b8"]
+                [nil "_:b8" (iri rdf "first") "_:b9"]
+                [nil "_:b8" (iri rdf "rest") (iri rdf "nil")]
 
                 ; 'has role' some 'evaluant role'
-                ["_:b9" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b9" (iri owl "onProperty") (iri obo "RO_0000087")]
-                ["_:b9" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
+                [nil "_:b9" (iri rdf "type") (iri owl "Restriction")]
+                [nil "_:b9" (iri owl "onProperty") (iri obo "RO_0000087")]
+                [nil "_:b9" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
   ; more tests?
   )
