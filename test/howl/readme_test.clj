@@ -10,17 +10,20 @@
 
 (defn run-test
   [[block result]]
-  (testing block
-    (is (= (clojure.walk/postwalk
-            #(if (keyword? %) (name %) %)
-            (parse-block "example.howl" 1 block))
-           (json/read-str result)))))
+  (try
+    (testing block
+      (is (= (clojure.walk/postwalk
+              #(if (keyword? %) (name %) %)
+              (parse-block "example.howl" 1 block))
+             (json/read-str result))))
+    (catch Exception e
+      (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
 
 (deftest test-readme-examples
   (->> "README.md"
        slurp
        string/split-lines
-       (drop-while #(not (.startsWith % "## Blocks")))
+       (drop-while #(not (.startsWith % "## Syntax and Parsing")))
        (partition-by #(.startsWith % "    "))
        (filter #(.startsWith (first %) "    ")) ; keep indented
        (map (fn [lines] (map #(string/replace % #"^    " "") lines)))
@@ -28,4 +31,5 @@
        (partition 2)
        (map run-test)
        doall
+       (#(do (println "Running" (count %) "tests on README") %))
        (apply = true)))

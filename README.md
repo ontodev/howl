@@ -355,52 +355,6 @@ is parsed into this JSON object:
      "eol": "\n"}
 
 
-### Link
-
-To express a triple where the object is an IRI, we use a link block. The subject for the link block will be whatever the current subject is, as specified in a previous subject block or graph block. The link block consists of a predicate, a "arrow colon" separator, and an object. The predicate can be a prefixed name, IRI, or label. The object can be any of these, or a blank node.
-
-This link block:
-
-    rdf:type:> owl:Class
-
-is parsed into this JSON object:
-
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "rdf:type:> owl:Class\n",
-     "block-type": "LINK_BLOCK",
-     "parse": ["LINK_BLOCK"
-               ["ARROWS" "" ""]
-               ["PREDICATE" ["PREFIXED_NAME" "rdf" ":" "type"]]
-               ["ARROW_COLON" "" ":>" " "]
-               ["OBJECT" ["PREFIXED_NAME" "owl" ":" "Class"]]
-               ["EOL" "\n"]],
-     "arrows": "",
-     "predicate": ["PREFIXED_NAME" "rdf" ":" "type"],
-     "object": ["PREFIXED_NAME" "owl" ":" "Class"],
-     "eol": "\n"}
-
-So these HOWL blocks:
-
-```
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX ex: <http://example.com>
-GRAPH ex:graph
-ex:subject
-rdf:type:> owl:Class
-```
-
-specify this NQuad (with newlines added for readability):
-
-```
-<http://example.com/graph>
-<http://example.com/subject>
-<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
-<http://www.w3.org/2002/07/owl#Class> .
-```
-
-
 ### Literal
 
 The key difference between the HOWL syntax for literals and the Turtle or NTriples syntax is that HOWL does not require quotation marks. A literal block consists of a predicate, a colon and one or more spaces, followed by the literal content, and optionally ending with a language tag or datatype.
@@ -449,6 +403,122 @@ specify this NQuad (with newlines added for readability):
 <http://example.com/subject>
 <http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
 "This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+```
+
+
+### Link
+
+To express a triple where the object is an IRI, we use a link block. The subject for the link block will be whatever the current subject is, as specified in a previous subject block or graph block. The link block consists of a predicate, a `:>` "arrow colon" separator, and an object. The predicate can be a prefixed name, IRI, or label. The object can be any of these, or a blank node.
+
+This link block:
+
+    rdf:type:> owl:Class
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "rdf:type:> owl:Class\n",
+     "block-type": "LINK_BLOCK",
+     "parse": ["LINK_BLOCK"
+               ["ARROWS" "" ""]
+               ["PREDICATE" ["PREFIXED_NAME" "rdf" ":" "type"]]
+               ["ARROW_COLON" "" ":>" " "]
+               ["OBJECT" ["PREFIXED_NAME" "owl" ":" "Class"]]
+               ["EOL" "\n"]],
+     "arrows": "",
+     "predicate": ["PREFIXED_NAME" "rdf" ":" "type"],
+     "object": ["PREFIXED_NAME" "owl" ":" "Class"],
+     "eol": "\n"}
+
+So these HOWL blocks:
+
+```
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX ex: <http://example.com>
+GRAPH ex:graph
+ex:subject
+rdf:type:> owl:Class
+```
+
+specify this NQuad (with newlines added for readability):
+
+```
+<http://example.com/graph>
+<http://example.com/subject>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+<http://www.w3.org/2002/07/owl#Class> .
+```
+
+### Expression
+
+HOWL files can also contain OWL class expressions in the version of Manchester syntax familiar from the Protege editor. The subject for the expression block will be whatever the current subject is, as specified in a previous subject block or graph block. The expression block consists of a predicate, a `:>>` "double arrow colon" separator, and an expression string. The predicate can be a prefixed name, IRI, or label.
+
+This expression block:
+
+    rdfs:subClassOf:>> 'has part' some foo
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "rdfs:subClassOf:>> 'has part' some foo\n",
+     "block-type": "EXPRESSION_BLOCK",
+     "parse": ["EXPRESSION_BLOCK"
+               ["PREDICATE" ["PREFIXED_NAME" "rdfs" ":" "subClassOf"]]
+               ["ARROWS_COLON" "" ":>>" " "]
+               ["MN_CLASS_EXPRESSION"
+                ["MN_SOME"
+                 ["MN_OBJECT_PROPERTY_EXPRESSION"
+                  ["MN_NAME" ["MN_QUOTED_LABEL" "'" "has part" "'"]]]
+                 ["MN_SPACE" " "]
+                 "some"
+                 ["MN_SPACE" " "]
+                 ["MN_CLASS_EXPRESSION"
+                  ["MN_NAME" ["MN_LABEL" "foo"]]]]]
+               ["EOL" "\n"]],
+     "predicate": ["PREFIXED_NAME" "rdfs" ":" "subClassOf"],
+     "expression": ["MN_CLASS_EXPRESSION"
+                    ["MN_SOME"
+                     ["MN_OBJECT_PROPERTY_EXPRESSION"
+                      ["MN_NAME" ["MN_QUOTED_LABEL" "'" "has part" "'"]]]
+                     ["MN_SPACE" " "]
+                     "some"
+                     ["MN_SPACE" " "]
+                     ["MN_CLASS_EXPRESSION"
+                      ["MN_NAME" ["MN_LABEL" "foo"]]]]],
+     "eol": "\n"}
+
+So these HOWL blocks:
+
+```
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX ex: <http://example.com>
+GRAPH ex:graph
+ex:subject
+owl:subClassOf:>> 'has part' some foo
+```
+
+specify these NTriples (with newlines added for readability):
+
+```
+_:b1
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+<http://www.w3.org/2002/07/owl#Restriction> .
+
+_:b1
+<http://www.w3.org/2002/07/owl#onProperty>
+<http://purl.obolibrary.org/obo/BFO_0000051> .
+
+_:b1
+<http://www.w3.org/2002/07/owl#someValuesFrom>
+<http://example.com/foo> .
+
+<http://example.com/subject>
+<http://www.w3.org/2000/01/rdf-schema#subClassOf>
+_:b1 .
 ```
 
 

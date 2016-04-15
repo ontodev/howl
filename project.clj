@@ -7,5 +7,5 @@
                  [instaparse "1.4.1"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]]
-  :main howl.core
-  :aot [howl.core])
+  :main howl.cli
+  :aot [howl.cli])
