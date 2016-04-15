@@ -1,6 +1,6 @@
-# Humane OWL Format (HOWL)
+# Humane OWL (HOWL) Format
 
-HOWL is (an idea for) a new concrete syntax for RDF and OWL, designed for human editing and standard version control workflows.
+This is work-in-progress toward a file format and supporting tools that make it easy for humans to read and write [RDF](http://www.w3.org/TR/rdf11-concepts/) and [OWL](http://www.w3.org/TR/owl2-overview/).
 
 
 ## Example
@@ -9,11 +9,13 @@ HOWL is (an idea for) a new concrete syntax for RDF and OWL, designed for human 
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX obo: <http://purl.obolibrary.org/obo/>
     PREFIX ex: <http://example.com/>
 
     LABEL rdf:type: type
     LABEL rdfs:label: label
     LABEL rdfs:comment: comment
+    LABEL obo:BFO_0000051: has part
     TYPE comment: xsd:string
 
     ex:ontology
@@ -31,163 +33,135 @@ HOWL is (an idea for) a new concrete syntax for RDF and OWL, designed for human 
 
       as long as each line after the first
       is indented with two spaces.
-    subClassOf:> 'has part' some Bar
 
     ex:bar
     label: Bar
-    type> Class
+    type:> owl:Class
+    subClassOf:>> 'has part' some Bar
+
+See the [ontology]() directory and [Makefile]() for more examples.
+
+
+## Status
+
+The 0.1 series supports:
+
+- draft HOWL syntax
+- basic OWL class expressions from [Protégé](http://protege.stanford.edu):
+  `not`, `and`, `or`, `some`, `only`
+- converting HOWL to N-Triples, N-Quads, or JSON
+
+You can use another tool such as [rapper](http://librdf.org/raptor/rapper.html) or [Jena riot](https://jena.apache.org/documentation/io/) to convert from N-Triples/N-Quads to any other concrete RDF or OWL syntax.
+
+**Not yet supported:** Converting to HOWL from other RDF and OWL syntaxes.
+
+
+## Installation and Usage
+
+The `howl` tool requires Java (1.6+).
+
+1. [Download a released version of the `howl` file](https://github.com/ontodev/howl), or build it yourself by following the instructions below
+2. Rename the file to `howl`, put it on your PATH, and make it executable: `chmod +x howl`
+3. Run `howl` on one or more HOWL files to convert them to N-Triples:
+
+```
+howl input.howl input2.howl > output.nt
+```
+
+Run `howl --help` for more options. The `howl` file is a JAR, so you can also run `java -jar howl`, with standard Java options.
 
 
 ## Features
 
 Features in this example:
 
-- line 1: SPARQL-style PREFIXes
-- line 7: LABELs -- like PREFIXes for single terms
-- line 10: TYPEs to set default language tag or datatype for a predicate
-- line 12: specify the current subject by its prefixed name, IRI, or label
-- line 13:
-  - specify a predicate by its prefixed name, IRI, or label
-  - use ":" for literal statements
-  - literals without quotation marks
-- line 14:
-  - use ":>" for link statements
-  - specify an object by its prefixed name, IRI, or label
-- line 20: OWL annotations start with `>`
-- line 21: OWL annotations can be nested
-- line 22: multi-line values using indentation
-- line 27: class expressions use Manchester Syntax and labels
+- `PREFIX ex: <http://example.com/>`
+    - SPARQL-style PREFIXes
+- `LABEL obo:BFO_0000051: has part`
+    - like PREFIXes for single terms
+- `TYPE comment: xsd:string`
+    - set default language tag or datatype for a predicate
+- prefixes, labels, and types
+    - can occur at any point in the document
+    - can be included from an external document, keeping the main document very simple
+    - can be automatically generated using tools (not yet supported)
+- `ex:ontology`
+    - specify the current subject by its prefixed name, IRI, or label
+- `label: Example Ontology`
+    - use `: ` for literal statements
+    - specify a predicate by its prefixed name, IRI, or label
+    - literals quotation marks
+    - multi-line literals are indented
+    - optionally append a language tag or datatype
+- `type:> owl:Ontology`
+    - use `:> ` for link statements (when the object is a node)
+    - specify the object by its prefixed name, IRI, or label
+- `subClassOf:>> 'has part' some Bar`
+    - use `:>> ` for expression statements
+    - supports Manchester syntax, as used in [Protégé](http://protege.stanford.edu)
+- `> comment: An annotation on the comment.^^xsd:string`
+    - use `> ` for an OWL annotation
+    - use `>> ` for nested annotations (and so on)
 
 Other features, not in this example:
 
-- RDF dataset support for a default graph and zero or more named graphs
-- BASE IRI
+- RDF dataset support: default graph and zero or more named graphs using `GRAPH`
+- set or change the `BASE` IRI at any point in the document
 
 Behind the scenes:
 
 - line-based format for stream processing
 - JSON format for parse information, for language agnostic tooling
 
+HOWL is designed to be simple and predictable. The most common mistakes will probably be using a label that has not been defined, or using the wrong separator. 
 
-## Goals
+- `: ` for text, numbers, dates, and other literal values
+- `:> ` for links
+- `:>> ` for complex expressions, i.e. things that link to things
 
-For our current purpose, a "humane" syntax is still a formal language suited for machines to read, but designed for humans to read and write in a basic text editor. Syntax highlighting and auto-complete are handy but should not be necessary. It should:
+There are plans for tools that will:
 
-1. have a simple, predictable structure
-2. require minimal use of quotations, parentheses, line-terminators, and other "noise"
-3. use human-readable labels rather than opaque IDs wherever possible
-
-For bonus points, it should have a deterministic serialization.
-
-
-## Comparisons
-
-- RDF/XML is used for most OWL files; XML has some virtues as an exchange format, but it is inhumane
-- Turtle is the most humane concrete RDF syntax, but still requires quotations, and does not support OWL constructs
-- Manchester Syntax (OMN) is the most humane of the concrete OWL syntaxes, but focused on logical structure rather than annotations, and somewhat complex
-- OBO Format is humane and close to what we want, but not as expressive as OWL and is now deprecated
-- YAML is humane and general-purpose, but it has a big specification and will require quoting for some of our main cases (i.e. key strings with spaces)
+- check for missing labels
+- checking for dangerous or misleading labels
+- find missing labels among a list of ontologies, and write them to a file
+- update labels, using the IRI to replacing an old label with a new label
+- "linting" statements to infer whether the user meant to use a literal, link, or expression
 
 
-Format  | 1 | 2 | 3
---------|---|---|---
-RDF/XML | N | N | N
-Turtle  | N | N | N
-OMN     | N | N | N
-OBO     | Y | Y | N
-YAML    | Y | Y | ?
-HOWL    | Y | Y | Y
+## Labels
 
+RDF is built up from [IRIs](http://tools.ietf.org/html/rfc3987). IRIs provide a flexible system for using, creating, and reusing a practically unlimited number of globally unique names. But IRIs are often difficult for humans to read and write.
 
-## Elements
+The prefixed names used in Turtle and SPARQL syntax are shorter than full IRIs and are often easier to read and write. We have tools for translating between prefixed names and their full IRIs.
 
-The first step is to represent RDF in HOWL. There are three elements in RDF:
+HOWL goes one step further, supporting human-readable labels in almost every place that an IRI can be used. The HOWL tools take care of the translation between labels and the IRIs that they denote. A HOWL label is a string that:
 
-- IRIs
-    - absolute
-    - relative
-- blank nodes
-- literals
-    - plain
-    - typed
-    - language
+- must not begin or end with whitespace
+- must not contain newlines or tabs
+- must not begin with a reserved word (case sensitive) followed by a space: BASE, PREFIX, LABEL, TYPE, GRAPH
+- must not begin with `>`
+- must not contain `: ` (colon space)
+- must not contain `:> ` (colon arrow space)
+- must not contain `:>> ` (colon arrow arrow space)
 
-Since IRIs are cumbersome, Turtle introduces prefixes and QNames. You can use a QName in any place you can use an IRI.
-
-Since many QNames and IRIs are not easy for human to read and remember, we introduce the HLabel. In HOWL syntax you can use an HLabel anywhere you can use an IRI. HLabels are strings that:
-
-- do not begin or end with whitespace
-- do not contain newlines or tabs
-- do not begin with a reserved word (case sensitive): BASE, PREFIX, LABEL, TYPE, GRAPH
-- do not begin with `>`
-- do not contain `: ` (colon space)
-- do not contain `:> ` (colon arrow space)
-
-HLabels are defined by the rdfs:label predicate. When multiple rdfs:labels are available, HOWL uses the first valid HLabel in a alphanumeric sort of their lexical values.
-
-Because rdfs:labels can overlap and be ambiguous, we introduce the QLabel. A QLabel consists of a prefix (as for a QName) and an HLabel. Example: `OBI:assay`.
-
-A HOWL serializer will refer to a named resource using (in order of preference):
-
-1. an HLabel if the resources has an appropriate, unambiguous rdfs:label string
-2. a QLabel if the resource has an appropriate rdfs:label
-3. a CURIE: using the longest matching prefix
-4. an IRI
-
-A HOWL parser works in two passes, first collecting a map between IDs and HLabels (similar to a JSON-LD context), then parsing the rest of the content. A HOWL parser will handle a resource name as:
-
-1. a blank node if it starts with `_:`
-2. an IRI if it starts with `<` and ends with `>`
-3. a QLabel if it contains a colon and the HLabel can be found
-4. a CURIE if it contains a colon
-5. an HLabel if it can be found
-6. a name error
-
-A HOWL parser will handle a literal value as:
-
-1. a typed literal if it ends with a type
-2. a language literal if it ends with a language tag
-3. a plain literal
-
-
-## HOWL for RDF
-
-HOWL is a line-based format. There are six types of line:
-
-1. `PREFIX` (SPARQL-style)
-2. `GRAPH` begins a named graph; not used for OWL, but might be useful
-3. `DECLARE` used to start a new subject block
-  - `DECLARE ANYID: LABEL` declares a subject and assigns an rdfs:label
-  - `DECLARE: LABEL` declares a subject and assigns an rdfs:label; the ID must be given elsewhere
-4. assertion: `NAME> NAME` asserts a predicate and resource object for the current subject
-  - separated by `> `
-5. assertion: `NAME: VALUE` asserts a predicate and literal object for the current subject
-  - separated by `: `
-6 indented multi-line values: values may continue on consecutive lines
-  - lines after the first must be indented by two spaces
-  - the multi-line value ends at the EOF or first non-indented line
-  - tailing blank lines are stripped unless they are indented
-
-HOWL has a deterministic, idempotent serialization order:
-
-1. PREFIX lines: lexical order
-2. GRAPH blocks: lexical order
-3. DECLARE blocks: lexical order
-4. assertions within DECLARE blocks: lexical order, configurable; priority for rdf:type, rdfs:label
-
-
-## HOWL for OWL
-
-- class expressions: Use Manchester Syntax for class expressions
-- annotated axioms: annotate the previous line
-- sort order:
-  - OWL types: Ontology, AnnotationProperty, ObjectProperty, Class, Individuals (all others)
-  - within these types, as above
+HOWL labels are defined either by `LABEL` blocks, or when an `rdfs:label` is asserted for a subject and that label meets these criteria.
 
 
 ## Syntax and Parsing
 
-Each block consists of a line of text, followed by zero or more indented lines. The block is the level at which HOWL is parsed. HOWL is designed for streaming, so a sequence of files is transformed into a sequence of parsed blocks. Each parsed block can be represented as a JSON object.
+HOWL is build from a sequence of "blocks". Each block is a string consisting of one line of text, followed by zero or more blank or indented lines of text. HOWL is designed for streaming, so a sequence of files is transformed into a sequence of parsed blocks. Each parsed block can be represented as a JSON object.
+
+There are nine kinds of block:
+
+- BASE
+- PREFIX
+- LABEL
+- TYPE
+- GRAPH
+- Subject
+- Literal (a statement in which the object is an RDF literal)
+- Link (a statement in which the object is an RDF node)
+- Expression (a statement in which the object is an OWL expression)
 
 
 ### BASE
@@ -357,7 +331,7 @@ is parsed into this JSON object:
 
 ### Literal
 
-The key difference between the HOWL syntax for literals and the Turtle or NTriples syntax is that HOWL does not require quotation marks. A literal block consists of a predicate, a colon and one or more spaces, followed by the literal content, and optionally ending with a language tag or datatype.
+The key difference between the HOWL syntax for literals and the Turtle or NTriples syntax is that HOWL does not require quotation marks. A literal block consists of a predicate, a `: ` (colon and one or more spaces), followed by the literal content, and optionally ending with a language tag or datatype.
 
 This literal block:
 
@@ -408,7 +382,7 @@ specify this NQuad (with newlines added for readability):
 
 ### Link
 
-To express a triple where the object is an IRI, we use a link block. The subject for the link block will be whatever the current subject is, as specified in a previous subject block or graph block. The link block consists of a predicate, a `:>` "arrow colon" separator, and an object. The predicate can be a prefixed name, IRI, or label. The object can be any of these, or a blank node.
+To express a triple where the object is an IRI, we use a link block. The subject for the link block will be whatever the current subject is, as specified in a previous subject block or graph block. The link block consists of a predicate, a `:> ` (colon, arrow, and one or more spaces) separator, and an object. The predicate can be a prefixed name, IRI, or label. The object can be any of these, or a blank node.
 
 This link block:
 
@@ -453,7 +427,7 @@ specify this NQuad (with newlines added for readability):
 
 ### Expression
 
-HOWL files can also contain OWL class expressions in the version of Manchester syntax familiar from the Protege editor. The subject for the expression block will be whatever the current subject is, as specified in a previous subject block or graph block. The expression block consists of a predicate, a `:>>` "double arrow colon" separator, and an expression string. The predicate can be a prefixed name, IRI, or label.
+HOWL files can also contain OWL class expressions in the version of Manchester syntax familiar from the [Protégé](http://protege.stanford.edu) editor. The subject for the expression block will be whatever the current subject is, as specified in a previous subject block or graph block. The expression block consists of a predicate, a `:>> ` (colon, two arrows, and one or more spaces) separator, and an expression string. The predicate can be a prefixed name, IRI, or label.
 
 This expression block:
 
@@ -606,4 +580,20 @@ comment: A -- original comment
 ```
 
 
+## Build
+
+The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is required to build it.
+
+- `lein uberjar` builds a standalone JAR file in `target/`
+- `lein test` runs the unit and integration tests
+- `lein run` can be used to compile and run the command-line interface during development
+
+
+## Release History
+
+- 0.1 initial release
+    - draft HOWL syntax
+    - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
+      `not`, `and`, `or`, `some`, `only`
+    - converting HOWL to N-Triples, N-Quads, or JSON
 
