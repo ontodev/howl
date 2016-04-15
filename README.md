@@ -1,6 +1,8 @@
 # Humane OWL (HOWL) Format
 
-This is work-in-progress toward a file format and supporting tools that make it easy for humans to read and write [RDF](http://www.w3.org/TR/rdf11-concepts/) and [OWL](http://www.w3.org/TR/owl2-overview/).
+HOWL makes it easy for humans to read and write [RDF](http://www.w3.org/TR/rdf11-concepts/) and [OWL](http://www.w3.org/TR/owl2-overview/). Here you'll find a description of HOWL, examples, and tools for working with HOWL data.
+
+This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues) is appreciated!
 
 
 ## Example
