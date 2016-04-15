@@ -13,7 +13,13 @@
   [& parts]
   (str "<" (string/join "" parts) ">"))
 
+(defn unwrap-iri
+  [iri]
+  (string/replace iri #"^<|>$" ""))
+
 (defn format-literal
+  "Given a state map and a block map for a LITERAL_BLOCK,
+   return a concrete triple string."
   [state {:keys [content language datatype] :as block}]
   (let [content (string/replace content "\n" "\\n")]
     (cond
@@ -35,81 +41,109 @@
        (remove #(= :MN_SPACE (first %)))
        (remove #(= :SPACES (first %)))))
 
-(declare ce-triples)
+(declare render-expression)
 
-(defn process-list
-  [block state element]
-  (let [state (ce-triples state block element)]
-    (update state :rdf-list (fnil conj []) (:node state))))
+;; This is very imperative code, which is somewhat awkward in Clojure.
+;; It's a little cleaner if the nodes are rendered in reverse order,
+;; but this way the results are easier to read.
 
-(defn rdf-list-element
-  "Given the triple of a blank node, a 'first' node, and a 'rest' node,
-   return triples representing an RDF list item."
-  [[bnode rdf-first rdf-rest]]
-  [[bnode (iri rdf "first") rdf-first]
-   [bnode (iri rdf "rest") rdf-rest]])
+;; First get a new blank node for the complementOf class.
+;; Then clear the state (s2) and render the negated class expression.
+;; Update that result (s3) with triples for the complement and s3.
 
-(defn rdf-list
-  "Given a state map and a sequence of nodes,
-   update the statement with an RDF list of the nodes."
-  [state nodes]
-  (let [blank-node-count (inc (get state :blank-node-count 0))
-        final-count      (+ blank-node-count (count nodes))
-        bnodes (for [b (range blank-node-count final-count)]
-                 (str "_:b" b))
-        lists (map vector bnodes nodes (concat (rest bnodes) [(iri rdf "nil")]))]
-    (-> state
-        (assoc :node (first bnodes))
-        (assoc :blank-node-count (dec final-count))
-        (update :triples concat (mapcat rdf-list-element lists)))))
+(defn render-negation
+  "Given a state, a block, and a parse vector,
+   render the first elements in the parse vector
+   and update the state with new triples for the
+   complement class and first element."
+  [s1 block parse]
+  (let [bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        s2 (assoc s1 :blank-node-count (+ bs 1) :triples [])
+        s3 (render-expression s2 block (->> parse filter-ce first))]
+    (assoc
+     s3
+     :node b1
+     :triples
+     (concat
+      (:triples s1)
+      [[b1 (iri rdf "type")         (iri owl "Class")]
+       [b1 (iri owl "complementOf") (:node s3)]]
+      (:triples s3)))))
 
-(defn render-combination
-  [state block parse predicate]
-  (let [first-state  (ce-triples state block (->> parse filter-ce first))
-        second-state (ce-triples first-state block (->> parse filter-ce second))
-        third-state  (rdf-list second-state [(:node first-state) (:node second-state)])
-        blank-node-count (inc (get third-state :blank-node-count 0))
-        bnode            (str "_:b" blank-node-count)]
-    (-> third-state
-        (assoc :blank-node-count blank-node-count)
-        (assoc :node bnode)
-        (update
-         :triples
-         concat
-         [[bnode (iri rdf "type") (iri owl "Class")]
-          [bnode predicate        (:node third-state)]]))))
+;; Like render-negation, but with two elements:
+;; the object property expression and the class expression.
 
 (defn render-restriction
-  [state block parse predicate]
-  (let [ope-state (ce-triples state block (->> parse filter-ce first))
-        ce-state  (ce-triples ope-state block (->> parse filter-ce second))
-        blank-node-count (inc (get ce-state :blank-node-count 0))
-        bnode            (str "_:b" blank-node-count)]
-    (-> ce-state
-        (assoc :blank-node-count blank-node-count)
-        (assoc :node bnode)
-        (update
-         :triples
-         concat
-         [[bnode (iri rdf "type")       (iri owl "Restriction")]
-          [bnode (iri owl "onProperty") (:node ope-state)]
-          [bnode predicate              (:node ce-state)]]))))
+  "Given a state, a block, a parse vector, and a predicate IRI string,
+   render the first and second elements in the parse vector
+   and update the state with new triples for the:
+   restriction class, and first and second elements."
+  [s1 block parse predicate]
+  (let [bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        s2 (assoc s1 :blank-node-count (+ bs 1) :triples [])
+        s3 (render-expression s2 block (->> parse filter-ce first))
+        s4 (render-expression s3 block (->> parse filter-ce second))]
+    (assoc
+     s4
+     :node b1
+     :triples
+     (concat
+      (:triples s1)
+      [[b1 (iri rdf "type")       (iri owl "Restriction")]
+       [b1 (iri owl "onProperty") (:node s3)]
+       [b1 predicate              (:node s4)]]
+      (:triples s4)))))
 
-(defn ce-triples
+;; Unions and intersections are trickier because they include an RDF list.
+;; First generate some blank nodes for the combination class and RDF list.
+;; Then clear the state, and render the first and second elements,
+;; storing the results in new states.
+;; Then update the state resulting from the second element (s4)
+;; with previous triples,
+;; the combination element and RDF list,
+;; and the triples from s4, which include the first and second elements.
+
+(defn render-combination
+  "Given a state, a block, a parse vector, and a predicate IRI string,
+   render the first and second elements in the parse vector
+   and update the state with new triples for the:
+   combination class (i.e. unionOf, intersectionOf),
+   RDF list of elements,
+   first and second elements."
+  [s1 block parse predicate]
+  (let [bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        b2 (str "_:b" (+ bs 2))
+        b3 (str "_:b" (+ bs 3))
+        s2 (assoc s1 :blank-node-count (+ bs 3) :triples [])
+        s3 (render-expression s2 block (->> parse filter-ce first))
+        s4 (render-expression s3 block (->> parse filter-ce second))]
+    (assoc
+     s4
+     :node b1
+     :triples
+     (concat
+      (:triples s1)
+      [[b1 (iri rdf "type")  (iri owl "Class")]
+       [b1 predicate         b2]
+       [b2 (iri rdf "first") (:node s3)]
+       [b2 (iri rdf "rest")  b3]
+       [b3 (iri rdf "first") (:node s4)]
+       [b3 (iri rdf "rest")  (iri rdf "nil")]]
+      (:triples s4)))))
+
+(defn render-expression
+  "Given a state map, a block map, and a parse vector with a Manchester expression
+   return an updated state with triples for the expression."
   [state block parse]
   (case (first parse)
+    :MN_CLASS_EXPRESSION
+    (render-expression state block (->> parse filter-ce first))
+    
     :MN_NEGATION
-    (let [state (ce-triples state block (->> parse filter-ce first))
-          blank-node-count (inc (get state :blank-node-count 0))
-          bnode            (str "_:b" blank-node-count)]
-      (-> state
-          (assoc :blank-node-count blank-node-count)
-          (assoc :node bnode)
-          (update
-           :triples
-           concat
-           [[bnode (iri rdf "type")         (iri owl "Class")]
-            [bnode (iri owl "complementOf") (:node state)]])))
+    (render-negation state block parse)
 
     :MN_DISJUNCTION
     (render-combination state block parse (iri owl "unionOf"))
@@ -117,17 +151,17 @@
     :MN_CONJUNCTION
     (render-combination state block parse (iri owl "intersectionOf"))
 
+    :MN_OBJECT_PROPERTY_EXPRESSION
+    (render-expression state block (->> parse filter-ce first))
+
     :MN_SOME
     (render-restriction state block parse (iri owl "someValuesFrom"))
 
-    :MN_CLASS_EXPRESSION
-    (ce-triples state block (->> parse filter-ce first))
-    
-    :MN_OBJECT_PROPERTY_EXPRESSION
-    (ce-triples state block (->> parse filter-ce first))
+    :MN_ONLY
+    (render-restriction state block parse (iri owl "allValuesFrom"))
 
     :MN_NAME
-    (ce-triples state block (->> parse filter-ce first))
+    (render-expression state block (->> parse filter-ce first))
 
     :MN_LABEL
     (assoc state :node (iri (resolve-name state block [:LABEL (second parse)])))
@@ -138,12 +172,12 @@
     ; else
     state))
 
-(defn unwrap-iri
-  [iri]
-  (string/replace iri #"^<|>$" ""))
-
-
-(defn render-statement
+(defn render-statement!
+  "Given a reducing function, a result,
+   a reference to a state map,
+   a block map, and a concrete object string.
+   mutate the state to update the :subjects key,
+   and apply the reducing function to all the generated triples."
   [xf result state block object]
   (let [{:keys [arrows predicate content]} block
         subject   (if (string/blank? arrows)
@@ -189,8 +223,7 @@
 (defn to-triples
   "Given a reducing function,
    return a stateful transducer
-   that takes parse maps
-   and returns NTriple statement strings."
+   that takes parse maps and returns triples (vectors of strings)."
   [xf]
   (let [state (volatile! default-state)]
     (fn
@@ -232,7 +265,7 @@
              result)
 
            :LITERAL_BLOCK
-           (render-statement
+           (render-statement!
             xf
             result
             state
@@ -240,7 +273,7 @@
             (format-literal @state block))
            
            :LINK_BLOCK
-           (render-statement
+           (render-statement!
             xf
             result
             state
@@ -248,7 +281,7 @@
             (iri (resolve-name @state block (:object block))))
 
            :EXPRESSION_BLOCK
-           (let [new-state (ce-triples @state block (:expression block))
+           (let [new-state (render-expression @state block (:expression block))
                  {:keys [arrows predicate content]} block
                  subject   (-> @state :subjects first first)
                  predicate (iri (resolve-name @state block predicate))
@@ -276,4 +309,3 @@
                      (:line-number block)
                      (:block block)
                      (.getMessage e))))))))))
-

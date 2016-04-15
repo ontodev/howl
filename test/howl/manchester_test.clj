@@ -1,6 +1,6 @@
 (ns howl.manchester-test
   (:require [clojure.test :refer :all]
-            [howl.ntriples :refer [rdf-list ce-triples iri rdf owl]]
+            [howl.ntriples :refer [render-expression iri rdf owl]]
             [howl.core :refer [block-parser]]))
 
 (def example-state
@@ -23,20 +23,6 @@
     "foo"                        "foo"
     "bar"                        "bar"}})
 
-
-(deftest test-rdf-list
-  (testing "Three elements"
-    (is (= (rdf-list {:blank-node-count 10} ["A" "B" "C"])
-           {:blank-node-count 13
-            :node "_:b11"
-            :triples
-            [["_:b11" (iri rdf "first") "A"]
-             ["_:b11" (iri rdf "rest")  "_:b12"]
-             ["_:b12" (iri rdf "first") "B"]
-             ["_:b12" (iri rdf "rest")  "_:b13"]
-             ["_:b13" (iri rdf "first") "C"]
-             ["_:b13" (iri rdf "rest")  (iri rdf "nil")]]}))))
-
 (defn ce-parser
   [expression]
   (get-in (block-parser (str "subclass of:>> " expression)) [1 3]))
@@ -47,7 +33,7 @@
           parse     (ce-parser mn-string)]
       (is (= parse
              [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:node "<foo>"})))))
@@ -58,7 +44,7 @@
       (is (= parse
              [:MN_CLASS_EXPRESSION
               [:MN_NAME [:MN_QUOTED_LABEL "'" "foo" "'"]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:node "<foo>"})))))
@@ -72,7 +58,7 @@
               [:MN_CLASS_EXPRESSION
                [:MN_NAME [:MN_LABEL "foo"]]] [:MN_SPACE " "]
               ")"]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:node "<foo>"})))))
@@ -86,7 +72,7 @@
                "not"
                [:MN_SPACE " "]
                [:MN_NAME [:MN_LABEL "foo"]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 1
@@ -106,18 +92,18 @@
                "or"
                [:MN_SPACE " "]
                [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "bar"]]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 3
-               :node "_:b3"
+               :node "_:b1"
                :triples
-               [["_:b1" (iri rdf "first") "<foo>"]
-                ["_:b1" (iri rdf "rest") "_:b2"]
-                ["_:b2" (iri rdf "first") "<bar>"]
-                ["_:b2" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b3" (iri rdf "type") (iri owl "Class")]
-                ["_:b3" (iri owl "unionOf") "_:b1"]]})))))
+               [["_:b1" (iri rdf "type") (iri owl "Class")]
+                ["_:b1" (iri owl "unionOf") "_:b2"]
+                ["_:b2" (iri rdf "first") "<foo>"]
+                ["_:b2" (iri rdf "rest") "_:b3"]
+                ["_:b3" (iri rdf "first") "<bar>"]
+                ["_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Conjunction"
     (let [mn-string "foo and bar"
@@ -130,18 +116,18 @@
                "and"
                [:MN_SPACE " "]
                [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "bar"]]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 3
-               :node "_:b3"
+               :node "_:b1"
                :triples
-               [["_:b1" (iri rdf "first") "<foo>"]
-                ["_:b1" (iri rdf "rest") "_:b2"]
-                ["_:b2" (iri rdf "first") "<bar>"]
-                ["_:b2" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b3" (iri rdf "type") (iri owl "Class")]
-                ["_:b3" (iri owl "intersectionOf") "_:b1"]]})))))
+               [["_:b1" (iri rdf "type") (iri owl "Class")]
+                ["_:b1" (iri owl "intersectionOf") "_:b2"]
+                ["_:b2" (iri rdf "first") "<foo>"]
+                ["_:b2" (iri rdf "rest") "_:b3"]
+                ["_:b3" (iri rdf "first") "<bar>"]
+                ["_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Some"
     (let [mn-string "'has part' some foo"
@@ -155,7 +141,7 @@
                "some"
                [:MN_SPACE " "]
                [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 1
@@ -181,17 +167,17 @@
                  "not"
                  [:MN_SPACE " "]
                  [:MN_NAME [:MN_LABEL "foo"]]]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 2
-               :node "_:b2"
+               :node "_:b1"
                :triples
-               [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "complementOf") "<foo>"]
-                ["_:b2" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b2" (iri owl "onProperty") "<part>"]
-                ["_:b2" (iri owl "someValuesFrom") "_:b1"]]})))))
+               [["_:b1" (iri rdf "type") (iri owl "Restriction")]
+                ["_:b1" (iri owl "onProperty") "<part>"]
+                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
+                ["_:b2" (iri rdf "type") (iri owl "Class")]
+                ["_:b2" (iri owl "complementOf") "<foo>"]]})))))
 
   (testing "And not"
     (let [mn-string "foo and not bar"
@@ -208,20 +194,20 @@
                  "not"
                  [:MN_SPACE " "]
                  [:MN_NAME [:MN_LABEL "bar"]]]]]]))
-      (is (= (ce-triples example-state {} parse)
+      (is (= (render-expression example-state {} parse)
              (merge
               example-state
               {:blank-node-count 4
-               :node "_:b4"
+               :node "_:b1"
                :triples
                [["_:b1" (iri rdf "type") (iri owl "Class")]
-                ["_:b1" (iri owl "complementOf") "<bar>"]
+                ["_:b1" (iri owl "intersectionOf") "_:b2"]
                 ["_:b2" (iri rdf "first") "<foo>"]
                 ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "_:b1"]
+                ["_:b3" (iri rdf "first") "_:b4"]
                 ["_:b3" (iri rdf "rest") (iri rdf "nil")]
                 ["_:b4" (iri rdf "type") (iri owl "Class")]
-                ["_:b4" (iri owl "intersectionOf") "_:b2"]]})))))
+                ["_:b4" (iri owl "complementOf") "<bar>"]]})))))
 
   (testing "Complex axiom"
     (let [mn-string
@@ -259,29 +245,29 @@
                       [:MN_NAME [:MN_QUOTED_LABEL "'" "evaluant role" "'"]]]]]
                    ")"]]]
                 ")"]]]))
-      (is (= (ce-triples bigger-state {} parse)
+      (is (= (render-expression bigger-state {} parse)
              (merge
               bigger-state
               {:blank-node-count 5
-               :node "_:b5"
+               :node "_:b1"
                :triples
-               [; 'has role' some 'evaluant role'
+               [; 'is about' some X
                 ["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") (iri obo "RO_0000087")]
-                ["_:b1" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]
+                ["_:b1" (iri owl "onProperty") (iri obo "IAO_0000136")]
+                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
 
                 ; 'material entity' and X
-                ["_:b2" (iri rdf "first") (iri obo "BFO_0000040")]
-                ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "_:b1"]
-                ["_:b3" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b4" (iri rdf "type") (iri owl "Class")]
-                ["_:b4" (iri owl "intersectionOf") "_:b2"]
+                ["_:b2" (iri rdf "type") (iri owl "Class")]
+                ["_:b2" (iri owl "intersectionOf") "_:b3"]
+                ["_:b3" (iri rdf "first") (iri obo "BFO_0000040")]
+                ["_:b3" (iri rdf "rest") "_:b4"]
+                ["_:b4" (iri rdf "first") "_:b5"]
+                ["_:b4" (iri rdf "rest") (iri rdf "nil")]
 
-                ; 'is about' some X
+                ; 'has role' some 'evaluant role'
                 ["_:b5" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b5" (iri owl "onProperty") (iri obo "IAO_0000136")]
-                ["_:b5" (iri owl "someValuesFrom") "_:b4"]]})))))
+                ["_:b5" (iri owl "onProperty") (iri obo "RO_0000087")]
+                ["_:b5" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
 
   (testing "More complex axiom"
     (let [mn-string
@@ -341,42 +327,41 @@
                       ")"]]]
                    ")"]]]
                 ")"]]]))
-      (is (= (ce-triples bigger-state {} parse)
+      (is (= (render-expression bigger-state {} parse)
              (merge
               bigger-state
               {:blank-node-count 9
-               :node "_:b9"
+               :node "_:b1"
                :triples
-               [; 'has role' some 'evaluant role'
+               [; has_specfied_output somme X
                 ["_:b1" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b1" (iri owl "onProperty") (iri obo "RO_0000087")]
-                ["_:b1" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]
+                ["_:b1" (iri owl "onProperty") (iri obo "OBI_0000299")]
+                ["_:b1" (iri owl "someValuesFrom") "_:b2"]
 
-                ; 'material entity' and X
-                ["_:b2" (iri rdf "first") (iri obo "BFO_0000040")]
-                ["_:b2" (iri rdf "rest") "_:b3"]
-                ["_:b3" (iri rdf "first") "_:b1"]
-                ["_:b3" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b4" (iri rdf "type") (iri owl "Class")]
-                ["_:b4" (iri owl "intersectionOf") "_:b2"]
-
+                ; ('information content entity' and X)
+                ["_:b2" (iri rdf "type") (iri owl "Class")]
+                ["_:b2" (iri owl "intersectionOf") "_:b3"]
+                ["_:b3" (iri rdf "first") (iri obo "IAO_0000030")]
+                ["_:b3" (iri rdf "rest") "_:b4"]
+                ["_:b4" (iri rdf "first") "_:b5"]
+                ["_:b4" (iri rdf "rest") (iri rdf "nil")]
+                
                 ; 'is about' some X
                 ["_:b5" (iri rdf "type") (iri owl "Restriction")]
                 ["_:b5" (iri owl "onProperty") (iri obo "IAO_0000136")]
-                ["_:b5" (iri owl "someValuesFrom") "_:b4"]
+                ["_:b5" (iri owl "someValuesFrom") "_:b6"]
 
-                ; ('information content entity' and X)
-                ["_:b6" (iri rdf "first") (iri obo "IAO_0000030")]
-                ["_:b6" (iri rdf "rest") "_:b7"]
-                ["_:b7" (iri rdf "first") "_:b5"]
-                ["_:b7" (iri rdf "rest") (iri rdf "nil")]
-                ["_:b8" (iri rdf "type") (iri owl "Class")]
-                ["_:b8" (iri owl "intersectionOf") "_:b6"]
+                ; 'material entity' and X
+                ["_:b6" (iri rdf "type") (iri owl "Class")]
+                ["_:b6" (iri owl "intersectionOf") "_:b7"]
+                ["_:b7" (iri rdf "first") (iri obo "BFO_0000040")]
+                ["_:b7" (iri rdf "rest") "_:b8"]
+                ["_:b8" (iri rdf "first") "_:b9"]
+                ["_:b8" (iri rdf "rest") (iri rdf "nil")]
 
-                ; has_specfied_output somme X
+                ; 'has role' some 'evaluant role'
                 ["_:b9" (iri rdf "type") (iri owl "Restriction")]
-                ["_:b9" (iri owl "onProperty") (iri obo "OBI_0000299")]
-                ["_:b9" (iri owl "someValuesFrom") "_:b8"]]})))))
+                ["_:b9" (iri owl "onProperty") (iri obo "RO_0000087")]
+                ["_:b9" (iri owl "someValuesFrom") (iri obo "OBI_0000067")]]})))))
   ; more tests?
   )
-
