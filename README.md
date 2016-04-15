@@ -39,7 +39,7 @@ This is work-in-progress toward a file format and supporting tools that make it 
     type:> owl:Class
     subClassOf:>> 'has part' some Bar
 
-See the [ontology]() directory and [Makefile]() for more examples.
+See the [ontology](ontology) directory and [Makefile](Makefile) for more examples.
 
 
 ## Status
@@ -60,7 +60,7 @@ You can use another tool such as [rapper](http://librdf.org/raptor/rapper.html) 
 
 The `howl` tool requires Java (1.6+).
 
-1. [Download a released version of the `howl` file](https://github.com/ontodev/howl), or build it yourself by following the instructions below
+1. [Download a released version of the `howl` file](https://github.com/ontodev/howl/releases), or build it yourself by following the instructions below
 2. Rename the file to `howl`, put it on your PATH, and make it executable: `chmod +x howl`
 3. Run `howl` on one or more HOWL files to convert them to N-Triples:
 
@@ -591,11 +591,12 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 ## Release History
 
-- 0.1 initial release
+- 0.1.0 initial release
     - draft HOWL syntax
     - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
       `not`, `and`, `or`, `some`, `only`
     - converting HOWL to N-Triples, N-Quads, or JSON
+
 
 ## License
 
