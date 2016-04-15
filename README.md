@@ -597,3 +597,8 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
       `not`, `and`, `or`, `some`, `only`
     - converting HOWL to N-Triples, N-Quads, or JSON
 
+## License
+
+Copyright © 2016, James A. Overton
+
+Distributed under the Simplified BSD License: [http://opensource.org/licenses/BSD-2-Clause]()
