@@ -1,8 +1,8 @@
-(defproject howl "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject howl "0.1.0"
+  :description "Tools for processing HOWL format"
+  :url "https://github.com/ontodev/howl"
+  :license {:name "Simplified BSD License"
+            :url "http://opensource.org/licenses/BSD-2-Clause"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [instaparse "1.4.1"]
                  [org.clojure/tools.cli "0.3.3"]
