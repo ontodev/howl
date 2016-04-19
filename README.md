@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ontodev/howl.svg?branch=master)](https://travis-ci.org/ontodev/howl)
+[![Clojars Project](https://img.shields.io/clojars/v/howl.svg)](https://clojars.org/howl)
 
 # Humane OWL (HOWL) Format
 
@@ -62,7 +63,12 @@ You can use another tool such as [rapper](http://librdf.org/raptor/rapper.html) 
 
 ## Installation and Usage
 
-The `howl` tool requires Java (1.6+).
+You can install HOWL as a command-line tool (`howl`) or use it as a Clojure library:
+
+
+### Command Line Tool
+
+The `howl` command-line tool requires Java (1.6+).
 
 1. [Download a released version of the `howl` file](https://github.com/ontodev/howl/releases), or build it yourself by following the instructions below
 2. Rename the file to `howl`, put it on your PATH, and make it executable: `chmod +x howl`
@@ -73,6 +79,13 @@ howl input.howl input2.howl > output.nt
 ```
 
 Run `howl --help` for more options. The `howl` file is a JAR, so you can also run `java -jar howl`, with standard Java options.
+
+
+### Clojure Library
+
+HOWL is also available as a Clojure library. See the Clojars page for details:
+
+[![Clojars Project](https://img.shields.io/clojars/v/howl.svg)](https://clojars.org/howl)
 
 
 ## Features
