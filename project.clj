@@ -1,4 +1,6 @@
-(defproject howl "0.1.1-SNAPSHOT"
+(def project-version "0.1.1-SNAPSHOT")
+
+(defproject howl project-version
   :description "Tools for processing HOWL format"
   :url "https://github.com/ontodev/howl"
   :license {:name "Simplified BSD License"
@@ -10,12 +12,13 @@
                  [org.clojure/data.json "0.2.6"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]]
+  :main howl.cli
+  :aot [howl.cli]
+  :manifest {"Implementation-Version" ~project-version}
   :cljsbuild
   {:builds
    [{:source-paths ["src"]
      :compiler
      {:output-to "target/howl.js"
-      :optimizations :advanced ; :whitespace
-      :pretty-print true}}]}
-  :main howl.cli
-  :aot [howl.cli])
+      :optimizations :whitespace
+      :pretty-print true}}]})

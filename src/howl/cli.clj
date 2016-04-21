@@ -79,9 +79,11 @@
 
 (def cli-options
   [["-o" "--output FORMAT" "Output format: N-Triples (default), N-Quads, parses (JSON)"]
+   ["-V" "--version"]
    ["-h" "--help"]])
 
-(defn usage [options-summary]
+(defn usage
+  [options-summary]
   (->> ["Process HOWL files, writing to STDOUT."
         ""
         "Usage: howl [OPTIONS] INPUT-FILE+"
@@ -93,11 +95,20 @@
         "Please see https://github.com/ontodev/howl for more information."]
        (string/join \newline)))
 
-(defn error-msg [errors]
+(defn version
+  []
+  (-> (eval 'howl.cli)
+      .getPackage
+      .getImplementationVersion
+      (or "DEVELOPMENT")))
+
+(defn error-msg
+  [errors]
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
 
-(defn exit [status msg]
+(defn exit
+  [status msg]
   (println msg)
   (System/exit status))
 
@@ -107,6 +118,7 @@
     ;; Handle help and error conditions
     (cond
       (:help options) (exit 0 (usage summary))
+      (:version options) (exit 0 (version))
       (not= (count arguments) 1) (exit 1 (usage summary))
       errors (exit 1 (error-msg errors)))
     ;; Execute program with options
