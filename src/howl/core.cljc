@@ -21,7 +21,7 @@
     BASE_BLOCK       = 'BASE'   SPACES IRI EOL
     PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON IRI EOL
     LABEL_BLOCK      = 'LABEL'  SPACES IDENTIFIER COLON LABEL EOL
-    TYPE_BLOCK       = 'TYPE'   SPACES PREDICATE  COLON DATATYPE EOL
+    TYPE_BLOCK       = 'TYPE'   SPACES PREDICATE  COLON (LANG | DATATYPE) EOL
     GRAPH_BLOCK      = 'GRAPH'  EOL /
                        'GRAPH'  SPACES GRAPH EOL
     SUBJECT_BLOCK    = SUBJECT EOL
@@ -142,8 +142,13 @@
      :label      (get-in parse [5 1])}
 
     :TYPE_BLOCK
-    {:predicate (get-in parse [3 1])
-     :datatype  (get-in parse [5 1])}
+    (merge
+     {:predicate (get-in parse [3 1])}
+     (case (get-in parse [5 0])
+       :LANG
+       {:language (get-in parse [5 1])}
+       :DATATYPE
+       {:datatype (get-in parse [5 1])}))
 
     :GRAPH_BLOCK
     (case (count parse)

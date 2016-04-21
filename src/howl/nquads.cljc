@@ -83,7 +83,7 @@
     (resolve-prefixed-name state block name)
     :LABEL
     (resolve-label state block name)
-    :else
+    ; else
     (util/throw-exception
      (util/format
       "Could not resolve name '%s' in '%s' at line %d:\n%s"
@@ -112,15 +112,17 @@
 (defn format-literal
   "Given a state map and a block map for a LITERAL_BLOCK,
    return a concrete literal string."
-  [state {:keys [content language datatype] :as block}]
-  (let [content (string/replace content "\n" "\\n")]
+  [state {:keys [predicate content language datatype] :as block}]
+  (let [predicate-iri (resolve-name state block predicate)
+        language (or language (get-in state [:types-language predicate-iri]))
+        datatype (when datatype (resolve-name state block datatype))
+        datatype (or datatype (get-in state [:types-datatype predicate-iri]))
+        content  (string/replace content "\n" "\\n")]
     (cond
       language
       (util/format "\"%s\"%s" content language)
       datatype
-      (util/format "\"%s\"^^<%s>"
-              content
-              (resolve-name state block datatype))
+      (util/format "\"%s\"^^<%s>" content datatype)
       :else
       (util/format "\"%s\"" content))))
 
@@ -345,9 +347,18 @@
              result)
 
            :TYPE_BLOCK
-           (let [predicate-iri (resolve-name @state block (:predicate block))
-                 datatype-iri  (resolve-name @state block (:datatype block))]
-             (vswap! state assoc-in [:types predicate-iri] datatype-iri)
+           (let [predicate-iri (resolve-name @state block (:predicate block))]
+             (cond
+              (:language block)
+              (vswap! state
+                      assoc-in
+                      [:types-language predicate-iri]
+                      (:language block))
+              (:datatype block)
+              (vswap! state
+                      assoc-in
+                      [:types-datatype predicate-iri]
+                      (resolve-name @state block (:datatype block))))
              result)
 
            :GRAPH_BLOCK

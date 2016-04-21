@@ -9,6 +9,7 @@ LABEL rdf:type: type
 LABEL rdfs:comment: comment
 LABEL rdfs:subClassOf: subClassOf
 
+TYPE label: @en
 TYPE comment: xsd:string
 
 ex:ontology
