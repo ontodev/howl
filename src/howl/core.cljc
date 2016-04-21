@@ -234,24 +234,3 @@
              (if current-unit
                (xf result [file-name current-line current-unit])
                result))))))))
-
-(defn resolve-name
-  [state block name]
-  (case (first name)
-    :IRI
-    (nth name 3)
-    :PREFIXED_NAME
-    (let [[type prefix colon local-name] name]
-      (str (get-in state [:prefixes prefix]) local-name))
-    :LABEL
-    (get-in state [:labels (second name)])
-    :else
-    (util/throw-exception
-     (util/format
-       "Could not resolve name '%s' in '%s' at line %d:\n%s"
-              name
-              (:file-name block)
-              (:line-number block)
-              (:line block)))))
-
-

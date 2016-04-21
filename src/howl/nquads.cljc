@@ -2,7 +2,7 @@
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
             [howl.util :as util]
-            [howl.core :as core :refer [resolve-name valid-label?]]))
+            [howl.core :as core]))
 
 (def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 (def rdfs "http://www.w3.org/2000/01/rdf-schema#")
@@ -18,6 +18,96 @@
 (defn unwrap-iri
   [iri]
   (string/replace iri #"^<|>$" ""))
+
+(defn resolve-iri
+  "Given a state map, a block map, and an IRI parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state block [type left iri right]]
+  (cond
+   (re-matches #"^\w+://\S+$" iri)
+   iri
+   (string? (:base state))
+   (str (:base state) iri)
+   :else
+   (util/throw-exception
+    (util/format
+     "Could not resolve relative IRI '%s' with BASE '%s' in '%s' at line %d:\n%s"
+     iri
+     (:base state)
+     (:file-name block)
+     (:line-number block)
+     (:line block)))))
+
+(defn resolve-prefixed-name
+  "Given a state map, a block map, and a PREFIXED_NAME parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state block [type prefix colon local-name]]
+  (let [iri (get-in state [:prefixes prefix])]
+    (if (string? iri)
+      (str iri local-name)
+      (util/throw-exception
+       (util/format
+        "Could not resolve prefixed name '%s' in '%s' at line %d:\n%s"
+        (str prefix colon local-name)
+        (:file-name block)
+        (:line-number block)
+        (:line block))))))
+
+(defn resolve-label
+  "Given a state map, a block map, and a LABEL parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state block [type label]]
+  (let [iri (get-in state [:labels label])]
+    (if (string? iri)
+      iri
+      (util/throw-exception
+       (util/format
+        "Could not resolve label '%s' in '%s' at line %d:\n%s"
+        label
+        (:file-name block)
+        (:line-number block)
+        (:line block))))))
+
+(defn resolve-absolute
+  "Given a state map, a block map, and a parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state block name]
+  (case (first name)
+    :IRI
+    (resolve-iri state block name)
+    :PREFIXED_NAME
+    (resolve-prefixed-name state block name)
+    :LABEL
+    (resolve-label state block name)
+    :else
+    (util/throw-exception
+     (util/format
+      "Could not resolve name '%s' in '%s' at line %d:\n%s"
+      name
+      (:file-name block)
+      (:line-number block)
+      (:line block)))))
+
+(defn resolve-name
+  "Given a state map, a block map, and a parse vector,
+   resolve the name to an absolute IRI,
+   check the result and return it,
+   or throw an exception."
+  [state block name]
+  (let [iri (resolve-absolute state block name)]
+    (if (re-matches #"^\w+://\S+$" iri)
+      iri
+      (util/throw-exception
+       (util/format
+        "Resolved IRI '%s' is not absolute in '%s' at line %d:\n%s"
+        iri
+        (:file-name block)
+        (:line-number block)
+        (:line block))))))
 
 (defn format-literal
   "Given a state map and a block map for a LITERAL_BLOCK,
@@ -196,7 +286,7 @@
     ; When this is a HOWL-valid rdfs:label, add it to the map of labels.
     (when (and (string/blank? arrows)
                (= predicate (iri rdfs "label"))
-               (valid-label? content))
+               (core/valid-label? content))
       (vswap! state assoc-in [:labels content] (unwrap-iri subject)))
 
     ; Add this quad to the stack of subjects.
@@ -239,6 +329,11 @@
       ([result block]
        (try
          (case (:block-type block)
+           :BASE_BLOCK
+           (do
+             (vswap! state assoc :base (:iri block))
+             result)
+
            :PREFIX_BLOCK
            (do
              (vswap! state assoc-in [:prefixes (:prefix block)] (:iri block))

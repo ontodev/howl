@@ -5,9 +5,9 @@
 
 (def example-state
   {:labels
-   {"foo"      "foo"
-    "bar"      "bar"
-    "has part" "part"}})
+   {"foo"      "http://foo"
+    "bar"      "http://bar"
+    "has part" "http://part"}})
 
 (def obo "http://purl.obolibrary.org/obo/")
 
@@ -36,7 +36,7 @@
       (is (= (render-expression example-state {} parse)
              (merge
               example-state
-              {:node "<foo>"})))))
+              {:node "<http://foo>"})))))
 
   (testing "Quoted label"
     (let [mn-string "'foo'"
@@ -47,7 +47,7 @@
       (is (= (render-expression example-state {} parse)
              (merge
               example-state
-              {:node "<foo>"})))))
+              {:node "<http://foo>"})))))
 
   (testing "Parens"
     (let [mn-string "(foo )"
@@ -61,7 +61,7 @@
       (is (= (render-expression example-state {} parse)
              (merge
               example-state
-              {:node "<foo>"})))))
+              {:node "<http://foo>"})))))
 
   (testing "Negation"
     (let [mn-string "not foo"
@@ -79,7 +79,7 @@
                :node "_:b1"
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
-                [nil "_:b1" (iri owl "complementOf") "<foo>"]]})))))
+                [nil "_:b1" (iri owl "complementOf") "<http://foo>"]]})))))
 
   (testing "Disjunction"
     (let [mn-string "foo or bar"
@@ -100,9 +100,9 @@
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
                 [nil "_:b1" (iri owl "unionOf") "_:b2"]
-                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "first") "<http://foo>"]
                 [nil "_:b2" (iri rdf "rest") "_:b3"]
-                [nil "_:b3" (iri rdf "first") "<bar>"]
+                [nil "_:b3" (iri rdf "first") "<http://bar>"]
                 [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Conjunction"
@@ -124,9 +124,9 @@
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
                 [nil "_:b1" (iri owl "intersectionOf") "_:b2"]
-                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "first") "<http://foo>"]
                 [nil "_:b2" (iri rdf "rest") "_:b3"]
-                [nil "_:b3" (iri rdf "first") "<bar>"]
+                [nil "_:b3" (iri rdf "first") "<http://bar>"]
                 [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]]})))))
 
   (testing "Some"
@@ -148,8 +148,8 @@
                :node "_:b1"
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
-                [nil "_:b1" (iri owl "onProperty") "<part>"]
-                [nil "_:b1" (iri owl "someValuesFrom") "<foo>"]]})))))
+                [nil "_:b1" (iri owl "onProperty") "<http://part>"]
+                [nil "_:b1" (iri owl "someValuesFrom") "<http://foo>"]]})))))
 
   (testing "Some Not"
     (let [mn-string "'has part' some not foo"
@@ -174,10 +174,10 @@
                :node "_:b1"
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Restriction")]
-                [nil "_:b1" (iri owl "onProperty") "<part>"]
+                [nil "_:b1" (iri owl "onProperty") "<http://part>"]
                 [nil "_:b1" (iri owl "someValuesFrom") "_:b2"]
                 [nil "_:b2" (iri rdf "type") (iri owl "Class")]
-                [nil "_:b2" (iri owl "complementOf") "<foo>"]]})))))
+                [nil "_:b2" (iri owl "complementOf") "<http://foo>"]]})))))
 
   (testing "And not"
     (let [mn-string "foo and not bar"
@@ -202,12 +202,12 @@
                :quads
                [[nil "_:b1" (iri rdf "type") (iri owl "Class")]
                 [nil "_:b1" (iri owl "intersectionOf") "_:b2"]
-                [nil "_:b2" (iri rdf "first") "<foo>"]
+                [nil "_:b2" (iri rdf "first") "<http://foo>"]
                 [nil "_:b2" (iri rdf "rest") "_:b3"]
                 [nil "_:b3" (iri rdf "first") "_:b4"]
                 [nil "_:b3" (iri rdf "rest") (iri rdf "nil")]
                 [nil "_:b4" (iri rdf "type") (iri owl "Class")]
-                [nil "_:b4" (iri owl "complementOf") "<bar>"]]})))))
+                [nil "_:b4" (iri owl "complementOf") "<http://bar>"]]})))))
 
   (testing "Complex axiom"
     (let [mn-string

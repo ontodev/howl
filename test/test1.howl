@@ -68,3 +68,8 @@ GRAPH
 
 ex:subject-2
 label: Subject in default graph.
+
+BASE <http://example.com/>
+
+<subject-3>
+<label>: Relative IRI
