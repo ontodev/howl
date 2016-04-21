@@ -1,4 +1,5 @@
 (ns howl.nquads
+  "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
             [howl.util :as util]
             [howl.core :as core :refer [resolve-name valid-label?]]))
@@ -184,7 +185,7 @@
    and apply the reducing function to all the generated quads."
   [xf result state block object]
   (let [{:keys [arrows predicate content]} block
-        graph     (:graph state)
+        graph     (:graph @state)
         subject   (if (string/blank? arrows)
                     (-> @state :subjects first second)
                     (do
@@ -255,13 +256,21 @@
              result)
 
            :GRAPH_BLOCK
-           (let [graph (resolve-name @state block (:graph block))]
-             (vswap! state assoc :subjects [[(iri graph) (iri graph)]])
+           (let [graph (when (:graph block)
+                         (resolve-name @state block (:graph block)))]
+             (if graph
+               (vswap! state
+                       assoc
+                       :graph
+                       (iri graph)
+                       :subjects
+                       [[(iri graph) (iri graph)]])
+               (vswap! state dissoc :graph :subjects))
              result)
 
            :SUBJECT_BLOCK
            (let [subject (resolve-name @state block (:subject block))]
-             (vswap! state assoc :subjects [[(iri (:graph state)) (iri subject)]])
+             (vswap! state assoc :subjects [[(:graph @state) (iri subject)]])
              result)
 
            :LITERAL_BLOCK
@@ -283,7 +292,7 @@
            :EXPRESSION_BLOCK
            (let [new-state (render-expression @state block (:expression block))
                  {:keys [arrows predicate content]} block
-                 graph     (:graph state)
+                 graph     (:graph @state)
                  subject   (-> @state :subjects first second)
                  predicate (iri (resolve-name @state block predicate))
                  object    (:node new-state)]
@@ -310,3 +319,14 @@
              (:line-number block)
              (:block block)
              e))))))))
+
+(defn quad-to-string
+  "Given a quad as a vector, subject-predicate-object,
+   or graph-subject-predicate-object,
+   return an N-Quads string."
+  ([quad]
+   (apply quad-to-string quad))
+  ([s p o]
+   (string/join " " [s p o "."]))
+  ([g s p o]
+   (string/join " " [s p o g "."])))

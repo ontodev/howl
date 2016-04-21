@@ -22,9 +22,5 @@
   (->> content
        parse-string
        (transduce nq/render-quads conj)
-       (map
-        (fn [[g s p o]]
-          (if (nil? g)
-            (string/join " " [s p o "."])
-            (string/join " " [g s p o "."]))))
+       (map nq/quad-to-string)
        (string/join "\n")))

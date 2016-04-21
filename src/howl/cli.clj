@@ -40,11 +40,7 @@
   [file-names]
   (->> (apply parse-files file-names)
        (transduce nq/render-quads conj)
-       (map
-        (fn [[g s p o]]
-          (if (nil? g)
-            (format "%s %s %s ."      s p o)
-            (format "%s %s %s %s ." g s p o))))
+       (map nq/quad-to-string)
        (map println)
        doall))
 

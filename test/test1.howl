@@ -58,3 +58,13 @@ subClassOf:>> has_specified_output some
         ('material entity'
          and ('has role' some 'evaluant role'))))
 
+GRAPH ex:graph
+label: Named Graph
+
+ex:subject
+label: Subject in named graph.
+
+GRAPH
+
+ex:subject-2
+label: Subject in default graph.
