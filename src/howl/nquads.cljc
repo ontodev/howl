@@ -435,4 +435,6 @@
   ([s p o]
    (string/join " " [s p o "."]))
   ([g s p o]
-   (string/join " " [s p o g "."])))
+   (if g
+     (string/join " " [s p o g "."])
+     (string/join " " [s p o "."]))))
