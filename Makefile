@@ -19,12 +19,18 @@ build:
 
 VERSION := $(shell lein project-version)
 
-target/howl-$(VERSION)-standalone.jar: src
+target/howl-$(VERSION)-standalone.jar: project.clj src
 	lein uberjar
 
 build/howl-$(VERSION).jar: src/stub.sh target/howl-$(VERSION)-standalone.jar | build
 	cat $^ > $@
 	chmod +x $@
+
+target/howl.js: project.clj src
+	lein cljsbuild once
+
+build/howl-$(VERSION).js: target/howl.js | build
+	cp $< $@
 
 
 ### General Conversion
@@ -70,9 +76,14 @@ build/terms.howl: ontology/template.py ontology/terms.tsv | build
 	$^ > $@
 
 
+.PHONY: jar
+jar: build/howl-$(VERSION).jar
+
+.PHONY: js
+js: build/howl-$(VERSION).js
 
 .PHONY: all
-all: build/howl-$(VERSION).jar
+all: jar js
 
 .PHONY: clean
 clean:
