@@ -1,5 +1,6 @@
 (ns howl.nquads
   (:require [clojure.string :as string]
+            [howl.util :as util]
             [howl.core :as core :refer [resolve-name valid-label?]]))
 
 (def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
@@ -24,13 +25,13 @@
   (let [content (string/replace content "\n" "\\n")]
     (cond
       language
-      (format "\"%s\"%s" content language)
+      (util/format "\"%s\"%s" content language)
       datatype
-      (format "\"%s\"^^<%s>"
+      (util/format "\"%s\"^^<%s>"
               content
               (resolve-name state block datatype))
       :else
-      (format "\"%s\"" content))))
+      (util/format "\"%s\"" content))))
 
 (defn filter-ce
   "Given a parse vector,
@@ -144,7 +145,7 @@
   (case (first parse)
     :MN_CLASS_EXPRESSION
     (render-expression state block (->> parse filter-ce first))
-    
+
     :MN_NEGATION
     (render-negation state block parse)
 
@@ -257,7 +258,7 @@
            (let [graph (resolve-name @state block (:graph block))]
              (vswap! state assoc :subjects [[(iri graph) (iri graph)]])
              result)
-           
+
            :SUBJECT_BLOCK
            (let [subject (resolve-name @state block (:subject block))]
              (vswap! state assoc :subjects [[(iri (:graph state)) (iri subject)]])
@@ -270,7 +271,7 @@
             state
             block
             (format-literal @state block))
-           
+
            :LINK_BLOCK
            (render-statement!
             xf
@@ -301,11 +302,11 @@
            ; else
            result)
 
-         (catch Exception e
-           (throw
-            (Exception.
-             (format "Error while serializing to Nquads:\n%s line %d: %s\n%s"
-                     (:file-name block)
-                     (:line-number block)
-                     (:block block)
-                     (.getMessage e))))))))))
+         (catch #?(:clj Exception :cljs :default) e
+           (util/throw-exception
+            (util/format
+             "Error while serializing to Nquads:\n%s line %d: %s\n%s"
+             (:file-name block)
+             (:line-number block)
+             (:block block)
+             e))))))))

@@ -1,6 +1,7 @@
 (ns howl.core
   (:require [clojure.string :as string]
-            [instaparse.core :as insta]))
+            [instaparse.core :as insta]
+            [howl.util :as util]))
 
 ;; Parsing works like this:
 ;;
@@ -37,7 +38,7 @@
     MN_DISJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'or'  MN_SPACE MN_CLASS_EXPRESSION
     MN_CONJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'and' MN_SPACE MN_CLASS_EXPRESSION
     MN_NEGATION = 'not' MN_SPACE (MN_RESTRICTION | MN_NAME)
-                     
+
     <MN_RESTRICTION> = MN_SOME | MN_ONLY
     MN_SOME = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'some' MN_SPACE MN_CLASS_EXPRESSION
     MN_ONLY = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'only' MN_SPACE MN_CLASS_EXPRESSION
@@ -85,10 +86,10 @@
     (.startsWith label "LABEL") false
     (.startsWith label "TYPE") false
     (.startsWith label "GRAPH") false
-    (.contains   label "\n") false
-    (.contains   label "\t") false
-    (.contains   label ": ") false
-    (.contains   label ":> ") false
+    (util/substring? label "\n") false
+    (util/substring? label "\t") false
+    (util/substring? label ": ") false
+    (util/substring? label ":> ") false
     (.endsWith   label " ") false
     :else true))
 
@@ -112,7 +113,7 @@
   (string/join
    "\n"
    (concat
-    [(format "Parse error in '%s' at line %d:" file-name line-number)
+    [(util/format "Parse error in '%s' at line %d:" file-name line-number)
      text
      (instaparse.failure/marker column)
      "Expected:"]
@@ -182,7 +183,7 @@
   ([[file-name line-number block]]
    (let [parse (block-parser block)]
      (if (insta/failure? parse)
-       (throw (Exception. (message file-name line-number parse)))
+       (util/throw-exception (message file-name line-number parse))
        (merge
         {:file-name   file-name
          :line-number line-number
@@ -244,10 +245,12 @@
     :LABEL
     (get-in state [:labels (second name)])
     :else
-    (throw
-     (Exception.
-      (format "Could not resolve name '%s' in '%s' at line %d:\n%s"
+    (util/throw-exception
+     (util/format
+       "Could not resolve name '%s' in '%s' at line %d:\n%s"
               name
               (:file-name block)
               (:line-number block)
-              (:line block))))))
+              (:line block)))))
+
+
