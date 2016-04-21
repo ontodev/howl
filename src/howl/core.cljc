@@ -1,4 +1,5 @@
 (ns howl.core
+  "Parse HOWL."
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
             [howl.util :as util]))
