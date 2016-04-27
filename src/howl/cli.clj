@@ -39,7 +39,7 @@
    print a sequence of N-Quads."
   [file-names]
   (->> (apply parse-files file-names)
-       (transduce nq/render-quads conj)
+       (transduce (nq/render-quads) conj)
        (map nq/quad-to-string)
        (map println)
        doall))
@@ -49,7 +49,7 @@
    print a sequence of N-Triples from the default graph."
   [file-names]
   (->> (apply parse-files file-names)
-       (transduce nq/render-quads conj)
+       (transduce (nq/render-quads) conj)
        (filter #(nil? (first %)))
        (map rest)
        (map (partial apply format "%s %s %s ."))

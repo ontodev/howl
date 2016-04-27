@@ -21,6 +21,6 @@
   [content]
   (->> content
        parse-string
-       (transduce nq/render-quads conj)
+       (transduce (nq/render-quads) conj)
        (map nq/quad-to-string)
        (string/join "\n")))

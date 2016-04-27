@@ -294,10 +294,10 @@
 
     ; Add this quad to the stack of subjects.
     (vswap! state
-           assoc
-           :subjects
-           (conj (vec (take (count arrows) (:subjects @state)))
-                 [graph subject predicate object]))
+            assoc
+            :subjects
+            (conj (vec (take (count arrows) (:subjects @state)))
+                  [graph subject predicate object]))
 
     [@state
      ; Two cases
@@ -392,7 +392,7 @@
       ; else
       [state nil])
 
-    (catch #?(:clj Exception :cljs :default) e
+    (catch #? (:clj Exception :cljs :default) e
       (util/throw-exception
        (util/format
         "Error while serializing to Nquads:\n%s line %d: %s\n%s"
@@ -402,20 +402,23 @@
         e)))))
 
 (defn render-quads
-  "Given a reducing function,
+  "Given a starting state map (or no arguments)
    return a stateful transducer
    that takes parse maps and returns quads (vectors of strings)."
-  [xf]
-  (let [state (volatile! {})]
-    (fn
-      ([] (xf))
-      ([result] (xf result))
-      ([result block]
-       (let [[new-state quads] (render-block @state block)]
-         (vreset! state new-state)
-         (if quads
-           (apply xf result quads)
-           result))))))
+  ([] (render-quads {}))
+  ([starting-state]
+   (fn
+     [xf]
+     (let [state (volatile! starting-state)]
+       (fn
+         ([] (xf))
+         ([result] (xf result))
+         ([result block]
+          (let [[new-state quads] (render-block @state block)]
+            (vreset! state new-state)
+            (if quads
+              (apply xf result quads)
+              result))))))))
 
 (defn quad-to-string
   "Given a quad as a vector, subject-predicate-object,
