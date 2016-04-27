@@ -28,8 +28,8 @@
                        'GRAPH'  SPACES GRAPH EOL
     SUBJECT_BLOCK    = SUBJECT EOL
     LITERAL_BLOCK    = ARROWS PREDICATE COLON LITERAL EOL
-    LINK_BLOCK       = ARROWS PREDICATE ARROW_COLON OBJECT EOL
-    EXPRESSION_BLOCK = PREDICATE ARROWS_COLON MN_CLASS_EXPRESSION EOL
+    LINK_BLOCK       = ARROWS PREDICATE COLON_ARROW OBJECT EOL
+    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS MN_CLASS_EXPRESSION EOL
 
     MN_CLASS_EXPRESSION = '(' MN_SPACE? MN_CLASS_EXPRESSION MN_SPACE? ')'
       | MN_DISJUNCTION
@@ -69,8 +69,8 @@
     IRI           = '<' #'[^>\\s]+' '>'
     LANG          = #'@(\\w|-)+'
     COLON         = #' *' ':'  #' +'
-    ARROW_COLON   = #' *' ':>' #' +'
-    ARROWS_COLON  = #' *' ':>>' #' +'
+    COLON_ARROW   = #' *' ':>' #' +'
+    COLON_ARROWS  = #' *' ':>>' #' +'
     SPACES        = #' +'
     ARROWS        = #'>*' #'\\s*'
     LABEL         = #'[^:\n]+'

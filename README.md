@@ -441,7 +441,7 @@ is parsed into this JSON object:
      "parse": ["LINK_BLOCK"
                ["ARROWS" "" ""]
                ["PREDICATE" ["PREFIXED_NAME" "rdf" ":" "type"]]
-               ["ARROW_COLON" "" ":>" " "]
+               ["COLON_ARROW" "" ":>" " "]
                ["OBJECT" ["PREFIXED_NAME" "owl" ":" "Class"]]
                ["EOL" "\n"]],
      "arrows": "",
@@ -485,7 +485,7 @@ is parsed into this JSON object:
      "block-type": "EXPRESSION_BLOCK",
      "parse": ["EXPRESSION_BLOCK"
                ["PREDICATE" ["PREFIXED_NAME" "rdfs" ":" "subClassOf"]]
-               ["ARROWS_COLON" "" ":>>" " "]
+               ["COLON_ARROWS" "" ":>>" " "]
                ["MN_CLASS_EXPRESSION"
                 ["MN_SOME"
                  ["MN_OBJECT_PROPERTY_EXPRESSION"
@@ -635,7 +635,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 ## Release History
 
-- 0.2.0-SNAPSHOT
+- 0.2.0-SNAPSHOT tweak grammar
   - allow comments
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
