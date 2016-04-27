@@ -608,11 +608,20 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 ## Release History
 
+- 0.1.1
+  - add cross-platform support: Clojure and ClojureScript
+  - add cross-platform API in `api.cljc`
+  - add `--version` command-line option
+  - fix named graph support
+  - fix relative IRI resolution
+  - fix: TYPE can be language tag
+  - refactor render-quads
+  - more tests
 - 0.1.0 initial release
-    - draft HOWL syntax
-    - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
-      `not`, `and`, `or`, `some`, `only`
-    - converting HOWL to N-Triples, N-Quads, or JSON
+  - draft HOWL syntax
+  - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
+    `not`, `and`, `or`, `some`, `only`
+  - converting HOWL to N-Triples, N-Quads, or JSON
 
 
 ## License
