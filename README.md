@@ -44,6 +44,8 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
     type:> owl:Class
     subClassOf:>> 'has part' some Bar
 
+    # Lines starting with '#' are just comments.
+
 See the [ontology](ontology) directory and [Makefile](Makefile) for more examples.
 
 
@@ -156,6 +158,7 @@ HOWL goes one step further, supporting human-readable labels in almost every pla
 - must not begin or end with whitespace
 - must not contain newlines or tabs
 - must not begin with a reserved word (case sensitive) followed by a space: BASE, PREFIX, LABEL, TYPE, GRAPH
+- must not begin with `#`
 - must not begin with `>`
 - must not contain `: ` (colon space)
 - must not contain `:> ` (colon arrow space)
@@ -168,8 +171,9 @@ HOWL labels are defined either by `LABEL` blocks, or when an `rdfs:label` is ass
 
 HOWL is build from a sequence of "blocks". Each block is a string consisting of one line of text, followed by zero or more blank or indented lines of text. HOWL is designed for streaming, so a sequence of files is transformed into a sequence of parsed blocks. Each parsed block can be represented as a JSON object.
 
-There are nine kinds of block:
+There are ten kinds of block:
 
+- Comment
 - BASE
 - PREFIX
 - LABEL
@@ -179,6 +183,29 @@ There are nine kinds of block:
 - Literal (a statement in which the object is an RDF literal)
 - Link (a statement in which the object is an RDF node)
 - Expression (a statement in which the object is an OWL expression)
+
+
+### Comments
+
+Comment blocks do not specify any information for HOWL, but the parser does keep track of them. A comment line **must** start with '#' -- the '#' has no special meaning unless it is the first character on a line.
+
+This comment block:
+
+    # Just a comment.
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "# Just a comment.\n",
+     "block-type": "COMMENT_BLOCK",
+     "parse": ["COMMENT_BLOCK"
+               "# ",
+               "Just a comment."
+               ["EOL" "\n"]],
+     "hash": "# ",
+     "comment": "Just a comment.",
+     "eol": "\n"}
 
 
 ### BASE
@@ -608,6 +635,8 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 ## Release History
 
+- 0.2.0-SNAPSHOT
+  - allow comments
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
   - add cross-platform API in `api.cljc`

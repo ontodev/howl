@@ -13,11 +13,13 @@
 
 (def block-parser
   (insta/parser
-   "BLOCK = BASE_BLOCK / PREFIX_BLOCK /
+   "BLOCK = COMMENT_BLOCK /
+            BASE_BLOCK / PREFIX_BLOCK /
             LABEL_BLOCK / TYPE_BLOCK /
             GRAPH_BLOCK / SUBJECT_BLOCK /
             LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
 
+    COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
     BASE_BLOCK       = 'BASE'   SPACES IRI EOL
     PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON IRI EOL
     LABEL_BLOCK      = 'LABEL'  SPACES IDENTIFIER COLON LABEL EOL
@@ -80,6 +82,7 @@
   [label]
   (cond
     (not (string? label)) false
+    (.startsWith label "#") false
     (.startsWith label ">") false
     (.startsWith label " ") false
     (.startsWith label "BASE") false
@@ -130,6 +133,10 @@
    for this type of parse."
   [parse]
   (case (first parse)
+    :COMMENT_BLOCK
+    {:hash    (get-in parse [1])
+     :comment (get-in parse [2])}
+
     :BASE_BLOCK
     {:iri (get-in parse [3 2])}
 
