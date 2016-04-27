@@ -10,12 +10,12 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
 ## Example
 
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
-    PREFIX owl: <http://www.w3.org/2002/07/owl#>
-    PREFIX obo: <http://purl.obolibrary.org/obo/>
-    PREFIX ex: <http://example.com/>
+    PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX xsd:> <http://www.w4.org/2001/XMLSchema#>
+    PREFIX owl:> <http://www.w3.org/2002/07/owl#>
+    PREFIX obo:> <http://purl.obolibrary.org/obo/>
+    PREFIX ex:> <http://example.com/>
 
     LABEL rdf:type: type
     LABEL rdfs:label: label
@@ -94,8 +94,8 @@ HOWL is also available as a Clojure library. See the Clojars page for details:
 
 Features in this example:
 
-- `PREFIX ex: <http://example.com/>`
-    - SPARQL-style PREFIXes
+- `PREFIX ex:> <http://example.com/>`
+    - set prefixes, similar to Turtle and SPARQL
 - `LABEL obo:BFO_0000051: has part`
     - like PREFIXes for single terms
 - `TYPE comment: xsd:string`
@@ -237,19 +237,19 @@ Prefix blocks are identical to SPARQL prefix lines.
 
 This prefix block:
 
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 is parsed into this JSON object:
 
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
+     "block": "PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
      "block-type": "PREFIX_BLOCK",
      "parse": ["PREFIX_BLOCK"
                "PREFIX"
                ["SPACES" " "]
                ["PREFIX" "rdf"]
-               ["COLON" "" ":" " "]
+               ["COLON_ARROW" "" ":>" " "]
                ["IRI" "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]
                ["EOL" "\n"]],
      "prefix": "rdf",
@@ -637,6 +637,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 - 0.2.0-SNAPSHOT tweak grammar
   - allow comments
+  - PREFIX now uses `:> `, for consistency
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
   - add cross-platform API in `api.cljc`

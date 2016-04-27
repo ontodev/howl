@@ -4,7 +4,7 @@
             [howl.api :refer :all]))
 
 (def test-howl
-  "PREFIX ex: <http://ex.com/>
+  "PREFIX ex:> <http://ex.com/>
 BASE <http://foo.com/>
 # COMMENT
 LABEL ex:label: label
