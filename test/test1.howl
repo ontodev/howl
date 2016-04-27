@@ -6,6 +6,7 @@ PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX ex: <http://example.com/>
 
 LABEL rdf:type: type
+LABEL rdfs:label: label
 LABEL rdfs:comment: comment
 LABEL rdfs:subClassOf: subClassOf
 

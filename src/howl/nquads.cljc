@@ -25,19 +25,19 @@
    or throw an exception."
   [state block [type left iri right]]
   (cond
-   (re-matches #"^\w+://\S+$" iri)
-   iri
-   (string? (:base state))
-   (str (:base state) iri)
-   :else
-   (util/throw-exception
-    (util/format
-     "Could not resolve relative IRI '%s' with BASE '%s' in '%s' at line %d:\n%s"
-     iri
-     (:base state)
-     (:file-name block)
-     (:line-number block)
-     (:line block)))))
+    (re-matches #"^\w+://\S+$" iri)
+    iri
+    (string? (:base state))
+    (str (:base state) iri)
+    :else
+    (util/throw-exception
+     (util/format
+      "Could not resolve relative IRI '%s' with BASE '%s' in '%s' at line %d:\n%s"
+      iri
+      (:base state)
+      (:file-name block)
+      (:line-number block)
+      (:line block)))))
 
 (defn resolve-prefixed-name
   "Given a state map, a block map, and a PREFIXED_NAME parse vector,
@@ -269,19 +269,20 @@
     ; else
     state))
 
-(defn render-statement!
-  "Given a reducing function, a result,
-   a reference to a state map,
-   a block map, and a concrete object string.
+; TODO: This function is too imperative -- factor out the volatile.
+
+(defn render-statement
+  "Given a state map, a block map, and a concrete object string.
    mutate the state to update the :subjects key,
    and apply the reducing function to all the generated quads."
-  [xf result state block object]
+  [old-state block object]
   (let [{:keys [arrows predicate content]} block
+        state     (volatile! old-state)
         graph     (:graph @state)
         subject   (if (string/blank? arrows)
                     (-> @state :subjects first second)
                     (do
-                      (vswap! state update-in [:blank-node-count] inc)
+                      (vswap! state update-in [:blank-node-count] (fnil inc 0))
                       (str "_:b" (:blank-node-count @state))))
         predicate (iri (resolve-name @state block predicate))]
 
@@ -293,138 +294,128 @@
 
     ; Add this quad to the stack of subjects.
     (vswap! state
-            assoc
-            :subjects
-            (conj (vec (take (count arrows) (:subjects @state)))
-                  [graph subject predicate object]))
+           assoc
+           :subjects
+           (conj (vec (take (count arrows) (:subjects @state)))
+                 [graph subject predicate object]))
 
-    ; Two cases
-    (if (string/blank? arrows)
-      ; normal literal node
-      (xf result [graph subject predicate object])
-      ; annotation (maybe nested)
-      (let [[_ annotatedSource annotatedProperty annotatedTarget]
-            (get-in @state [:subjects (dec (count arrows))])]
-        (apply
-         xf
-         result
+    [@state
+     ; Two cases
+     (if (string/blank? arrows)
+       ; normal literal node
+       [[graph subject predicate object]]
+       ; annotation (maybe nested)
+       (let [[_ annotatedSource annotatedProperty annotatedTarget]
+             (get-in @state [:subjects (dec (count arrows))])]
          [[graph subject (iri rdf "type") (iri owl "Axiom")]
           [graph subject (iri owl "annotatedSource") annotatedSource]
           [graph subject (iri owl "annotatedProperty") annotatedProperty]
           [graph subject (iri owl "annotatedTarget") annotatedTarget]
-          [graph subject predicate object]])))))
+          [graph subject predicate object]]))]))
 
-(def default-state
-  {:blank-node-count 0
-   :graph nil
-   :labels {"label" (str rdfs "label")}})
+(defn render-block
+  "Given a state map and a block map,
+   return a vector
+   with an updated state map,
+   and either a sequence of N-Quad vectors to render
+   or nil if there are no new N-Quads to render."
+  [state block]
+  (try
+    (case (:block-type block)
+      :BASE_BLOCK
+      [(assoc state :base (:iri block))
+       nil]
+
+      :PREFIX_BLOCK
+      [(assoc-in state [:prefixes (:prefix block)] (:iri block))
+       nil]
+
+      :LABEL_BLOCK
+      (let [iri (resolve-name state block (:identifier block))]
+        [(assoc-in state [:labels (:label block)] iri)
+         nil])
+
+      :TYPE_BLOCK
+      (let [predicate-iri (resolve-name state block (:predicate block))]
+        [(cond
+           (:language block)
+           (assoc-in
+            state
+            [:types-language predicate-iri]
+            (:language block))
+           (:datatype block)
+           (assoc-in
+            state
+            [:types-datatype predicate-iri]
+            (resolve-name state block (:datatype block))))
+         nil])
+
+      :GRAPH_BLOCK
+      (let [graph (when (:graph block)
+                    (resolve-name state block (:graph block)))]
+        [(if graph
+           (assoc state :graph (iri graph) :subjects [[(iri graph) (iri graph)]])
+           (dissoc state :graph :subjects))
+         nil])
+
+      :SUBJECT_BLOCK
+      (let [subject (resolve-name state block (:subject block))]
+        [(assoc state :subjects [[(:graph state) (iri subject)]])
+         nil])
+
+      :LITERAL_BLOCK
+      (render-statement
+       state
+       block
+       (format-literal state block))
+
+      :LINK_BLOCK
+      (render-statement
+       state
+       block
+       (iri (resolve-name state block (:object block))))
+
+      :EXPRESSION_BLOCK
+      (let [new-state (render-expression state block (:expression block))
+            {:keys [arrows predicate content]} block
+            graph     (:graph state)
+            subject   (-> state :subjects first second)
+            predicate (iri (resolve-name state block predicate))
+            object    (:node new-state)]
+        [(-> new-state
+             (dissoc :node :quads)
+             (assoc :subjects [[graph subject predicate object]]))
+         (concat
+          [[graph subject predicate object]]
+          (:quads new-state))])
+
+      ; else
+      [state nil])
+
+    (catch #?(:clj Exception :cljs :default) e
+      (util/throw-exception
+       (util/format
+        "Error while serializing to Nquads:\n%s line %d: %s\n%s"
+        (:file-name block)
+        (:line-number block)
+        (:block block)
+        e)))))
 
 (defn render-quads
   "Given a reducing function,
    return a stateful transducer
    that takes parse maps and returns quads (vectors of strings)."
   [xf]
-  (let [state (volatile! default-state)]
+  (let [state (volatile! {})]
     (fn
       ([] (xf))
       ([result] (xf result))
       ([result block]
-       (try
-         (case (:block-type block)
-           :BASE_BLOCK
-           (do
-             (vswap! state assoc :base (:iri block))
-             result)
-
-           :PREFIX_BLOCK
-           (do
-             (vswap! state assoc-in [:prefixes (:prefix block)] (:iri block))
-             result)
-
-           :LABEL_BLOCK
-           (let [iri (resolve-name @state block (:identifier block))]
-             (vswap! state assoc-in [:labels (:label block)] iri)
-             result)
-
-           :TYPE_BLOCK
-           (let [predicate-iri (resolve-name @state block (:predicate block))]
-             (cond
-              (:language block)
-              (vswap! state
-                      assoc-in
-                      [:types-language predicate-iri]
-                      (:language block))
-              (:datatype block)
-              (vswap! state
-                      assoc-in
-                      [:types-datatype predicate-iri]
-                      (resolve-name @state block (:datatype block))))
-             result)
-
-           :GRAPH_BLOCK
-           (let [graph (when (:graph block)
-                         (resolve-name @state block (:graph block)))]
-             (if graph
-               (vswap! state
-                       assoc
-                       :graph
-                       (iri graph)
-                       :subjects
-                       [[(iri graph) (iri graph)]])
-               (vswap! state dissoc :graph :subjects))
-             result)
-
-           :SUBJECT_BLOCK
-           (let [subject (resolve-name @state block (:subject block))]
-             (vswap! state assoc :subjects [[(:graph @state) (iri subject)]])
-             result)
-
-           :LITERAL_BLOCK
-           (render-statement!
-            xf
-            result
-            state
-            block
-            (format-literal @state block))
-
-           :LINK_BLOCK
-           (render-statement!
-            xf
-            result
-            state
-            block
-            (iri (resolve-name @state block (:object block))))
-
-           :EXPRESSION_BLOCK
-           (let [new-state (render-expression @state block (:expression block))
-                 {:keys [arrows predicate content]} block
-                 graph     (:graph @state)
-                 subject   (-> @state :subjects first second)
-                 predicate (iri (resolve-name @state block predicate))
-                 object    (:node new-state)]
-             (vreset!
-              state
-              (-> new-state
-                  (dissoc :node :quads)
-                  (assoc :subjects [[graph subject predicate object]])))
-             (apply
-              xf
-              result
-              (concat
-               [[graph subject predicate object]]
-               (:quads new-state))))
-
-           ; else
-           result)
-
-         (catch #?(:clj Exception :cljs :default) e
-           (util/throw-exception
-            (util/format
-             "Error while serializing to Nquads:\n%s line %d: %s\n%s"
-             (:file-name block)
-             (:line-number block)
-             (:block block)
-             e))))))))
+       (let [[new-state quads] (render-block @state block)]
+         (vreset! state new-state)
+         (if quads
+           (apply xf result quads)
+           result))))))
 
 (defn quad-to-string
   "Given a quad as a vector, subject-predicate-object,
