@@ -21,7 +21,7 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
     LABEL rdfs:label: label
     LABEL rdfs:comment: comment
     LABEL obo:BFO_0000051: has part
-    TYPE comment: xsd:string
+    TYPE comment:> xsd:string
 
     ex:ontology
     label: Example Ontology
@@ -98,7 +98,7 @@ Features in this example:
     - set prefixes, similar to Turtle and SPARQL
 - `LABEL obo:BFO_0000051: has part`
     - like PREFIXes for single terms
-- `TYPE comment: xsd:string`
+- `TYPE comment:> xsd:string`
     - set default language tag or datatype for a predicate
 - prefixes, labels, and types
     - can occur at any point in the document
@@ -289,19 +289,19 @@ Like JSON-LD, HOWL allows you to associate a default datatype (or language tag) 
 
 This type block:
 
-    TYPE comment: xsd:string
+    TYPE comment:> xsd:string
 
 is parsed into this JSON object:
 
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "TYPE comment: xsd:string\n",
+     "block": "TYPE comment:> xsd:string\n",
      "block-type": "TYPE_BLOCK",
      "parse": ["TYPE_BLOCK"
                "TYPE"
                ["SPACES" " "]
                ["PREDICATE" ["LABEL" "comment"]]
-               ["COLON" "" ":" " "]
+               ["COLON_ARROW" "" ":>" " "]
                ["DATATYPE" ["PREFIXED_NAME" "xsd" ":" "string"]]
                ["EOL" "\n"]],
      "predicate": ["LABEL" "comment"],
@@ -638,6 +638,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 - 0.2.0-SNAPSHOT tweak grammar
   - allow comments
   - PREFIX now uses `:> `, for consistency
+  - TYPE now uses `:> `, for consistency
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
   - add cross-platform API in `api.cljc`

@@ -8,7 +8,7 @@
 BASE <http://foo.com/>
 # COMMENT
 LABEL ex:label: label
-TYPE ex:label: @en
+TYPE ex:label:> @en
 <foo>
 label: FOO
 > label: BAR
