@@ -3,10 +3,10 @@
   (:require [clojure.test :refer :all]
             [howl.api :refer :all]))
 
-(def test-howl
-  "PREFIX ex:> http://ex.com/
+(def test-howl "
+# Initial blank line
+PREFIX ex:> http://ex.com/
 BASE http://foo.com/
-# COMMENT
 LABEL ex:label: label
 TYPE ex:label:> @en
 <foo>

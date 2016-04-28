@@ -171,8 +171,9 @@ HOWL labels are defined either by `LABEL` blocks, or when an `rdfs:label` is ass
 
 HOWL is build from a sequence of "blocks". Each block is a string consisting of one line of text, followed by zero or more blank or indented lines of text. HOWL is designed for streaming, so a sequence of files is transformed into a sequence of parsed blocks. Each parsed block can be represented as a JSON object.
 
-There are ten kinds of block:
+These are all the block types:
 
+- Blank
 - Comment
 - BASE
 - PREFIX
@@ -185,7 +186,26 @@ There are ten kinds of block:
 - Expression (a statement in which the object is an OWL expression)
 
 
-### Comments
+### Blank
+
+If a HOWL stream starts with blank lines, these will be parsed as blank blocks. We keep track of this whitespace so that we can process a file and render it back with the exact formatting the user provided. Note that blank lines that don't being a stream are merged into the previous block.
+
+This blank block:
+
+        
+
+is parsed into this JSON object:
+
+    {"file-name": "example.howl",
+     "line-number": 1,
+     "block": "    \n",
+     "block-type": "BLANK_BLOCK",
+     "parse": ["BLANK_BLOCK"
+               ["EOL" "    \n"]],
+     "eol": "    \n"}
+
+
+### Comment
 
 Comment blocks do not specify any information for HOWL, but the parser does keep track of them. A comment line **must** start with '#' -- the '#' has no special meaning unless it is the first character on a line.
 
@@ -641,6 +661,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
   - PREFIX now uses `:> `, for consistency
   - TYPE now uses `:> `, for consistency
   - absolute IRIs don't have to be wrapped in angle brackets
+  - allow initial blank lines
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
   - add cross-platform API in `api.cljc`

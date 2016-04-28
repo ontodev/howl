@@ -13,12 +13,13 @@
 
 (def block-parser
   (insta/parser
-   "BLOCK = COMMENT_BLOCK /
+   "BLOCK = BLANK_BLOCK / COMMENT_BLOCK /
             BASE_BLOCK / PREFIX_BLOCK /
             LABEL_BLOCK / TYPE_BLOCK /
             GRAPH_BLOCK / SUBJECT_BLOCK /
             LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
 
+    BLANK_BLOCK      = EOL
     COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
     BASE_BLOCK       = 'BASE'   SPACES BASE EOL
     PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON_ARROW PREFIXED EOL
