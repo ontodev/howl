@@ -22,5 +22,4 @@
      {:optimizations :advanced
       :output-dir "target"
       :output-to "target/howl.js"
-      :source-map "target/howl.js.map"
       :pretty-print true}}]})
