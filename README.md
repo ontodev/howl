@@ -1,9 +1,11 @@
 [![Build Status](https://travis-ci.org/ontodev/howl.svg?branch=master)](https://travis-ci.org/ontodev/howl)
 [![Clojars Project](https://img.shields.io/clojars/v/howl.svg)](https://clojars.org/howl)
 
-# Humane OWL (HOWL) Format
+# HOWL: Humane OWL Format
 
 HOWL makes it easy for humans to read and write [RDF](http://www.w3.org/TR/rdf11-concepts/) and [OWL](http://www.w3.org/TR/owl2-overview/). Here you'll find a description of HOWL, examples, and tools for working with HOWL data.
+
+[**Try HOWL!**](http://try.humaneowl.com)
 
 This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues) is appreciated!
 
@@ -46,7 +48,9 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
     # Lines starting with '#' are just comments.
 
-See the [ontology](ontology) directory and [Makefile](Makefile) for more examples.
+For more examples, see the [demo site](http://try.humaneowl.com),
+the [ontology](ontology) directory,
+and the [Makefile](Makefile).
 
 
 ## Status
@@ -65,14 +69,18 @@ You can use another tool such as [rapper](http://librdf.org/raptor/rapper.html) 
 
 ## Installation and Usage
 
-You can install HOWL as a command-line tool (`howl`) or use it as a Clojure library:
+You can install HOWL as:
+
+1. a command-line tool (`howl`)
+2. a Clojure library
+3. a JavaScript library
 
 
-### Command Line Tool
+### 1. Command Line Tool
 
-The `howl` command-line tool requires Java (1.6+).
+The `howl` command-line tool requires Java (1.6+). On Unix (Linux, Mac OS X):
 
-1. [Download a released version of the `howl` file](https://github.com/ontodev/howl/releases), or build it yourself by following the instructions below
+1. [Download a released version of the `howl-X.Y.Z.jar` file](https://github.com/ontodev/howl/releases), or build it yourself by following the instructions below
 2. Rename the file to `howl`, put it on your PATH, and make it executable: `chmod +x howl`
 3. Run `howl` on one or more HOWL files to convert them to N-Triples:
 
@@ -82,12 +90,31 @@ howl input.howl input2.howl > output.nt
 
 Run `howl --help` for more options. The `howl` file is a JAR, so you can also run `java -jar howl`, with standard Java options.
 
+On Windows, download the JAR file and run it from the Command Prompt using Java (not tested!):
 
-### Clojure Library
+```
+java -jar howl.jar input.howl input2.howl > output.nt
+```
 
-HOWL is also available as a Clojure library. See the Clojars page for details:
+
+### 2. Clojure Library
+
+HOWL is also available as a Clojure/ClojureScript library. See the Clojars page for details:
 
 [![Clojars Project](https://img.shields.io/clojars/v/howl.svg)](https://clojars.org/howl)
+
+
+### 3. JavaScript Library
+
+1. [Download a released version of the `howl-X.Y.Z.js` file](https://github.com/ontodev/howl/releases), or build it yourself by following the instructions below
+2. Add a `<script>` tag to your HTML page: `<script src="howl.js" type="text/javascript" charset="utf-8"></script>`
+3. Call one of the [API functions](src/howl/api.cljc):
+
+```
+var your_quad_string = howl.api.convert_to_quads(your_howl_string);
+```
+
+It might also work under Node.js -- let us know!
 
 
 ## Features
@@ -647,11 +674,14 @@ comment: A -- original comment
 
 ## Build
 
-The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is required to build it.
+The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5.2+ is required to build it.
 
 - `lein uberjar` builds a standalone JAR file in `target/`
+- `lein cljsbuild once` builds a JavaScript file in `target/`
 - `lein test` runs the unit and integration tests
 - `lein run` can be used to compile and run the command-line interface during development
+
+The [Makefile](Makefile) also contains some convenient build tasks.
 
 
 ## Release History
