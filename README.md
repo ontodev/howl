@@ -51,9 +51,9 @@ See the [ontology](ontology) directory and [Makefile](Makefile) for more example
 
 ## Status
 
-The 0.1 series supports:
+The 0.2 series supports:
 
-- draft HOWL syntax
+- draft HOWL syntax (some changes from 0.1)
 - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
   `not`, `and`, `or`, `some`, `only`
 - converting HOWL to N-Triples, N-Quads, or JSON
@@ -656,7 +656,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
 
 ## Release History
 
-- 0.2.0-SNAPSHOT tweak grammar
+- 0.2.0 improve grammar
   - allow comments
   - PREFIX now uses `:> `, for consistency
   - TYPE now uses `:> `, for consistency
