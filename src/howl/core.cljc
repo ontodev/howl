@@ -20,8 +20,8 @@
             LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
 
     COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
-    BASE_BLOCK       = 'BASE'   SPACES IRI EOL
-    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON_ARROW IRI EOL
+    BASE_BLOCK       = 'BASE'   SPACES BASE EOL
+    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON_ARROW PREFIXED EOL
     LABEL_BLOCK      = 'LABEL'  SPACES IDENTIFIER COLON       LABEL EOL
     TYPE_BLOCK       = 'TYPE'   SPACES PREDICATE  COLON_ARROW (LANG | DATATYPE) EOL
     GRAPH_BLOCK      = 'GRAPH'  EOL /
@@ -53,20 +53,23 @@
     MN_LABEL = #'\\w+'
     MN_SPACE = #'\\s+'
 
-    IDENTIFIER = BLANK_NODE / PREFIXED_NAME / IRI
-    GRAPH      = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
-    SUBJECT    = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
-    PREDICATE  = PREFIXED_NAME / IRI / LABEL
-    OBJECT     = BLANK_NODE / PREFIXED_NAME / IRI / LABEL
-    DATATYPE   = PREFIXED_NAME / IRI / LABEL
+    IDENTIFIER = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI
+    BASE       = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
+    PREFIXED   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
+    GRAPH      = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
+    SUBJECT    = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
+    PREDICATE  = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
+    OBJECT     = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
+    DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     LITERAL    = #'.+(?=@(\\w|-)+)' LANG /
                  #'.+(?=\\^\\^\\S+)' '^^' DATATYPE /
                  #'(\n|.)+.+'
 
     PREFIX        = #'(\\w|-)+'
     BLANK_NODE    = '_:' #'(\\w|-)+'
-    PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s|:]+'
-    IRI           = '<' #'[^>\\s]+' '>'
+    PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:]*'
+    WRAPPED_IRI   = '<' #'[^>\\s]+' '>'
+    ABSOLUTE_IRI  = #'\\w+:/[^>\\s]+'
     LANG          = #'@(\\w|-)+'
     COLON         = #' *' ':'  #' +'
     COLON_ARROW   = #' *' ':>' #' +'
@@ -127,6 +130,13 @@
          (map (fn [r] (str (print-reason r) " (followed by end-of-string)"))))
     [""])))
 
+(defn get-iri
+  [parse]
+  (case (first parse)
+    :WRAPPED_IRI  (get parse 2)
+    :ABSOLUTE_IRI (get parse 1)
+    nil))
+
 (defn annotate-parse
   "Given a parse vector,
    return a map with the special key-value pairs
@@ -138,11 +148,11 @@
      :comment (get-in parse [2])}
 
     :BASE_BLOCK
-    {:iri (get-in parse [3 2])}
+    {:base (get-in parse [3 1])}
 
     :PREFIX_BLOCK
-    {:prefix (get-in parse [3 1])
-     :iri    (get-in parse [5 2])}
+    {:prefix   (get-in parse [3 1])
+     :prefixed (get-in parse [5 1])}
 
     :LABEL_BLOCK
     {:identifier (get-in parse [3 1])

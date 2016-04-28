@@ -13,13 +13,13 @@
     (is (= (resolve-name
             test-state
             {}
-            [:IRI "<" "http://example.com/foo" ">"])
+            [:WRAPPED_IRI "<" "http://example.com/foo" ">"])
            "http://example.com/foo")))
   (testing "relative IRI"
     (is (= (resolve-name
             test-state
             {}
-            [:IRI "<" "foo" ">"])
+            [:WRAPPED_IRI "<" "foo" ">"])
            "http://example.com/foo")))
   (testing "prefixed name"
     (is (= (resolve-name
@@ -80,7 +80,7 @@
           (render-block
            {}
            {:block-type :BASE_BLOCK
-            :iri "http://example.com/"})]
+            :base [:ABSOLUTE_IRI "http://example.com/"]})]
       (is (= state {:base "http://example.com/"}))
       (is (nil? quads))))
   (testing "PREFIX"
@@ -89,7 +89,7 @@
            {}
            {:block-type :PREFIX_BLOCK
             :prefix "ex"
-            :iri "http://example.com/"})]
+            :prefixed [:ABSOLUTE_IRI "http://example.com/"]})]
       (is (= state {:prefixes {"ex" "http://example.com/"}}))
       (is (nil? quads))))
   (testing "LABEL"
@@ -98,7 +98,7 @@
            {}
            {:block-type :LABEL_BLOCK
             :label "foo"
-            :identifier [:IRI "<" "http://example.com/foo" ">"]})]
+            :identifier [:WRAPPED_IRI "<" "http://example.com/foo" ">"]})]
       (is (= state {:labels {"foo" "http://example.com/foo"}}))
       (is (nil? quads))))
   (testing "TYPE"
@@ -106,7 +106,7 @@
           (render-block
            {}
            {:block-type :TYPE_BLOCK
-            :predicate [:IRI "<" "http://example.com/foo" ">"]
+            :predicate [:WRAPPED_IRI "<" "http://example.com/foo" ">"]
             :language "en"})]
       (is (= state {:types-language {"http://example.com/foo" "en"}}))
       (is (nil? quads))))
@@ -115,7 +115,7 @@
           (render-block
            {}
            {:block-type :GRAPH_BLOCK
-            :graph [:IRI "<" "http://example.com/foo" ">"]})]
+            :graph [:WRAPPED_IRI "<" "http://example.com/foo" ">"]})]
       (is (= state
              {:graph "<http://example.com/foo>"
               :subjects [["<http://example.com/foo>" "<http://example.com/foo>"]]}))
@@ -125,7 +125,7 @@
           (render-block
            {}
            {:block-type :SUBJECT_BLOCK
-            :subject [:IRI "<" "http://example.com/foo" ">"]})]
+            :subject [:WRAPPED_IRI "<" "http://example.com/foo" ">"]})]
       (is (= state {:subjects [[nil "<http://example.com/foo>"]]}))
       (is (nil? quads))))
   (testing "Literal"
@@ -133,7 +133,7 @@
           (render-block
            {:subjects [[nil "<http://example.com/foo>"]]}
            {:block-type :LITERAL_BLOCK
-            :predicate [:IRI "<" "http://example.com/foo" ">"]
+            :predicate [:WRAPPED_IRI "<" "http://example.com/foo" ">"]
             :content "FOO"})]
       (is (= state
              {:subjects
@@ -145,8 +145,8 @@
           (render-block
            {:subjects [[nil "<http://example.com/foo>"]]}
            {:block-type :LINK_BLOCK
-            :predicate [:IRI "<" "http://example.com/foo" ">"]
-            :object [:IRI "<" "http://example.com/bar" ">"]})]
+            :predicate [:WRAPPED_IRI "<" "http://example.com/foo" ">"]
+            :object [:WRAPPED_IRI "<" "http://example.com/bar" ">"]})]
       (is (= state
              {:subjects
               [[nil
@@ -168,7 +168,7 @@
               "<http://example.com/bar>"]]}
            {:block-type :LITERAL_BLOCK
             :arrows ">"
-            :predicate [:IRI "<" "http://example.com/foo" ">"]
+            :predicate [:WRAPPED_IRI "<" "http://example.com/foo" ">"]
             :content "FOO"})]
       (is (= state
              {:blank-node-count 1

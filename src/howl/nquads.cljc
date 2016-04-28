@@ -77,7 +77,9 @@
    or throw an exception."
   [state block name]
   (case (first name)
-    :IRI
+    :ABSOLUTE_IRI
+    (second name)
+    :WRAPPED_IRI
     (resolve-iri state block name)
     :PREFIXED_NAME
     (resolve-prefixed-name state block name)
@@ -323,12 +325,14 @@
   (try
     (case (:block-type block)
       :BASE_BLOCK
-      [(assoc state :base (:iri block))
-       nil]
+      (let [iri (resolve-name state block (:base block))]
+       [(assoc state :base iri)
+        nil])
 
       :PREFIX_BLOCK
-      [(assoc-in state [:prefixes (:prefix block)] (:iri block))
-       nil]
+      (let [iri (resolve-name state block (:prefixed block))]
+       [(assoc-in state [:prefixes (:prefix block)] iri)
+        nil])
 
       :LABEL_BLOCK
       (let [iri (resolve-name state block (:identifier block))]

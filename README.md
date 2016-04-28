@@ -10,12 +10,12 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
 ## Example
 
-    PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX xsd:> <http://www.w4.org/2001/XMLSchema#>
-    PREFIX owl:> <http://www.w3.org/2002/07/owl#>
-    PREFIX obo:> <http://purl.obolibrary.org/obo/>
-    PREFIX ex:> <http://example.com/>
+    PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
+    PREFIX rdfs:> http://www.w3.org/2000/01/rdf-schema#
+    PREFIX xsd:> http://www.w4.org/2001/XMLSchema#
+    PREFIX owl:> http://www.w3.org/2002/07/owl#
+    PREFIX obo:> http://purl.obolibrary.org/obo/
+    PREFIX ex:> http://example.com/
 
     LABEL rdf:type: type
     LABEL rdfs:label: label
@@ -94,7 +94,7 @@ HOWL is also available as a Clojure library. See the Clojars page for details:
 
 Features in this example:
 
-- `PREFIX ex:> <http://example.com/>`
+- `PREFIX ex:> http://example.com/`
     - set prefixes, similar to Turtle and SPARQL
 - `LABEL obo:BFO_0000051: has part`
     - like PREFIXes for single terms
@@ -214,20 +214,20 @@ Base blocks set the current base IRI for resolving relative IRIs. Multiple base 
 
 This prefix block:
 
-    BASE <http://example.com/>
+    BASE http://example.com/
 
 is parsed into this JSON object:
 
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "BASE <http://example.com/>\n",
+     "block": "BASE http://example.com/\n",
      "block-type": "BASE_BLOCK",
      "parse": ["BASE_BLOCK"
                "BASE"
                ["SPACES" " "]
-               ["IRI" "<" "http://example.com/" ">"]
+               ["BASE" ["ABSOLUTE_IRI" "http://example.com/"]]
                ["EOL" "\n"]],
-     "iri": "http://example.com/",
+     "base": ["ABSOLUTE_IRI" "http://example.com/"],
      "eol": "\n"}
 
 
@@ -237,23 +237,24 @@ Prefix blocks are identical to SPARQL prefix lines.
 
 This prefix block:
 
-    PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
 
 is parsed into this JSON object:
 
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
+     "block": "PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#\n",
      "block-type": "PREFIX_BLOCK",
      "parse": ["PREFIX_BLOCK"
                "PREFIX"
                ["SPACES" " "]
                ["PREFIX" "rdf"]
                ["COLON_ARROW" "" ":>" " "]
-               ["IRI" "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]
+               ["PREFIXED"
+                ["ABSOLUTE_IRI" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"]]
                ["EOL" "\n"]],
      "prefix": "rdf",
-     "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     "prefixed": ["ABSOLUTE_IRI" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"],
      "eol": "\n"}
 
 
@@ -405,9 +406,9 @@ is parsed into this JSON object:
 So these HOWL blocks:
 
 ```
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
-PREFIX ex: <http://example.com>
+PREFIX rdfs:> http://www.w3.org/2000/01/rdf-schema#
+PREFIX xsd:> http://www.w4.org/2001/XMLSchema#
+PREFIX ex:> http://example.com
 LABEL rdfs:comment: comment
 GRAPH ex:graph
 ex:subject
@@ -452,9 +453,9 @@ is parsed into this JSON object:
 So these HOWL blocks:
 
 ```
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX ex: <http://example.com>
+PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
+PREFIX owl:> http://www.w3.org/2002/07/owl#
+PREFIX ex:> http://example.com
 GRAPH ex:graph
 ex:subject
 rdf:type:> owl:Class
@@ -511,9 +512,9 @@ is parsed into this JSON object:
 So these HOWL blocks:
 
 ```
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX ex: <http://example.com>
+PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
+PREFIX owl:> http://www.w3.org/2002/07/owl#
+PREFIX ex:> http://example.com
 GRAPH ex:graph
 ex:subject
 owl:subClassOf:>> 'has part' some foo
@@ -569,9 +570,9 @@ is parsed into this JSON object:
 So these HOWL blocks:
 
 ```
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
-PREFIX ex: <http://example.com>
+PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
+PREFIX owl:> http://www.w3.org/2002/07/owl#
+PREFIX ex:> http://example.com
 LABEL rdfs:comment: comment
 GRAPH ex:graph
 ex:subject
@@ -639,6 +640,7 @@ The `howl` tool is written in Clojure. [Leiningen](http://leiningen.org) 2.5+ is
   - allow comments
   - PREFIX now uses `:> `, for consistency
   - TYPE now uses `:> `, for consistency
+  - absolute IRIs don't have to be wrapped in angle brackets
 - 0.1.1
   - add cross-platform support: Clojure and ClojureScript
   - add cross-platform API in `api.cljc`
