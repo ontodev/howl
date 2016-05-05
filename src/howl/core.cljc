@@ -257,3 +257,37 @@
              (if current-unit
                (xf result [file-name current-line current-unit])
                result))))))))
+
+(defn render-name
+  "Given the parse vector for a name
+   (IRI, blank node, prefixed name, or label)
+   return that name as a printable HOWL string."
+  [name]
+  (apply str (rest name)))
+
+(defn render-block
+  "Given a block, return a printable HOWL string."
+  [block]
+  (case (:block-type block)
+    :GRAPH_BLOCK
+    (if (:graph block)
+      (str "\nGRAPH " (render-name (:graph block)))
+      "\nGRAPH")
+
+    :SUBJECT_BLOCK
+    (str "\n" (render-name (:subject block)))
+
+    :LITERAL_BLOCK
+    (str (:arrows block)
+         (render-name (:predicate block))
+         ": "
+         (:content block))
+
+    :LINK_BLOCK
+    (str (:arrows block)
+         (render-name (:predicate block))
+         ":> "
+         (render-name (:object block)))
+
+    ;else
+    (str block)))

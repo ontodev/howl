@@ -1,6 +1,7 @@
 (ns howl.nquads
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
+            [edn-ld.core :as edn-ld]
             [howl.util :as util]
             [howl.core :as core]))
 
@@ -96,16 +97,16 @@
 
 (defn resolve-name
   "Given a state map, a block map, and a parse vector,
-   resolve the name to an absolute IRI,
+   resolve the name to an absolute IRI or blank node,
    check the result and return it,
    or throw an exception."
   [state block name]
   (let [iri (resolve-absolute state block name)]
-    (if (re-matches #"^\w+://\S+$" iri)
+    (if (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri)
       iri
       (util/throw-exception
        (util/format
-        "Resolved IRI '%s' is not absolute in '%s' at line %d:\n%s"
+        "Resolved IRI '%s' is not absolute or blank in '%s' at line %d:\n%s"
         iri
         (:file-name block)
         (:line-number block)
@@ -436,3 +437,210 @@
    (if g
      (string/join " " [s p o g "."])
      (string/join " " [s p o "."]))))
+
+(defn get-name
+  "Given a state map and an IRI string,
+   return the best name:
+   label, blank node, prefixed name, wrapped (relative) iri, or absolute IRI."
+  [state iri]
+  (cond
+   (get-in state [:reverse-labels iri])
+   [:LABEL (get-in state [:reverse-labels iri])]
+
+   ; TODO: prefixed name
+
+   (and (:base state)
+        (.startsWith iri (:base state)))
+   [:WRAPPED_IRI "<" (subs iri (count (:base state))) ">"]
+
+   :else
+   [:ABSOLUTE_IRI iri]))
+
+(defn render-statement-2
+  "Given a state map, an arrow string (for depth),
+   a predicate IRI, and an object,
+   return a HOWL statement block map."
+  [state arrows predicate-iri object]
+  (merge
+   {:predicate (get-name state predicate-iri)
+    :arrows
+    (if (string/blank? arrows)
+      arrows
+      (str arrows " "))}
+   (cond
+    (map? object)
+    {:block-type :LITERAL_BLOCK
+     :content (:value object)}
+    :else
+    {:block-type :LINK_BLOCK
+     :object (get-name state object)})))
+
+(declare render-predicates)
+
+(defn render-statements
+  "Given a state map, an arrow string (for depth),
+   a predicate IRI, and an object map,
+   return a sequence of HOWL statement block maps."
+  [state arrows predicate-iri object-map]
+  (concat
+   [(render-statement-2 state arrows predicate-iri (first object-map))]
+   (render-predicates state (str arrows ">") (second object-map))))
+
+(defn render-predicate
+  "Given a state map, an arrow string (for depth),
+   a predicate IRI, and a sequence of object maps,
+   return a sequence of HOWL statement block maps."
+  [state arrows predicate-iri object-list]
+  (mapcat (partial render-statements state arrows predicate-iri) object-list))
+
+(defn render-predicates
+  "Given a state map, an arrow string (for depth), and a predicate map,
+   return a sequence of HOWL statement block maps."
+  [state arrows predicate-map]
+  (->> predicate-map
+       keys
+       sort
+       (mapcat #(render-predicate state arrows % (get predicate-map %)))))
+
+(defn render-subject
+  "Given a state map, a subject IRI, and a predicate map for that subject,
+   return a sequence of HOWL block maps."
+  [state subject-iri predicate-map]
+  (concat
+   [{:block-type :SUBJECT_BLOCK
+     :subject (get-name state subject-iri)}]
+   (render-predicates state "" predicate-map)))
+
+(defn get-annotation-deps
+  "Given a subject map,
+   return a map from OWL annotation IRIs to their annotatedSource IRIs."
+  [subject-map]
+  (->> subject-map
+       keys
+       (filter #(get-in subject-map [% (str rdf "type") (str owl "Axiom")]))
+       (filter #(get-in subject-map [% (str owl "annotatedSource")]))
+       (filter #(get-in subject-map [% (str owl "annotatedProperty")]))
+       (filter #(get-in subject-map [% (str owl "annotatedTarget")]))
+       (map (juxt identity #(ffirst (get-in subject-map [% (str owl "annotatedSource")]))))
+       (into {})))
+
+(defn get-annotation-nodes
+  "Given a subject map,
+   return a map from OWL annotation IRIs to their annotatedSource IRIs."
+  [subject-map]
+  (->> subject-map
+       keys
+       (filter #(get-in subject-map [% (str rdf "type") (str owl "Axiom")]))
+       (filter #(get-in subject-map [% (str owl "annotatedSource")]))
+       (filter #(get-in subject-map [% (str owl "annotatedProperty")]))
+       (filter #(get-in subject-map [% (str owl "annotatedTarget")]))))
+
+(defn render-annotation
+  "Given a subject map and the IRI of an OWL annotation,
+   return an updated subject map with the OWL annotation
+   'folded in' to the object map of the appropriate annotatedSource."
+  [subject-map node]
+  (assoc-in
+   subject-map
+   [(ffirst (get-in subject-map [node (str owl "annotatedSource")]))
+    (ffirst (get-in subject-map [node (str owl "annotatedProperty")]))
+    (ffirst (get-in subject-map [node (str owl "annotatedTarget")]))]
+   (dissoc
+    (get subject-map node)
+    (str rdf "type")
+    (str owl "annotatedSource")
+    (str owl "annotatedProperty")
+    (str owl "annotatedTarget"))))
+
+(defn render-subjects
+  "Given a state map and a subject map,
+   return a sequnce of HOWL block maps for the subjects."
+  [state subject-map]
+  (let [;annotation-deps (get-annotation-deps subject-map)
+        ;depth ()
+        ;new-subject-map
+        ;(->> subject-map
+        ;     get-annotation-nodes
+        ;     (reduce render-annotation subject-map))
+        ]
+    ;(println "STATE" new-subject-map)
+    (->> ;new-subject-map
+         subject-map
+         keys
+         ;(remove #(.startsWith % "_:")) ; TODO!
+         sort
+         (mapcat #(render-subject
+                   state
+                   %
+                   ;(get new-subject-map %)
+                   (get subject-map %))))))
+
+(def arq-default-graph
+ "urn:x-arq:DefaultGraphNode")
+
+(defn render-named-graph
+  "Given a state map, a named graph IRI, and the subject map for that named graph,
+   return a sequence of HOWL block maps for that named graph."
+  [state graph-iri subject-map]
+  (concat
+   [{:block-type :GRAPH_BLOCK
+     :graph (get-name state graph-iri)}]
+   (render-predicates state "" (get subject-map graph-iri))
+   (render-subjects state (dissoc subject-map graph-iri))))
+
+(defn render-graphs
+  "Given a state and a graph map,
+   return a sequence of HOWL block maps for those graphs."
+  [state graph-map]
+  (concat
+   (render-subjects state (get graph-map arq-default-graph))
+   (->> (dissoc graph-map arq-default-graph)
+        keys
+        sort
+        (mapcat #(render-named-graph state % (get graph-map %))))))
+
+(defn graphify
+  "Given a sequence of Quads, return a GraphMap."
+  [quads]
+  (reduce
+   (fn [coll [graph subject predicate object datatype lang]]
+     (assoc-in
+      coll
+      [graph
+       subject
+       predicate
+       (if datatype
+         (edn-ld/literal object datatype lang)
+         object)]
+      {}))
+   nil
+   quads))
+
+(defn triplify
+  "Given a sequence of Triples, return a SubjectMap."
+  [triples]
+  (reduce
+   (fn [coll [subject predicate object datatype lang]]
+     (assoc-in
+      coll
+      [subject
+       predicate
+       (if datatype
+         (edn-ld/literal object datatype lang)
+         object)]
+      {}))
+   nil
+   triples))
+
+(defn quads-to-howl
+  "Given a state map and a sequence of quads,
+   return a sequence of HOWL block maps."
+  [state quads]
+  (render-graphs state (graphify quads)))
+
+(defn triples-to-howl
+  "Given a state map and a sequence of triples,
+   return a sequence of HOWL block maps."
+  [state quads]
+  (render-subjects state (triplify quads)))
+

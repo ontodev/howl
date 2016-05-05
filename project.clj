@@ -1,4 +1,4 @@
-(def project-version "0.2.0")
+(def project-version "0.2.1-SNAPSHOT")
 
 (defproject howl project-version
   :description "Tools for processing HOWL format"
@@ -9,7 +9,8 @@
                  [org.clojure/clojurescript "1.8.40"]
                  [com.lucasbradstreet/instaparse-cljs "1.4.1.1"]
                  [org.clojure/tools.cli "0.3.3"]
-                 [org.clojure/data.json "0.2.6"]]
+                 [org.clojure/data.json "0.2.6"]
+                 [edn-ld "0.2.2"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]]
   :main howl.cli

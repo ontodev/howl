@@ -3,13 +3,19 @@
             [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.tools.cli :refer [parse-opts]]
+            [edn-ld.jena]
             [howl.core :as core]
             [howl.nquads :as nq])
   (:gen-class))
 
-(defn parse-file
-  "Given a file name,
-   return a lazy sequence of parse results."
+(defn exit
+  [status msg]
+  (println msg)
+  (System/exit status))
+
+(defn parse-howl-file
+  "Given the name of a HOWL file,
+   return a lazy sequence of HOWL block maps."
   [file-name]
   (with-open [reader (io/reader file-name)]
     (transduce
@@ -19,11 +25,45 @@
      conj
      (line-seq reader))))
 
+(defn parse-rdf-file
+  "Given the name of a file that Apache Jena can read,
+   and return a sequence of HOWL block maps."
+  [file-name]
+  (let [[prefixes quads] (edn-ld.jena/read-quads file-name)]
+    (if (seq quads)
+      (nq/quads-to-howl {} quads)
+      (let [[prefixes triples] (edn-ld.jena/read-triples file-name)]
+        (if (seq triples)
+          (nq/triples-to-howl {} triples)
+          (exit 1 (str "Could not find quads or triples in file: " file-name)))))))
+
+(defn parse-file
+  "Given a file name,
+   return a lazy sequence of HOWL block maps."
+  [file-name]
+  (cond
+   (.endsWith file-name "howl")
+   (parse-howl-file file-name)
+
+   ; TODO: more formats
+
+   :else
+   (parse-rdf-file file-name)))
+
 (defn parse-files
   "Given a sequence of file names,
    return a lazy sequence of parse results."
   [& file-names]
   (mapcat parse-file file-names))
+
+
+(defn print-howl
+  "Given a sequence of file names, print HOWL."
+  [file-names]
+  (->> (apply parse-files file-names)
+       (map core/render-block)
+       (map println)
+       doall))
 
 (defn print-parses
   "Given a sequence of file names,
@@ -59,7 +99,8 @@
 (def format-synonyms
   {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
    "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
-   "parses"   ["parse"]})
+   "parses"   ["parse"]
+   "howl"     ["howl"]})
 
 (def format-map
   (->> format-synonyms
@@ -103,11 +144,6 @@
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
 
-(defn exit
-  [status msg]
-  (println msg)
-  (System/exit status))
-
 (defn -main
   [& args]
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
@@ -119,7 +155,8 @@
       errors (exit 1 (error-msg errors)))
     ;; Execute program with options
     (case (-> options (get :output "ntriples") string/lower-case format-map)
-      "ntriples" (print-triples arguments)
-      "nquads"   (print-quads arguments)
+      "howl"     (print-howl arguments)
       "parses"   (print-parses arguments)
+      "nquads"   (print-quads arguments)
+      "ntriples" (print-triples arguments)
       (exit 1 (usage summary)))))
