@@ -42,7 +42,8 @@ label: BAZ")
 (deftest test-render-howl
   (testing "Render N-Quads to HOWL"
     (is (= (->> test-quads
-                (nq/quads-to-howl test-state)
+                nq/quads-to-howl
+                (map (partial core/rename test-state))
                 (map core/render-block)
                 (string/join "\n"))
            test-howl-content))))

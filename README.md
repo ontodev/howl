@@ -686,6 +686,8 @@ The [Makefile](Makefile) also contains some convenient build tasks.
 
 ## Release History
 
+- 0.2.1-SNAPSHOT
+  - add `--context` command-line option
 - 0.2.0 improve grammar
   - allow comments
   - PREFIX now uses `:> `, for consistency

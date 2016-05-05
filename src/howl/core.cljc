@@ -258,6 +258,90 @@
                (xf result [file-name current-line current-unit])
                result))))))))
 
+(defn reverse-labels
+  "Given a state map,
+   return it with a :reverse-labels map added
+   that maps from IRI to label."
+  [state]
+  (->> state
+       :labels
+       (map (juxt second first))
+       (into {})
+       (assoc state :reverse-labels)))
+
+(defn prefix-sequence
+  "Given a state map,
+   return it with a :prefix-sequence vector added
+   where each entry is a [prefix-iri prefix] pair,
+   sorted from longest prefix-iri to shortest."
+  [state]
+  (->> state
+       :prefixes
+       (map (juxt second first))
+       (sort-by (comp count first) >)
+       (assoc state :prefix-sequence)))
+
+(defn find-prefix
+  "Given a state map with a :prefix-sequence vector and an IRI string,
+   return the first [prefix-iri prefix] pair
+   for which the given iri starts with the prefix-iri."
+  [state iri]
+  (->> state
+       :prefix-sequence
+       (filter
+        (fn [[prefix-iri prefix]]
+          (.startsWith iri prefix-iri)))
+       first))
+
+(defn get-name
+  "Given a state map and an IRI string,
+   return the best name:
+   label, blank node, prefixed name, wrapped (relative) iri, or absolute IRI."
+  [state iri]
+  (cond
+   (get-in state [:reverse-labels iri])
+   [:LABEL (get-in state [:reverse-labels iri])]
+
+   (find-prefix state iri)
+   (let [[prefix-iri prefix] (find-prefix state iri)]
+     [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
+
+   (and (:base state)
+        (.startsWith iri (:base state)))
+   [:WRAPPED_IRI "<" (subs iri (count (:base state))) ">"]
+
+   :else
+   [:ABSOLUTE_IRI iri]))
+
+(defn rename
+  "Given a state map and a block,
+   return the block with nicer names."
+  [state block]
+  (case (:block-type block)
+    :GRAPH_BLOCK
+    (if (:graph block)
+      (assoc
+       block
+       :graph (get-name state (:graph block)))
+      block)
+
+    :SUBJECT_BLOCK
+    (assoc block :subject (get-name state (:subject block)))
+
+    :LITERAL_BLOCK
+    (assoc block :predicate (get-name state (:predicate block)))
+
+    :LINK_BLOCK
+    (assoc
+     block
+     :predicate
+     (get-name state (:predicate block))
+     :object
+     (get-name state (:object block)))
+
+    ;else
+    block))
+
 (defn render-name
   "Given the parse vector for a name
    (IRI, blank node, prefixed name, or label)

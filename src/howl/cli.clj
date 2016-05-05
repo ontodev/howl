@@ -31,10 +31,10 @@
   [file-name]
   (let [[prefixes quads] (edn-ld.jena/read-quads file-name)]
     (if (seq quads)
-      (nq/quads-to-howl {} quads)
+      (nq/quads-to-howl quads)
       (let [[prefixes triples] (edn-ld.jena/read-triples file-name)]
         (if (seq triples)
-          (nq/triples-to-howl {} triples)
+          (nq/triples-to-howl triples)
           (exit 1 (str "Could not find quads or triples in file: " file-name)))))))
 
 (defn parse-file
@@ -56,14 +56,24 @@
   [& file-names]
   (mapcat parse-file file-names))
 
+(defn get-context
+  "Given an option map,
+   return a state map build from the --context entries."
+  [{:keys [context]}]
+  (->> (apply parse-files context)
+       (reduce (comp first nq/render-block) {})
+       core/reverse-labels
+       core/prefix-sequence))
 
 (defn print-howl
   "Given a sequence of file names, print HOWL."
-  [file-names]
-  (->> (apply parse-files file-names)
-       (map core/render-block)
-       (map println)
-       doall))
+  [options file-names]
+  (let [state (get-context options)]
+    (->> (apply parse-files file-names)
+         (map (partial core/rename state))
+         (map core/render-block)
+         (map println)
+         doall)))
 
 (defn print-parses
   "Given a sequence of file names,
@@ -116,6 +126,8 @@
 
 (def cli-options
   [["-o" "--output FORMAT" "Output format: N-Triples (default), N-Quads, parses (JSON)"]
+   ["-c" "--context FILE" "A HOWL file to use as context (not printed)"
+    :assoc-fn (fn [m k v] (update-in m [k] (fnil conj []) v))]
    ["-V" "--version"]
    ["-h" "--help"]])
 
@@ -155,7 +167,7 @@
       errors (exit 1 (error-msg errors)))
     ;; Execute program with options
     (case (-> options (get :output "ntriples") string/lower-case format-map)
-      "howl"     (print-howl arguments)
+      "howl"     (print-howl options arguments)
       "parses"   (print-parses arguments)
       "nquads"   (print-quads arguments)
       "ntriples" (print-triples arguments)
