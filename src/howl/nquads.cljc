@@ -506,24 +506,13 @@
        (map (juxt identity #(ffirst (get-in subject-map [% (str owl "annotatedSource")]))))
        (into {})))
 
-(defn get-annotation-nodes
-  "Given a subject map,
-   return a map from OWL annotation IRIs to their annotatedSource IRIs."
-  [subject-map]
-  (->> subject-map
-       keys
-       (filter #(get-in subject-map [% (str rdf "type") (str owl "Axiom")]))
-       (filter #(get-in subject-map [% (str owl "annotatedSource")]))
-       (filter #(get-in subject-map [% (str owl "annotatedProperty")]))
-       (filter #(get-in subject-map [% (str owl "annotatedTarget")]))))
-
 (defn render-annotation
   "Given a subject map and the IRI of an OWL annotation,
    return an updated subject map with the OWL annotation
    'folded in' to the object map of the appropriate annotatedSource."
   [subject-map node]
   (assoc-in
-   subject-map
+   (dissoc subject-map node)
    [(ffirst (get-in subject-map [node (str owl "annotatedSource")]))
     (ffirst (get-in subject-map [node (str owl "annotatedProperty")]))
     (ffirst (get-in subject-map [node (str owl "annotatedTarget")]))]
@@ -534,26 +523,33 @@
     (str owl "annotatedProperty")
     (str owl "annotatedTarget"))))
 
+(defn depth
+  "Given a map from node to node, and target node,
+   return the 'depth' of the target in the collection,
+   i.e. the number of steps before no further ancestor can be found."
+  [coll node]
+  (loop [node node
+         depth 0]
+    (if (get coll node)
+      (recur (get coll node) (inc depth))
+      depth)))
+
 (defn render-subjects
   "Given a subject map,
    return a sequnce of HOWL block maps for the subjects."
   [subject-map]
-  (let [;annotation-deps (get-annotation-deps subject-map)
-        ;depth ()
-        ;new-subject-map
-        ;(->> subject-map
-        ;     get-annotation-nodes
-        ;     (reduce render-annotation subject-map))
-        ]
-    (->> ;new-subject-map
-         subject-map
+  (let [annotation-deps (get-annotation-deps subject-map)
+        new-subject-map
+        (->> annotation-deps
+             keys
+             (sort-by (partial depth annotation-deps) >)
+             (reduce
+              render-annotation
+              subject-map))]
+    (->> new-subject-map
          keys
-         ;(remove #(.startsWith % "_:")) ; TODO!
-         sort
-         (mapcat #(render-subject
-                   %
-                   ;(get new-subject-map %)
-                   (get subject-map %))))))
+         sort ; TODO: better predicate sorting
+         (mapcat #(render-subject % (get new-subject-map %))))))
 
 (def arq-default-graph
  "urn:x-arq:DefaultGraphNode")
