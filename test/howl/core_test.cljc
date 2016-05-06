@@ -3,6 +3,27 @@
   (:require [clojure.test :refer :all]
             [howl.core :refer :all]))
 
+(def test-merge "
+A
+  indented
+   
+  (that was a blank line)
+
+B
+C
+  ")
+
+(deftest test-merge-lines
+  (testing "merge lines"
+    (is (= (transduce
+            (merge-lines "test")
+            conj
+            (line-seq (java.io.BufferedReader. (java.io.StringReader. test-merge))))
+           [["test" 1 ""]
+            ["test" 2 "A\nindented\n \n(that was a blank line)\n"]
+            ["test" 7 "B"]
+            ["test" 8 "C\n"]]))))
+
 (def test-state
   {:base "http://example.com/"
    :prefixes {"ex" "http://example.com/"}

@@ -4,12 +4,79 @@
             [instaparse.core :as insta]
             [howl.util :as util]))
 
+;; The first step when processing HOWL data
+;; is to merge blank and indented lines into 'units'
+;; that start at the beginning of the line.
+;; We define a reducing function that takes a state and a line
+;; and returns the pair of the update state and the merged line vector.
+;; Then we define a transducer that applies this reducing function,
+;; returning only the sequence of merged line vectors.
+
+(defn get-merged
+  "Given a line merging state, return the current merged line
+   as a vector [file-name line-number merged-line]. "
+  [{:keys [file-name number unit] :as state}]
+  [file-name (or number 1) unit])
+
+(defn merge-line
+  "Given a merging state and a line
+   return the pair of an updated state
+   and a vector [file-name line-number merged-line]
+   (or nil if we're in the middle of a merge)."
+  [state line]
+  (cond
+   (.startsWith line "  ")
+   [(-> state
+        (update :length (fnil inc 0))
+        (assoc :unit (str (:unit state)
+                          (when (:unit state) "\n")
+                          (subs line 2))))
+    nil]
+
+   (string/blank? line)
+   [(-> state
+        (update :length (fnil inc 0))
+        (assoc :unit (str (:unit state)
+                          (when (:unit state) "\n")
+                          line)))
+    nil]
+
+   :else
+   [(-> state
+        (assoc :length 1)
+        (assoc :number (+ (get state :number 1) (get state :length 1)))
+        (assoc :unit line))
+    (when (:unit state) (get-merged state))]))
+
+(defn merge-lines
+  "Given a file name,
+   return a stateful transducer
+   that takes a sequence of lines,
+   merges indented and blank lines,
+   then emits a sequence of vectors:
+   [file-name line-number merged-line]"
+  [file-name]
+  (fn [xf]
+    (let [state (volatile! {:file-name file-name})]
+      (fn
+        ([] (xf))
+        ([result] (xf result (get-merged @state)))
+        ([result line]
+         (let [[new-state merged] (merge-line @state line)]
+            (vreset! state new-state)
+            (if merged
+              (xf result merged)
+              result)))))))
+
+
 ;; Parsing works like this:
 ;;
 ;; 1. loop over files
 ;; 2. loop over lines in file
 ;; 3. merge indented lines into a single "unit"
 ;; 4. parse the unit and emit a map
+;;
+;; The actual parsing is handled by Instaparse.
 
 (def block-parser
   (insta/parser
@@ -131,12 +198,10 @@
          (map (fn [r] (str (print-reason r) " (followed by end-of-string)"))))
     [""])))
 
-(defn get-iri
-  [parse]
-  (case (first parse)
-    :WRAPPED_IRI  (get parse 2)
-    :ABSOLUTE_IRI (get parse 1)
-    nil))
+
+;; Once we have the parse vector,
+;; we process that into a nicer "block map".
+
 
 (defn annotate-parse
   "Given a parse vector,
@@ -219,44 +284,13 @@
   ([file-name line-number block]
    (parse-block [file-name line-number block])))
 
-(defn merge-lines
-  "Given a file name,
-   return a stateful transducer
-   that takes a sequence of lines,
-   merges indented and blank lines,
-   then emits a sequence of vectors:
-   [file-name line-number merged-line]"
-  [file-name]
-  (fn [xf]
-    (let [number (volatile! 0)
-          length (volatile! 1)
-          unit   (volatile! nil)]
-      (fn
-        ([] (xf))
-        ([result] (xf result [file-name @number @unit]))
-        ([result line]
-         (cond
-           (.startsWith line "  ")
-           (do
-             (vswap! length inc)
-             (vreset! unit (str @unit "\n" (subs line 2)))
-             result)
 
-           (string/blank? line)
-           (do
-             (vswap! length inc)
-             (vreset! unit (str @unit "\n" line))
-             result)
-
-           :else
-           (let [current-line @number
-                 current-unit @unit]
-             (vreset! number (+ current-line @length))
-             (vreset! length 1)
-             (vreset! unit line)
-             (if current-unit
-               (xf result [file-name current-line current-unit])
-               result))))))))
+;; The next step might be to resolve all names to absolute IRIs,
+;; which is what we want to do when converting HOWL to N-Quads.
+;; We define a reducing function from state and block to [state block] pairs,
+;; then define a transducer that just returns the blocks.
+;; These keep track of the labels and prefixes as they are defined.
+;; TODO
 
 (defn reverse-labels
   "Given a state map,
@@ -385,6 +419,13 @@
         (:file-name block)
         (:line-number block)
         (or (:line block) block))))))
+
+
+;; We can also change absolute IRIs back into names,
+;; which is what we want to do when converting N-Quads to HOWL.
+;; Again we define a reducing function that tracks the state,
+;; and a transducer that just returns the sequence of blocks.
+
 
 (defn get-name
   "Given a state map and an IRI string,
