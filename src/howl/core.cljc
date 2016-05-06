@@ -339,6 +339,21 @@
      :object
      (get-name state (:object block)))
 
+    :EXPRESSION_BLOCK
+    (assoc
+     block
+     :predicate
+     (get-name state (:predicate block))
+     :expression
+     (clojure.walk/postwalk
+      (fn [x]
+        (let [label (get-in state [:reverse-labels x])]
+          (cond
+           (and (string? label) (re-find #"\s" label)) (str "'" label "'")
+           label label
+           :else x)))
+      (:expression block)))
+
     ;else
     block))
 
@@ -372,6 +387,19 @@
          (render-name (:predicate block))
          ":> "
          (render-name (:object block)))
+
+    :EXPRESSION_BLOCK
+    (str (:arrows block)
+         (render-name (:predicate block))
+         ":>> "
+         (->> block
+              :expression
+              (#(if (and (= "(" (second %)) (= ")" (last %)))
+                  (concat [(first %)] (drop 2 (butlast %)) )
+                  %))
+              flatten
+              (filter string?)
+              (apply str)))
 
     ;else
     (str block)))

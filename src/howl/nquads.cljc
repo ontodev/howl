@@ -1,6 +1,7 @@
 (ns howl.nquads
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
+            [clojure.set]
             [edn-ld.core :as edn-ld]
             [howl.util :as util]
             [howl.core :as core]))
@@ -453,6 +454,9 @@
     (map? object)
     {:block-type :LITERAL_BLOCK
      :content (:value object)}
+    (vector? object)
+    {:block-type :EXPRESSION_BLOCK
+     :expression object}
     :else
     {:block-type :LINK_BLOCK
      :object object})))
@@ -493,9 +497,163 @@
      :subject subject-iri}]
    (render-predicates "" predicate-map)))
 
+
+(defn expression-deps
+  "Given a subject map,
+   return a map from OWL annotation IRIs to sets of their dependencies."
+  [subject-map]
+  (->> subject-map
+       keys
+       (filter #(get-in subject-map [% (str rdf "type") (str owl "Restriction")]))
+       (filter #(get-in subject-map [% (str owl "onProperty")]))
+       (filter #(get-in subject-map [% (str owl "someValuesFrom")]))
+       (map
+        (fn [node]
+          [node
+           #{(ffirst (get-in subject-map [node (str owl "onProperty")]))}
+           (ffirst (get-in subject-map [node (str owl "someValuesFrom")]))]))
+       (into {})))
+
+(defn get-expression
+  "Given a subject map and a node,
+   if that node exactly matches an OWL pattern,
+   return the subject map with that node's contents replaced
+   by an OWL logic vector."
+  [predicate-map]
+  (cond
+   ; some
+   (and
+    (get-in predicate-map [(str rdf "type") (str owl "Restriction")])
+    (get-in predicate-map [(str owl "onProperty")])
+    (get-in predicate-map [(str owl "someValuesFrom")])
+    (= 3 (count predicate-map)))
+   [:MN_CLASS_EXPRESSION
+    "("
+    [:MN_SOME
+     [:MN_OBJECT_PROPERTY_EXPRESSION
+      (ffirst (get predicate-map (str owl "onProperty")))]
+     [:MN_SPACE " "]
+     "some"
+     [:MN_SPACE " "]
+     (ffirst (get predicate-map (str owl "someValuesFrom")))]
+     ")"]
+
+   ; only
+   (and
+    (get-in predicate-map [(str rdf "type") (str owl "Restriction")])
+    (get-in predicate-map [(str owl "onProperty")])
+    (get-in predicate-map [(str owl "allValuesFrom")])
+    (= 3 (count predicate-map)))
+   [:MN_CLASS_EXPRESSION
+    "("
+    [:MN_ONLY
+     [:MN_OBJECT_PROPERTY_EXPRESSION
+      (ffirst (get predicate-map (str owl "onProperty")))]
+     [:MN_SPACE " "]
+     "only"
+     [:MN_SPACE " "]
+     (ffirst (get predicate-map (str owl "allValuesFrom")))]
+     ")"]
+
+   ; not
+   (and
+    (get-in predicate-map [(str rdf "type") (str owl "Class")])
+    (get-in predicate-map [(str owl "complementOf")])
+    (= 2 (count predicate-map)))
+   [:MN_CLASS_EXPRESSION
+    "("
+    [:MN_NEGATION
+     "not"
+     [:MN_SPACE " "]
+     (ffirst (get predicate-map (str owl "complementOf")))]
+    ")"]
+
+   ; and
+   (and
+    (get-in predicate-map [(str rdf "type") (str owl "Class")])
+    (get-in predicate-map [(str owl "intersectionOf")])
+    (= 2 (count predicate-map)))
+   [:MN_CLASS_EXPRESSION
+    "("
+    [:MN_CONJUNCTION
+     (ffirst (get predicate-map (str owl "intersectionOf")))]
+    ")"]
+
+   ; or
+   (and
+    (get-in predicate-map [(str rdf "type") (str owl "Class")])
+    (get-in predicate-map [(str owl "unionOf")])
+    (= 2 (count predicate-map)))
+   [:MN_CLASS_EXPRESSION
+    "("
+    [:MN_DISJUNCTION
+     (ffirst (get predicate-map (str owl "unionOf")))]
+    ")"]
+
+   ; RDF list
+   (and
+    (get-in predicate-map [(str rdf "first")])
+    (get-in predicate-map [(str rdf "rest")])
+    (= 2 (count predicate-map)))
+   (if (= (ffirst (get-in predicate-map [(str rdf "rest")]))
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")
+     [(ffirst (get-in predicate-map [(str rdf "first")]))]
+     [(ffirst (get-in predicate-map [(str rdf "first")]))
+      " AND "
+      (ffirst (get-in predicate-map [(str rdf "rest")]))])
+
+   :else
+   nil))
+
+(defn merge-expression
+  "Given a subject map and a node,
+   if the value of that node is a vector (OWL expression)
+   walk the subject map and replace the node with its value."
+  [subject-map [node value]]
+  (if (vector? value)
+    (->> subject-map
+         (map
+          (fn [[k v]]
+            [k (clojure.walk/postwalk-replace {node value} v)]))
+         (into {}))
+    subject-map))
+
+(defn process-expressions
+  [subject-map]
+  (let [expressions
+        (->> subject-map
+             (map (fn [[k v]] [k (get-expression v)]))
+             (remove (comp nil? second))
+             (into {}))]
+    (->> (apply dissoc subject-map (keys expressions))
+    (map
+     (fn [[k v]]
+       [k
+       (clojure.walk/prewalk
+        (fn [x] (get expressions x x))
+        v)]))
+    (into {}))))
+
+(defn render-expression-2
+  "Given a subject map and the IRI of an OWL expression,
+   return an updated subject map with the OWL expression
+   'folded in' to the object map of the appropriate parent."
+  [subject-map node]
+  (assoc-in
+   (dissoc subject-map node)
+   [(ffirst (get-in subject-map [node (str owl "annotatedSource")]))
+    (ffirst (get-in subject-map [node (str owl "annotatedProperty")]))
+    (ffirst (get-in subject-map [node (str owl "annotatedTarget")]))]
+   (dissoc
+    (get subject-map node)
+    (str rdf "type")
+    (str owl "annotatedSource")
+    (str owl "annotatedProperty")
+    (str owl "annotatedTarget"))))
+
 (defn get-annotation-deps
   "Given a subject map,
-   return a map from OWL annotation IRIs to their annotatedSource IRIs."
+   return a map from OWL annotation IRIs to sets of their annotatedSource IRIs."
   [subject-map]
   (->> subject-map
        keys
@@ -503,7 +661,10 @@
        (filter #(get-in subject-map [% (str owl "annotatedSource")]))
        (filter #(get-in subject-map [% (str owl "annotatedProperty")]))
        (filter #(get-in subject-map [% (str owl "annotatedTarget")]))
-       (map (juxt identity #(ffirst (get-in subject-map [% (str owl "annotatedSource")]))))
+       (map
+        (fn [node]
+          [node
+           #{(ffirst (get-in subject-map [node (str owl "annotatedSource")]))}]))
        (into {})))
 
 (defn render-annotation
@@ -528,28 +689,33 @@
    return the 'depth' of the target in the collection,
    i.e. the number of steps before no further ancestor can be found."
   [coll node]
-  (loop [node node
-         depth 0]
-    (if (get coll node)
-      (recur (get coll node) (inc depth))
-      depth)))
+  (loop [ancestry #{node}]
+    (let [expanded (apply clojure.set/union ancestry (vals (select-keys coll ancestry)))]
+      (if (= expanded ancestry)
+        (count ancestry)
+        (recur expanded)))))
+
+(defn process-annotations
+  [subject-map]
+  (let [annotation-deps (get-annotation-deps subject-map)]
+    (->> annotation-deps
+         keys
+         (sort-by (partial depth annotation-deps) >)
+         (reduce render-annotation subject-map))))
 
 (defn render-subjects
   "Given a subject map,
    return a sequnce of HOWL block maps for the subjects."
   [subject-map]
-  (let [annotation-deps (get-annotation-deps subject-map)
-        new-subject-map
-        (->> annotation-deps
-             keys
-             (sort-by (partial depth annotation-deps) >)
-             (reduce
-              render-annotation
-              subject-map))]
-    (->> new-subject-map
-         keys
-         sort ; TODO: better predicate sorting
-         (mapcat #(render-subject % (get new-subject-map %))))))
+  (let [subject-map
+        (->> subject-map
+             process-annotations
+             process-expressions
+             )]
+  (->> subject-map
+       keys
+       sort ; TODO: better predicate sorting
+       (mapcat #(render-subject % (get subject-map %))))))
 
 (def arq-default-graph
  "urn:x-arq:DefaultGraphNode")
