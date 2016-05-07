@@ -44,7 +44,15 @@ C
             "2")
            {:block {:line "1"}
             :line-number 11
-            :merging-lines ["2"]}))))
+            :merging-lines ["2"]})))
+  (testing "merge error"
+    (is (= (merge-line
+            {:line-number 10
+             :merging-lines ["1"]}
+            nil)
+           {:errors ["Line 'null' is not a string"]
+            :line-number 10
+            :merging-lines ["1"]}))))
 
 (deftest test-parse
   (testing "empty"

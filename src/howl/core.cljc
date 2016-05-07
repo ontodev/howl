@@ -52,6 +52,12 @@
    (when (or file-name line-number) ":\n")
    (or line block state)))
 
+(defn report-error
+  "Given a state and one or more error strings,
+   update the state with a vector of :errors."
+  [state & messages]
+  (update state :errors (fnil concat []) messages))
+
 
 ;; The first step when processing HOWL data
 ;; is to merge blank and indented lines into 'units'
@@ -64,9 +70,9 @@
   [state line]
   (cond
    (not (string? line))
-   (util/throw-exception
-    (util/format "Line '%s' is not a string " line)
-    (locate state))
+   (report-error
+    state
+    (util/format "Line '%s' is not a string" line))
 
    (.startsWith line "  ")
    (update state :merging-lines (fnil conj [] (subs line 2)))
@@ -191,14 +197,15 @@
 (defn parse-block
   "Given a state map,
    if it has a :block key with a :line key,
-   parse it and add a :parse key to the :block."
+   parse it and add a :parse key to the :block,
+   or report an error."
   [state]
   (if-let [line (get-in state [:block :line])]
     (let [parse (block-parser line)]
       (if (insta/failure? parse)
-        (util/throw-exception
+        (report-error
+         state
          "Parsing error"
-         (locate state)
          (instaparse-message parse))
         (assoc-in state [:block :parse] (second parse))))
     state))
