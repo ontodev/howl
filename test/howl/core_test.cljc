@@ -92,32 +92,33 @@ C
 
 (def test-state
   {:base "http://example.com/"
-   :prefixes {"ex" "http://example.com/"}
-   :labels {"foo" "http://example.com/foo"}})
+   :prefix-iri {"ex" "http://example.com/"}
+   :label-iri {"foo" "http://example.com/foo"}})
 
-(deftest test-resolve-name
+(deftest test-expand-name
   (testing "absolute IRI"
-    (is (= (resolve-name
+    (is (= (expand-name
             test-state
-            {}
+            [:ABSOLUTE_IRI "http://example.com/foo"])
+           "http://example.com/foo")))
+  (testing "wrapped absolute IRI"
+    (is (= (expand-name
+            test-state
             [:WRAPPED_IRI "<" "http://example.com/foo" ">"])
            "http://example.com/foo")))
-  (testing "relative IRI"
-    (is (= (resolve-name
+  (testing "wrapped relative IRI"
+    (is (= (expand-name
             test-state
-            {}
             [:WRAPPED_IRI "<" "foo" ">"])
            "http://example.com/foo")))
   (testing "prefixed name"
-    (is (= (resolve-name
+    (is (= (expand-name
             test-state
-            {}
             [:PREFIXED_NAME "ex" ":" "foo"])
            "http://example.com/foo")))
   (testing "label"
-    (is (= (resolve-name
+    (is (= (expand-name
             test-state
-            {}
             [:LABEL "foo"])
            "http://example.com/foo"))))
 

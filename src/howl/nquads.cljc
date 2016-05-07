@@ -202,7 +202,7 @@
     (when (and (string/blank? arrows)
                (= predicate (iri rdfs "label"))
                (core/valid-label? content))
-      (vswap! state assoc-in [:labels content] (unwrap-iri subject)))
+      (vswap! state assoc-in [:label-iri content] (unwrap-iri subject)))
 
     ; Add this quad to the stack of subjects.
     (vswap! state
@@ -241,12 +241,12 @@
 
       :PREFIX_BLOCK
       (let [iri (resolve-name state block (:prefixed block))]
-       [(assoc-in state [:prefixes (:prefix block)] iri)
+       [(assoc-in state [:prefix-iri (:prefix block)] iri)
         nil])
 
       :LABEL_BLOCK
       (let [iri (resolve-name state block (:identifier block))]
-        [(assoc-in state [:labels (:label block)] iri)
+        [(assoc-in state [:label-iri (:label block)] iri)
          nil])
 
       :TYPE_BLOCK

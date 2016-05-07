@@ -5,8 +5,8 @@
 
 (def test-state
   {:base "http://example.com/"
-   :prefixes {"ex" "http://example.com/"}
-   :labels {"foo" "http://example.com/foo"}})
+   :prefix-iri {"ex" "http://example.com/"}
+   :label-iri {"foo" "http://example.com/foo"}})
 
 (deftest test-format-literal
   (testing "plain literal"
@@ -64,7 +64,7 @@
            {:block-type :PREFIX_BLOCK
             :prefix "ex"
             :prefixed [:ABSOLUTE_IRI "http://example.com/"]})]
-      (is (= state {:prefixes {"ex" "http://example.com/"}}))
+      (is (= state {:prefix-iri {"ex" "http://example.com/"}}))
       (is (nil? quads))))
   (testing "LABEL"
     (let [[state quads]
@@ -73,7 +73,7 @@
            {:block-type :LABEL_BLOCK
             :label "foo"
             :identifier [:WRAPPED_IRI "<" "http://example.com/foo" ">"]})]
-      (is (= state {:labels {"foo" "http://example.com/foo"}}))
+      (is (= state {:label-iri {"foo" "http://example.com/foo"}}))
       (is (nil? quads))))
   (testing "TYPE"
     (let [[state quads]

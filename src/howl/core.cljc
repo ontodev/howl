@@ -289,10 +289,92 @@
 
 ;; The next step might be to resolve all names to absolute IRIs,
 ;; which is what we want to do when converting HOWL to N-Quads.
-;; We define a reducing function from state and block to [state block] pairs,
-;; then define a transducer that just returns the blocks.
-;; These keep track of the labels and prefixes as they are defined.
-;; TODO
+;; To do that, we need to track: BASE, PREFIX, LABEL, and TYPE blocks,
+;; and rdfs:label statements.
+
+(defn expand-wrapped-iri
+  "Given a state map and a WRAPPED_IRI parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state [type left iri right]]
+  (cond
+    (and (string? iri) (re-matches #"^\w+://\S+$" iri))
+    iri
+    (and (string? iri) (string? (:base state)))
+    (str (:base state) iri)
+    :else
+    (util/throw-exception
+     (util/format
+      "Could not expand wrapped IRI '%s%s%s' with BASE '%s'"
+      left iri right (:base state))
+     (locate state))))
+
+(defn expand-prefixed-name
+  "Given a state map and a PREFIXED_NAME parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state [type prefix colon local-name]]
+  (let [iri (get-in state [:prefix-iri prefix])]
+    (if (and (string? iri) (string? local-name))
+      (str iri local-name)
+      (util/throw-exception
+       (util/format
+        "Could not expand prefixed name '%s%s%s'"
+        prefix colon local-name)
+       (locate state)))))
+
+(defn expand-label
+  "Given a state map and a LABEL parse vector,
+   return an absolute IRI string,
+   or throw an exception."
+  [state [type label]]
+  (let [iri (get-in state [:label-iri label])]
+    (if (string? iri)
+      iri
+      (util/throw-exception
+       (util/format "Could not expand label '%s'" label)
+       (locate state)))))
+
+(defn expand-absolute
+  "Given a state map and a parse vector for a name,
+   return an absolute IRI string,
+   or throw an exception."
+  [state name]
+  (case (first name)
+    :ABSOLUTE_IRI
+    (second name)
+    :WRAPPED_IRI
+    (expand-wrapped-iri state name)
+    :PREFIXED_NAME
+    (expand-prefixed-name state name)
+    :LABEL
+    (expand-label state name)
+    ; else
+    (util/throw-exception
+     (util/format "Could not expand name '%s'" name)
+     (locate state))))
+
+(defn expand-name
+  "Given a state map, a block map, and a parse vector,
+   expand the name to an absolute IRI or blank node,
+   check the result and return it,
+   or throw an exception."
+  [state name]
+  (let [iri (expand-absolute state name)]
+    (if (and (string? iri)
+             (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
+      iri
+      (util/throw-exception
+       (util/format "Expanded IRI '%s' is not absolute or blank" iri)
+       (locate state)))))
+
+(defn resolve-name
+  [state block name]
+  (expand-name state name))
+
+
+
+
 
 (defn valid-label?
   "Given a string, check whether it can be a HOWL label."
@@ -316,14 +398,14 @@
 
 (defn reverse-labels
   "Given a state map,
-   return it with a :reverse-labels map added
+   return it with a :iri-label map added
    that maps from IRI to label."
   [state]
   (->> state
-       :labels
+       :label-iri
        (map (juxt second first))
        (into {})
-       (assoc state :reverse-labels)))
+       (assoc state :iri-label)))
 
 (defn prefix-sequence
   "Given a state map,
@@ -332,7 +414,7 @@
    sorted from longest prefix-iri to shortest."
   [state]
   (->> state
-       :prefixes
+       :prefix-iri
        (map (juxt second first))
        (sort-by (comp count first) >)
        (assoc state :prefix-sequence)))
@@ -349,98 +431,6 @@
           (.startsWith iri prefix-iri)))
        first))
 
-(defn resolve-iri
-  "Given a state map, a block map, and a WRAPPED_IRI parse vector,
-   return an absolute IRI string,
-   or throw an exception."
-  [state block [type left iri right]]
-  (cond
-    (re-matches #"^\w+://\S+$" iri)
-    iri
-    (string? (:base state))
-    (str (:base state) iri)
-    :else
-    (util/throw-exception
-     (util/format
-      "Could not resolve relative IRI '%s' with BASE '%s' in '%s' at line %d:\n%s"
-      iri
-      (:base state)
-      (:file-name block)
-      (:line-number block)
-      (or (:line block) block)))))
-
-(defn resolve-prefixed-name
-  "Given a state map, a block map, and a PREFIXED_NAME parse vector,
-   return an absolute IRI string,
-   or throw an exception."
-  [state block [type prefix colon local-name]]
-  (let [iri (get-in state [:prefixes prefix])]
-    (if (string? iri)
-      (str iri local-name)
-      (util/throw-exception
-       (util/format
-        "Could not resolve prefixed name '%s' in '%s' at line %d:\n%s"
-        (str prefix colon local-name)
-        (:file-name block)
-        (:line-number block)
-        (or (:line block) block))))))
-
-(defn resolve-label
-  "Given a state map, a block map, and a LABEL parse vector,
-   return an absolute IRI string,
-   or throw an exception."
-  [state block [type label]]
-  (let [iri (get-in state [:labels label])]
-    (if (string? iri)
-      iri
-      (util/throw-exception
-       (util/format
-        "Could not resolve label '%s' in '%s' at line %d:\n%s"
-        label
-        (:file-name block)
-        (:line-number block)
-        (or (:line block) block))))))
-
-(defn resolve-absolute
-  "Given a state map, a block map, and a parse vector,
-   return an absolute IRI string,
-   or throw an exception."
-  [state block name]
-  (case (first name)
-    :ABSOLUTE_IRI
-    (second name)
-    :WRAPPED_IRI
-    (resolve-iri state block name)
-    :PREFIXED_NAME
-    (resolve-prefixed-name state block name)
-    :LABEL
-    (resolve-label state block name)
-    ; else
-    (util/throw-exception
-     (util/format
-      "Could not resolve name '%s' in '%s' at line %d:\n%s"
-      name
-      (:file-name block)
-      (:line-number block)
-      (or (:line block) block)))))
-
-(defn resolve-name
-  "Given a state map, a block map, and a parse vector,
-   resolve the name to an absolute IRI or blank node,
-   check the result and return it,
-   or throw an exception."
-  [state block name]
-  (let [iri (resolve-absolute state block name)]
-    (if (and (string? iri)
-             (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
-      iri
-      (util/throw-exception
-       (util/format
-        "Resolved IRI '%s' is not absolute or blank in '%s' at line %d:\n%s"
-        iri
-        (:file-name block)
-        (:line-number block)
-        (or (:line block) block))))))
 
 
 ;; We can also change absolute IRIs back into names,
@@ -456,8 +446,8 @@
   [state block name]
   (let [iri (resolve-name state block name)]
     (cond
-     (get-in state [:reverse-labels iri])
-     [:LABEL (get-in state [:reverse-labels iri])]
+     (get-in state [:iri-label iri])
+     [:LABEL (get-in state [:iri-label iri])]
 
      (find-prefix state iri)
      (let [[prefix-iri prefix] (find-prefix state iri)]
@@ -504,7 +494,7 @@
      :expression
      (clojure.walk/postwalk
       (fn [x]
-        (let [label (get-in state [:reverse-labels x])]
+        (let [label (get-in state [:iri-label x])]
           (cond
            (and (string? label) (re-find #"\s" label)) (str "'" label "'")
            label label

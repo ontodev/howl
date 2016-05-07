@@ -4,7 +4,7 @@
             [howl.core :refer [block-parser]]))
 
 (def example-state
-  {:labels
+  {:label-iri
    {"foo"      "http://foo"
     "bar"      "http://bar"
     "has part" "http://part"}})
@@ -12,7 +12,7 @@
 (def obo "http://purl.obolibrary.org/obo/")
 
 (def bigger-state
-  {:labels
+  {:label-iri
    {"has part"                   (str obo "BFO_0000051")
     "has_specified_output"       (str obo "OBI_0000299")
     "information content entity" (str obo "IAO_0000030")
