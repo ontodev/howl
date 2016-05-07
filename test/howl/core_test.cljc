@@ -67,6 +67,29 @@ C
               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
               [:EOL ""]]}}))))
 
+(deftest test-annotate
+  (testing "basics"
+    (is (= (annotate-block
+           {:block
+            {:line "BASE http://foo.com"
+             :parse
+             [:BASE_BLOCK
+               "BASE"
+               [:SPACES " "]
+               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+               [:EOL ""]]}})
+           {:block
+            {:block-type :BASE_BLOCK
+             :line "BASE http://foo.com"
+             :parse
+             [:BASE_BLOCK
+              "BASE"
+              [:SPACES " "]
+              [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:EOL ""]]
+             :base [:ABSOLUTE_IRI "http://foo.com"]
+             :eol ""}}))))
+
 (def test-state
   {:base "http://example.com/"
    :prefixes {"ex" "http://example.com/"}

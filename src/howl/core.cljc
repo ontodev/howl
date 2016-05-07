@@ -207,7 +207,6 @@
 ;; Once we have the parse vector,
 ;; we process that into a nicer "block map".
 
-
 (defn annotate-parse
   "Given a parse vector,
    return a map with the special key-value pairs
@@ -269,6 +268,23 @@
 
     ; else
     {}))
+
+(defn annotate-block
+  "Given a state map,
+   if it has a :block key with a :parse key,
+   add more annotations to the :block."
+  [state]
+  (if-let [parse (get-in state [:block :parse])]
+    (assoc
+     state
+     :block
+     (merge
+      (:block state)
+      {:block-type  (-> parse first)
+       :eol         (-> parse last last)}
+      (annotate-parse parse)))
+    state))
+
 
 
 ;; The next step might be to resolve all names to absolute IRIs,
