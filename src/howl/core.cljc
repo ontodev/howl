@@ -65,8 +65,8 @@
   (cond
    (not (string? line))
    (util/throw-exception
-    (str (util/format "Line '%s' is not a string " line)
-         (location state)))
+    (util/format "Line '%s' is not a string " line)
+    (location state))
 
    (.startsWith line "  ")
    (update state :merging-lines (fnil conj [] (subs line 2)))
@@ -160,27 +160,7 @@
     EOL           = #'(\r|\n|\\s)*'
     "))
 
-(defn valid-label?
-  "Given a string, check whether it can be a HOWL label."
-  [label]
-  (cond
-    (not (string? label)) false
-    (.startsWith label "#") false
-    (.startsWith label ">") false
-    (.startsWith label " ") false
-    (.startsWith label "BASE") false
-    (.startsWith label "PREFIX") false
-    (.startsWith label "LABEL") false
-    (.startsWith label "TYPE") false
-    (.startsWith label "GRAPH") false
-    (util/substring? label "\n") false
-    (util/substring? label "\t") false
-    (util/substring? label ": ") false
-    (util/substring? label ":> ") false
-    (.endsWith   label " ") false
-    :else true))
-
-(defn print-reason
+(defn instaparse-reason
   "Provides special case for printing negative lookahead reasons"
   [r]
   (cond
@@ -193,22 +173,35 @@
     :else
     (str r)))
 
-(defn message
-  "Given a file-name, line-number, and failed parse map,
-   throw an Exception with an informative message."
-  [file-name line-number {:keys [column text reason]}]
+(defn instaparse-message
+  "Given a failed parse map,
+   return an informative error message."
+  [{:keys [column text reason] :as parse}]
   (string/join
    "\n"
    (concat
-    [(util/format "Parse error in '%s' at line %d:" file-name line-number)
-     text
+    [text
      (instaparse.failure/marker column)
      "Expected:"]
     (->> reason
-         (filter :full)
          (map :expecting)
-         (map (fn [r] (str (print-reason r) " (followed by end-of-string)"))))
+         (map (fn [r] (str (instaparse-reason r) " (followed by end-of-string)"))))
     [""])))
+
+(defn parse-block
+  "Given a state map,
+   if it has a :block key with a :line key,
+   parse it and add a :parse key to the :block."
+  [state]
+  (if-let [line (get-in state [:block :line])]
+    (let [parse (block-parser line)]
+      (if (insta/failure? parse)
+        (util/throw-exception
+         "Parsing error"
+         (location state)
+         (instaparse-message parse))
+        (assoc-in state [:block :parse] (second parse))))
+    state))
 
 
 ;; Once we have the parse vector,
@@ -277,25 +270,6 @@
     ; else
     {}))
 
-(defn parse-block
-  "Given a file-name, line-number, and block to parse,
-   return a map with the parse information
-   or throw a parsing exception."
-  ([[file-name line-number block]]
-   (let [parse (block-parser block)]
-     (if (insta/failure? parse)
-       (util/throw-exception (message file-name line-number parse))
-       (merge
-        {:file-name   file-name
-         :line-number line-number
-         :block       block
-         :block-type  (-> parse second first)
-         :parse       (second parse)
-         :eol         (-> parse second last last)}
-        (annotate-parse (second parse))))))
-  ([file-name line-number block]
-   (parse-block [file-name line-number block])))
-
 
 ;; The next step might be to resolve all names to absolute IRIs,
 ;; which is what we want to do when converting HOWL to N-Quads.
@@ -303,6 +277,26 @@
 ;; then define a transducer that just returns the blocks.
 ;; These keep track of the labels and prefixes as they are defined.
 ;; TODO
+
+(defn valid-label?
+  "Given a string, check whether it can be a HOWL label."
+  [label]
+  (cond
+    (not (string? label)) false
+    (.startsWith label "#") false
+    (.startsWith label ">") false
+    (.startsWith label " ") false
+    (.startsWith label "BASE") false
+    (.startsWith label "PREFIX") false
+    (.startsWith label "LABEL") false
+    (.startsWith label "TYPE") false
+    (.startsWith label "GRAPH") false
+    (util/substring? label "\n") false
+    (util/substring? label "\t") false
+    (util/substring? label ": ") false
+    (util/substring? label ":> ") false
+    (.endsWith   label " ") false
+    :else true))
 
 (defn reverse-labels
   "Given a state map,

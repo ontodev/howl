@@ -55,6 +55,18 @@ C
             ["test" 7 "B"]
             ["test" 8 "C\n"]]))))
 
+(deftest test-parse
+  (testing "basics"
+    (is (= (parse-block {:block {:line "BASE http://foo.com"}})
+           {:block
+            {:line "BASE http://foo.com"
+             :parse
+             [:BASE_BLOCK
+              "BASE"
+              [:SPACES " "]
+              [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:EOL ""]]}}))))
+
 (def test-state
   {:base "http://example.com/"
    :prefixes {"ex" "http://example.com/"}
