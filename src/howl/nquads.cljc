@@ -353,21 +353,24 @@
    return a HOWL statement block map."
   [arrows predicate-iri object]
   (merge
-   {:predicate predicate-iri
-    :arrows
+   {:arrows
     (if (string/blank? arrows)
       arrows
-      (str arrows " "))}
+      (str arrows " "))
+    :predicate [:ABSOLUTE_IRI predicate-iri]
+    :eol "\n"}
    (cond
     (map? object)
     {:block-type :LITERAL_BLOCK
-     :content (:value object)}
+     :content (:value object)
+     ; TODO: language, datatype
+     }
     (vector? object)
     {:block-type :EXPRESSION_BLOCK
      :expression object}
     :else
     {:block-type :LINK_BLOCK
-     :object object})))
+     :object [:ABSOLUTE_IRI object]})))
 
 (declare render-predicates)
 
@@ -402,7 +405,8 @@
   [subject-iri predicate-map]
   (concat
    [{:block-type :SUBJECT_BLOCK
-     :subject subject-iri}]
+     :subject [:ABSOLUTE_IRI subject-iri]
+     :eol "\n"}]
    (render-predicates "" predicate-map)))
 
 
@@ -616,14 +620,17 @@
    return a sequnce of HOWL block maps for the subjects."
   [subject-map]
   (let [subject-map
-        (->> subject-map
-             process-annotations
-             process-expressions
-             )]
-  (->> subject-map
-       keys
-       sort ; TODO: better predicate sorting
-       (mapcat #(render-subject % (get subject-map %))))))
+        subject-map
+        ; TODO: process annotations and expressions
+        ;(->> subject-map
+        ;     process-annotations
+        ;     process-expressions
+        ;     )
+        ]
+    (->> subject-map
+         keys
+         sort ; TODO: better predicate sorting
+         (mapcat #(render-subject % (get subject-map %))))))
 
 (def arq-default-graph
  "urn:x-arq:DefaultGraphNode")
@@ -634,7 +641,8 @@
   [graph-iri subject-map]
   (concat
    [{:block-type :GRAPH_BLOCK
-     :graph graph-iri}]
+     :graph [:ABSOLUTE_IRI graph-iri]
+     :eol "\n"}]
    (render-predicates "" (get subject-map graph-iri))
    (render-subjects (dissoc subject-map graph-iri))))
 
@@ -643,9 +651,11 @@
    return a sequence of HOWL block maps for those graphs."
   [graph-map]
   (concat
-   (render-subjects (get graph-map arq-default-graph))
-   (->> (dissoc graph-map arq-default-graph)
+   ; TODO: better way to get default graph
+   (render-subjects (get graph-map nil))
+   (->> graph-map
         keys
+        (remove nil?)
         sort
         (mapcat #(render-named-graph % (get graph-map %))))))
 

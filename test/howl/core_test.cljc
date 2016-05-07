@@ -1,6 +1,7 @@
 (ns howl.core-test
   "Test core functions."
   (:require [clojure.test :refer :all]
+            [clojure.string :as string]
             [howl.core :refer :all]))
 
 (def test-merge "

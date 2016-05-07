@@ -431,21 +431,22 @@
   "Given a state map and an IRI string,
    return the best name:
    label, blank node, prefixed name, wrapped (relative) iri, or absolute IRI."
-  [state iri]
-  (cond
-   (get-in state [:reverse-labels iri])
-   [:LABEL (get-in state [:reverse-labels iri])]
+  [state block name]
+  (let [iri (resolve-name state block name)]
+    (cond
+     (get-in state [:reverse-labels iri])
+     [:LABEL (get-in state [:reverse-labels iri])]
 
-   (find-prefix state iri)
-   (let [[prefix-iri prefix] (find-prefix state iri)]
-     [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
+     (find-prefix state iri)
+     (let [[prefix-iri prefix] (find-prefix state iri)]
+       [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
 
-   (and (:base state)
-        (.startsWith iri (:base state)))
-   [:WRAPPED_IRI "<" (subs iri (count (:base state))) ">"]
+     (and (:base state)
+          (.startsWith iri (:base state)))
+     [:WRAPPED_IRI "<" (subs iri (count (:base state))) ">"]
 
-   :else
-   [:ABSOLUTE_IRI iri]))
+     :else
+     [:ABSOLUTE_IRI iri])))
 
 (defn rename
   "Given a state map and a block,
@@ -456,28 +457,28 @@
     (if (:graph block)
       (assoc
        block
-       :graph (get-name state (:graph block)))
+       :graph (get-name state block (:graph block)))
       block)
 
     :SUBJECT_BLOCK
-    (assoc block :subject (get-name state (:subject block)))
+    (assoc block :subject (get-name state block (:subject block)))
 
     :LITERAL_BLOCK
-    (assoc block :predicate (get-name state (:predicate block)))
+    (assoc block :predicate (get-name state block (:predicate block)))
 
     :LINK_BLOCK
     (assoc
      block
      :predicate
-     (get-name state (:predicate block))
+     (get-name state block (:predicate block))
      :object
-     (get-name state (:object block)))
+     (get-name state block (:object block)))
 
     :EXPRESSION_BLOCK
     (assoc
      block
      :predicate
-     (get-name state (:predicate block))
+     (get-name state block (:predicate block))
      :expression
      (clojure.walk/postwalk
       (fn [x]
@@ -498,29 +499,32 @@
   [name]
   (apply str (rest name)))
 
-(defn render-block
-  "Given a block, return a printable HOWL string."
+(defn block-to-line
+  "Given a block map, return a printable HOWL string."
   [block]
   (case (:block-type block)
     :GRAPH_BLOCK
-    (if (:graph block)
-      (str "\nGRAPH " (render-name (:graph block)))
-      "\nGRAPH")
+    (str "GRAPH"
+         (when (:graph block) (str " " (render-name (:graph block))))
+         (:eol block))
 
     :SUBJECT_BLOCK
-    (str "\n" (render-name (:subject block)))
+    (str (render-name (:subject block))
+         (:eol block))
 
     :LITERAL_BLOCK
     (str (:arrows block)
          (render-name (:predicate block))
          ": "
-         (:content block))
+         (:content block)
+         (:eol block))
 
     :LINK_BLOCK
     (str (:arrows block)
          (render-name (:predicate block))
          ":> "
-         (render-name (:object block)))
+         (render-name (:object block))
+         (:eol block))
 
     :EXPRESSION_BLOCK
     (str (:arrows block)
@@ -533,7 +537,15 @@
                   %))
               flatten
               (filter string?)
-              (apply str)))
+              (apply str))
+         (:eol block))
 
     ;else
-    (str block)))
+    ""))
+
+(defn render-howl
+  [state blocks]
+  (->> blocks
+       (map (partial rename state))
+       (map block-to-line)
+       (apply str)))
