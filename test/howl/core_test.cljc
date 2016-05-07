@@ -29,7 +29,23 @@ C
   ")
 
 (deftest test-merge-lines
-  (testing "merge lines"
+  (testing "merge line"
+    (is (= (merge-line {} "1")
+           {:block {:line ""}
+            :line-number 1
+            :merging-lines ["1"]}))
+    (is (= (merge-line {:merging-lines ["1"]} "2")
+           {:block {:line "1"}
+            :line-number 2
+            :merging-lines ["2"]}))
+    (is (= (merge-line
+            {:merging-lines ["1"]
+             :line-number 10}
+            "2")
+           {:block {:line "1"}
+            :line-number 11
+            :merging-lines ["2"]})))
+  #_(testing "merge lines"
     (is (= (transduce
             (merge-lines "test")
             conj

@@ -56,66 +56,29 @@
 ;; The first step when processing HOWL data
 ;; is to merge blank and indented lines into 'units'
 ;; that start at the beginning of the line.
-;; We define a reducing function that takes a state and a line
-;; and returns the pair of the update state and the merged line vector.
-;; Then we define a transducer that applies this reducing function,
-;; returning only the sequence of merged line vectors.
-
-(defn get-merged
-  "Given a line merging state, return the current merged line
-   as a vector [file-name line-number merged-line]. "
-  [{:keys [file-name number unit] :as state}]
-  [file-name (or number 1) unit])
 
 (defn merge-line
-  "Given a merging state and a line
-   return the pair of an updated state
-   and a vector [file-name line-number merged-line]
-   (or nil if we're in the middle of a merge)."
+  "Given a state map and a line string
+   return the updated state
+   with a :line string if a merge was completed."
   [state line]
   (cond
+   (not (string? line))
+   (util/throw-exception
+    (str (util/format "Line '%s' is not a string " line)
+         (location state)))
+
    (.startsWith line "  ")
-   [(-> state
-        (update :length (fnil inc 0))
-        (assoc :unit (str (:unit state)
-                          (when (:unit state) "\n")
-                          (subs line 2))))
-    nil]
+   (update state :merging-lines (fnil conj [] (subs line 2)))
 
    (string/blank? line)
-   [(-> state
-        (update :length (fnil inc 0))
-        (assoc :unit (str (:unit state)
-                          (when (:unit state) "\n")
-                          line)))
-    nil]
+   (update state :merging-lines (fnil conj [] line))
 
    :else
-   [(-> state
-        (assoc :length 1)
-        (assoc :number (+ (get state :number 1) (get state :length 1)))
-        (assoc :unit line))
-    (when (:unit state) (get-merged state))]))
-
-(defn merge-lines
-  "Given a file name,
-   return a stateful transducer
-   that takes a sequence of lines,
-   merges indented and blank lines,
-   then emits a sequence of vectors:
-   [file-name line-number merged-line]"
-  [file-name]
-  (fn [xf]
-    (let [state (volatile! {:file-name file-name})]
-      (fn
-        ([] (xf))
-        ([result] (xf result (get-merged @state)))
-        ([result line]
-         (let [[new-state merged] (merge-line @state line)]
-            (vreset! state new-state)
-            (if merged
-              (xf result merged)
-              result)))))))
+   (-> state
+       (update :line-number (fnil + 1) (count (get state :merging-lines)))
+       (assoc :block {:line (string/join "\n" (:merging-lines state))})
+       (assoc :merging-lines [line]))))
 
 
 ;; Parsing works like this:

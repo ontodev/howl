@@ -24,7 +24,7 @@ _:b1 <http://www.w3.org/2002/07/owl#annotatedTarget> \"FOO\"@en .
 _:b1 <http://ex.com/label> \"BAR\"@en .
 <http://foo.com/baz> <http://ex.com/label> \"BAZ\"@en <http://foo.com/baz> .")
 
-(deftest test-render-quads
+#_(deftest test-render-quads
   (testing "Render some HOWL to N-Quads"
     (is (= (convert-to-quads test-howl)
            test-quads))))

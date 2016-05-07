@@ -4,7 +4,7 @@
             [howl.core :as core]
             [howl.nquads :as nq]))
 
-(defn ^:export parse-string
+#_(defn ^:export parse-string
   "Given an input string in HOWL format,
    return a lazy sequence of parse results."
   [content]
@@ -15,7 +15,7 @@
      conj
      (string/split-lines content)))
 
-(defn ^:export convert-to-quads
+#_(defn ^:export convert-to-quads
   "Given an input string in HOWL format,
    return an output string with a sequence of N-Quads."
   [content]
