@@ -48,7 +48,7 @@
   (str
    (when file-name   (util/format "in '%s'" file-name))
    (when (and file-name line-number) " ")
-   (when line-number (util/format "at '%d'" line-number))
+   (when line-number (util/format "at line %d" line-number))
    (when (or file-name line-number) ":\n")
    (or line block state)))
 

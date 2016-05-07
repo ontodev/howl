@@ -7,13 +7,13 @@
 (deftest test-locate
   (testing "file, number, line"
     (is (= (locate {:file-name "local" :line-number 3 :line "FOO"})
-           "in 'local' at '3':\nFOO")))
+           "in 'local' at line 3:\nFOO")))
   (testing "number and line"
     (is (= (locate {:line-number 3 :line "FOO"})
-           "at '3':\nFOO")))
+           "at line 3:\nFOO")))
   (testing "number and block"
     (is (= (locate {:line-number 3 :block #{"FOO"}})
-           "at '3':\n#{\"FOO\"}")))
+           "at line 3:\n#{\"FOO\"}")))
   (testing "just state"
     (is (= (locate :just-a-state)
            ":just-a-state"))))
