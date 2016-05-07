@@ -4,18 +4,18 @@
             [clojure.string :as string]
             [howl.core :refer :all]))
 
-(deftest test-location
+(deftest test-locate
   (testing "file, number, line"
-    (is (= (location {:file-name "local" :line-number 3 :line "FOO"})
+    (is (= (locate {:file-name "local" :line-number 3 :line "FOO"})
            "in 'local' at '3':\nFOO")))
   (testing "number and line"
-    (is (= (location {:line-number 3 :line "FOO"})
+    (is (= (locate {:line-number 3 :line "FOO"})
            "at '3':\nFOO")))
   (testing "number and block"
-    (is (= (location {:line-number 3 :block #{"FOO"}})
+    (is (= (locate {:line-number 3 :block #{"FOO"}})
            "at '3':\n#{\"FOO\"}")))
   (testing "just state"
-    (is (= (location :just-a-state)
+    (is (= (locate :just-a-state)
            ":just-a-state"))))
 
 (def test-merge "

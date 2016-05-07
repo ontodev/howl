@@ -40,7 +40,7 @@
 
 ;; ## State Functions
 
-(defn location
+(defn locate
   "Given a state map,
    try to return a location string
    that's useful for error reporting."
@@ -66,7 +66,7 @@
    (not (string? line))
    (util/throw-exception
     (util/format "Line '%s' is not a string " line)
-    (location state))
+    (locate state))
 
    (.startsWith line "  ")
    (update state :merging-lines (fnil conj [] (subs line 2)))
@@ -198,7 +198,7 @@
       (if (insta/failure? parse)
         (util/throw-exception
          "Parsing error"
-         (location state)
+         (locate state)
          (instaparse-message parse))
         (assoc-in state [:block :parse] (second parse))))
     state))
