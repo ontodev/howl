@@ -59,6 +59,40 @@
   (update state :errors (fnil concat []) messages))
 
 
+;; ## General Processing Functions
+
+(defn line-transducer
+  [processing-function starting-state]
+  (fn
+    [xf]
+    (let [state (volatile! starting-state)]
+      (fn
+        ([] (xf))
+        ([result] (xf result (:block (processing-function @state "EOL"))))
+        ([result line]
+         (let [new-state (processing-function @state line)]
+           (when (:errors new-state)
+             (util/throw-exception
+              (string/join " " (:errors new-state))
+              (locate new-state)))
+           (vreset! state new-state)
+           (if (:block new-state)
+             (xf result (:block new-state))
+             result)))))))
+
+(defn process-lines
+  "Given a processing function
+   (that takes a state map and a line, and returns updated state with a :block key),
+   a starting state, and a sequence of lines,
+   return a sequence of blocks."
+  [processing-function starting-state lines]
+  (transduce
+   (line-transducer processing-function starting-state)
+   conj
+   []
+   lines))
+
+
 ;; The first step when processing HOWL data
 ;; is to merge blank and indented lines into 'units'
 ;; that start at the beginning of the line.
@@ -378,7 +412,6 @@
 (defn resolve-name
   [state block name]
   (expand-name state name))
-
 
 
 

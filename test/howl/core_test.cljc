@@ -92,6 +92,76 @@ C
              :base [:ABSOLUTE_IRI "http://foo.com"]
              :eol ""}}))))
 
+(deftest test-composition
+  (testing "one line"
+    (is (= (-> (merge-line {:merging-lines ["BASE http://foo.com"]} "2")
+               parse-block
+               annotate-block)
+           {:merging-lines ["2"]
+            :line-number 2
+            :block
+            {:block-type :BASE_BLOCK
+             :line "BASE http://foo.com"
+             :parse
+             [:BASE_BLOCK
+              "BASE"
+              [:SPACES " "]
+              [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:EOL ""]]
+             :base [:ABSOLUTE_IRI "http://foo.com"]
+             :eol ""}})))
+  (testing "multiple lines"
+    (is (= (process-lines
+            (fn [state line]
+              (-> (merge-line state line)
+                  parse-block
+                  annotate-block))
+            {}
+            ["BASE http://foo.com" "2" "3: 4\n  5"])
+           [{:block-type :BLANK_BLOCK
+             :line ""
+             :parse [:BLANK_BLOCK [:EOL ""]]
+             :eol ""}
+            {:block-type :BASE_BLOCK
+             :line "BASE http://foo.com"
+             :parse
+             [:BASE_BLOCK
+              "BASE"
+              [:SPACES " "]
+              [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:EOL ""]]
+             :base [:ABSOLUTE_IRI "http://foo.com"]
+             :eol ""}
+            {:block-type :SUBJECT_BLOCK
+             :line "2"
+             :parse [:SUBJECT_BLOCK [:SUBJECT [:LABEL "2"]] [:EOL ""]]
+             :subject [:LABEL "2"]
+             :eol ""}
+            {:block-type :LITERAL_BLOCK
+             :line "3: 4\n  5"
+             :parse [:LITERAL_BLOCK
+                     [:ARROWS "" ""]
+                     [:PREDICATE [:LABEL "3"]]
+                     [:COLON "" ":" " "]
+                     [:LITERAL "4\n  5"]
+                     [:EOL ""]]
+             :arrows ""
+             :predicate [:LABEL "3"]
+             :content "4\n  5"
+             :eol ""}
+            ])))
+  (testing "error"
+    (is (thrown-with-msg?
+         Exception
+         #"Line '1234' is not a string at line 1:"
+         (process-lines
+            (fn [state line]
+              (-> (merge-line state line)
+                  parse-block
+                  annotate-block))
+            {}
+            ["BASE http://foo.com" 1234])))))
+
 (def test-state
   {:base "http://example.com/"
    :prefix-iri {"ex" "http://example.com/"}
