@@ -39,23 +39,17 @@ C
             :line-number 2
             :merging-lines ["2"]}))
     (is (= (merge-line
-            {:merging-lines ["1"]
-             :line-number 10}
+            {:line-number 10
+             :merging-lines ["1"]}
             "2")
            {:block {:line "1"}
             :line-number 11
-            :merging-lines ["2"]})))
-  #_(testing "merge lines"
-    (is (= (transduce
-            (merge-lines "test")
-            conj
-            (line-seq (java.io.BufferedReader. (java.io.StringReader. test-merge))))
-           [["test" 1 ""]
-            ["test" 2 "A\nindented\n \n(that was a blank line)\n"]
-            ["test" 7 "B"]
-            ["test" 8 "C\n"]]))))
+            :merging-lines ["2"]}))))
 
 (deftest test-parse
+  (testing "empty"
+    (is (= (parse-block {:empty nil})
+           {:empty nil})))
   (testing "basics"
     (is (= (parse-block {:block {:line "BASE http://foo.com"}})
            {:block
