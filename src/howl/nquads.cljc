@@ -315,6 +315,14 @@
         (:block block)
         e)))))
 
+
+
+;; We convert HOWL to EDN-LD, then to N-Quads.
+;; EDN-LD quads are vectors [g s p o],
+;; where g, s, and p are absolute IRI strings or blank node strings,
+;; and o is either a IRI/blank string or a map
+;; with :value, :lang, and :type keys.
+
 (defn convert-object
   "Given a state map with a :block that is a literal or link,
    return an object: an object map for a literal or an IRI string for a link."
@@ -405,6 +413,42 @@
      (catch #?(:clj Exception :cljs :default) e
        (util/throw-exception e (core/locate state))))))
 
+
+
+;; It's easy to convert an EDN-LD quad to an N-Quad:
+
+(defn wrap-iri
+  "Return an IRI string wrapped in arrows (<iri>)
+   or a blank node string unchanged."
+  [iri]
+  (cond
+   (not (string? iri)) iri
+   (.startsWith iri "_:") iri)
+   :else (str "<" iri ">"))
+
+(defn object-to-string
+  "Given an EDN-LD object, return an N-Quads literal or IRI."
+  [o]
+  (cond
+   (and (map? o) (:lang o)) (str "\"" (:value o) "\"@" (:lang o))
+   (and (map? o) (:type o)) (str "\"" (:value o) "\"^^" (wrap-iri (:type o)))
+   (map? o) (str "\"" (:value o) "\"")
+   (string? o) (wrap-iri o)
+   :else nil))
+
+(defn quad-to-string
+  "Given an EDN-LD Quad vector return an N-Quads string."
+  [[g s p o]]
+  (->> [(wrap-iri s)
+        (wrap-iri p)
+        (object-to-string o)
+        (when g (wrap-iri g))
+        "."]
+       (remove nil?)
+       (string/join " ")))
+
+
+
 (defn render-quads
   "Given a starting state map (or no arguments)
    return a stateful transducer
@@ -423,19 +467,6 @@
             (if quads
               (apply xf result quads)
               result))))))))
-
-(defn quad-to-string
-  "Given a quad as a vector, subject-predicate-object,
-   or graph-subject-predicate-object,
-   return an N-Quads string."
-  ([quad]
-   (apply quad-to-string quad))
-  ([s p o]
-   (string/join " " [s p o "."]))
-  ([g s p o]
-   (if g
-     (string/join " " [s p o g "."])
-     (string/join " " [s p o "."]))))
 
 (defn render-statement-2
   "Given an arrow string (for depth),
