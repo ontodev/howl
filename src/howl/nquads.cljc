@@ -315,6 +315,96 @@
         (:block block)
         e)))))
 
+(defn convert-object
+  "Given a state map with a :block that is a literal or link,
+   return an object: an object map for a literal or an IRI string for a link."
+  [{:keys [block] :as state}]
+  (case (:block-type block)
+    :LITERAL_BLOCK
+    (select-keys block [:value :lang :type])
+    :LINK_BLOCK
+    (get-in state [:block :object 1])
+    ;else
+    nil))
+
+(defn convert-single-statement
+  "Given a state map with :current-subject and :block keys,
+   where the :block has no :arrows,
+   form a single quad,
+   and return the update state."
+  [state]
+  (let [g (:current-graph state)
+        s (:current-subject state)
+        p (get-in state [:block :predicate 1])
+        o (convert-object state)
+        statement [g s p o]]
+   (assoc state :quads [statement] :statements [statement])))
+
+(defn convert-annotation
+  "Given a state map with :current-subject and :block keys,
+   where the :block has no :arrows,
+   form a single quad,
+   and return the update state."
+  [state]
+  (let [g (:current-graph state)
+        s (str "_:b" (get state :blank-node-count 0))
+        p (get-in state [:block :predicate 1])
+        o (convert-object state)
+        statement [g s p o]
+        a (count (get-in state [:block :arrows]))
+        annotated (get-in state [:statements (dec a)])]
+   (-> state
+       (update :blank-nodes (fnil inc 0))
+       (assoc
+        :statements
+        (conj (vec (take a (:statements state))) statement))
+       (assoc
+        :quads
+        [[g s (str rdf "type")              (str owl "Axiom")]
+         [g s (str owl "annotatedSource")   (get annotated 1)]
+         [g s (str owl "annotatedProperty") (get annotated 2)]
+         [g s (str owl "annotatedTarget")   (get annotated 3)]
+         statement]))))
+
+(defn convert-statement
+  [{:keys [current-graph current-subject block statements] :as state}]
+  (if (string/blank? (:arrows block))
+   (convert-single-statement state)
+   (convert-annotation state)))
+
+(defn convert-quads
+  "Given a state (usually the output of expand-names),
+   if it has a :block key,
+   return an updated state with a :quads vector (maybe nil)
+   with entries in EDN-LD Quads format."
+  [state]
+  (if-let [block (:block state)]
+    (try
+     (case (:block-type block)
+       :LITERAL_BLOCK
+       (convert-statement state)
+       :LINK_BLOCK
+       (convert-statement state)
+       ;:EXPRESSION_BLOCK
+       ;(let [new-state (render-expression state block (:expression block))
+       ;      {:keys [arrows predicate content]} block
+       ;      graph     (:graph state)
+       ;      subject   (-> state :subjects first second)
+       ;      predicate (iri (resolve-name state block predicate))
+       ;      object    (:node new-state)]
+       ;  [(-> new-state
+       ;       (dissoc :node :quads)
+       ;       (assoc :subjects [[graph subject predicate object]]))
+       ;   (concat
+       ;    [[graph subject predicate object]]
+       ;    (:quads new-state))])
+
+       ; else
+       state)
+
+     (catch #?(:clj Exception :cljs :default) e
+       (util/throw-exception e (core/locate state))))))
+
 (defn render-quads
   "Given a starting state map (or no arguments)
    return a stateful transducer

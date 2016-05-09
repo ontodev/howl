@@ -688,6 +688,7 @@ The [Makefile](Makefile) also contains some convenient build tasks.
 
 - 0.2.1-SNAPSHOT
   - add `--context` command-line option
+  - rework TYPE and literal representation to match [EDN-LD](http://edn-ld.com)
 - 0.2.0 improve grammar
   - allow comments
   - PREFIX now uses `:> `, for consistency

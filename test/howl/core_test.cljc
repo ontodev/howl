@@ -147,7 +147,7 @@ C
                      [:EOL ""]]
              :arrows ""
              :predicate [:LABEL "3"]
-             :content "4\n  5"
+             :value "4\n  5"
              :eol ""}
             ])))
   (testing "error"
@@ -240,7 +240,7 @@ C
              :block
              {:block-type :LITERAL_BLOCK
               :predicate [:PREFIXED_NAME "rdfs" ":" "label"]
-              :content "2"
+              :value "2"
               :type [:PREFIXED_NAME "rdfs" ":" "integer"]}})
            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
             :label-iri {"2" "http://foo.com/2"}
@@ -249,7 +249,7 @@ C
             :block
             {:block-type :LITERAL_BLOCK
              :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
-             :content "2"
+             :value "2"
              :type [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#integer"]}})))
   (testing "expression"
     (is (= (expand-names

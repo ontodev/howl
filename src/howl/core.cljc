@@ -210,7 +210,7 @@
     PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:]*'
     WRAPPED_IRI   = '<' #'[^>\\s]+' '>'
     ABSOLUTE_IRI  = #'\\w+:/[^>\\s]+'
-    LANG          = #'@(\\w|-)+'
+    LANG          = '@' #'(\\w|-)+'
     COLON         = #' *' ':'  #' +'
     COLON_ARROW   = #' *' ':>' #' +'
     COLON_ARROWS  = #' *' ':>>' #' +'
@@ -294,7 +294,7 @@
      {:predicate (get-in parse [3 1])}
      (case (get-in parse [5 0])
        :LANG
-       {:lang (get-in parse [5 1])}
+       {:lang (get-in parse [5 2])}
        :DATATYPE
        {:type (get-in parse [5 1])}))
 
@@ -311,10 +311,10 @@
     (merge
      {:arrows    (get-in parse [1 1])
       :predicate (get-in parse [2 1])
-      :content   (get-in parse [4 1])}
+      :value     (get-in parse [4 1])}
      (case (count (get-in parse [4]))
        2 {}
-       3 {:lang (get-in parse [4 2 1])}
+       3 {:lang (get-in parse [4 2 2])}
        4 {:type (get-in parse [4 3 1])}
        {}))
 
@@ -530,10 +530,10 @@
             absolute (expand-name state (:predicate block))]
         (if (and (= (second absolute) "http://www.w3.org/2000/01/rdf-schema#label")
                  (string? (:current-subject state))
-                 (valid-label? (:content block)))
+                 (valid-label? (:value block)))
           (-> state
-              (assoc-in [:label-iri (:content block)] (:current-subject state))
-              (assoc-in [:iri-label (:current-subject state)] (:content block))
+              (assoc-in [:label-iri (:value block)] (:current-subject state))
+              (assoc-in [:iri-label (:current-subject state)] (:value block))
               (assoc-in [:block :predicate] absolute))
           (assoc-in state [:block :predicate] absolute)))
 
@@ -658,7 +658,7 @@
     (str (:arrows block)
          (render-name (:predicate block))
          ": "
-         (:content block)
+         (:value block)
          (:eol block))
 
     :LINK_BLOCK
