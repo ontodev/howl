@@ -26,7 +26,9 @@
   [{:keys [block] :as state}]
   (case (:block-type block)
     :LITERAL_BLOCK
-    (select-keys block [:value :lang :type])
+    (merge
+     (get-in state [:iri-type (get-in state [:block :predicate 1])])
+     (select-keys block [:value :lang :type]))
     :LINK_BLOCK
     (get-in state [:block :object 1])
     ;else

@@ -22,6 +22,24 @@
             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]
             :quads
             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]})))
+  (testing "literal default type"
+    (is (= (convert-quads
+            {:iri-type {(str rdfs "label") {:lang "en"}}
+             :current-subject "http://foo.com/foo"
+             :block
+             {:block-type :LITERAL_BLOCK
+             :predicate [:ABSOLUTE_IRI (str rdfs "label")]
+              :value "foo"}})
+           {:iri-type {(str rdfs "label") {:lang "en"}}
+            :current-subject "http://foo.com/foo"
+            :block
+            {:block-type :LITERAL_BLOCK
+             :predicate [:ABSOLUTE_IRI (str rdfs "label")]
+             :value "foo"}
+            :statements
+            [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]
+            :quads
+            [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]})))
   (testing "link"
     (is (= (convert-quads
             {:current-subject "http://foo.com/foo"
