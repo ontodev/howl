@@ -13,309 +13,6 @@
 (def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
 (def xsd-string "http://www.w4.org/2001/XMLSchema#string")
 
-(defn iri
-  [& parts]
-  (str "<" (string/join "" parts) ">"))
-
-(defn unwrap-iri
-  [iri]
-  (string/replace iri #"^<|>$" ""))
-
-(defn format-literal
-  "Given a state map and a block map for a LITERAL_BLOCK,
-   return a concrete literal string."
-  [state {:keys [predicate content language datatype] :as block}]
-  (let [predicate-iri (resolve-name state block predicate)
-        language (or language (get-in state [:types-language predicate-iri]))
-        datatype (when datatype (resolve-name state block datatype))
-        datatype (or datatype (get-in state [:types-datatype predicate-iri]))
-        content  (string/replace content "\n" "\\n")]
-    (cond
-      language
-      (util/format "\"%s\"%s" content language)
-      datatype
-      (util/format "\"%s\"^^<%s>" content datatype)
-      :else
-      (util/format "\"%s\"" content))))
-
-(defn filter-ce
-  "Given a parse vector,
-   remove the elements that don't matter for Manchester."
-  [parse]
-  (->> parse
-       (filter vector?)
-       (remove #(= :MN_SPACE (first %)))
-       (remove #(= :SPACES (first %)))))
-
-(declare render-expression)
-
-;; This is very imperative code, which is somewhat awkward in Clojure.
-;; It's a little cleaner if the nodes are rendered in reverse order,
-;; but this way the results are easier to read.
-
-;; First get a new blank node for the complementOf class.
-;; Then clear the state (s2) and render the negated class expression.
-;; Update that result (s3) with quads for the complement and s3.
-
-(defn render-negation
-  "Given a state, a block, and a parse vector,
-   render the first elements in the parse vector
-   and update the state with new quads for the
-   complement class and first element."
-  [s1 block parse]
-  (let [g  (:graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (render-expression s2 block (->> parse filter-ce first))]
-    (assoc
-     s3
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (iri rdf "type")         (iri owl "Class")]
-       [g b1 (iri owl "complementOf") (:node s3)]]
-      (:quads s3)))))
-
-;; Like render-negation, but with two elements:
-;; the object property expression and the class expression.
-
-(defn render-restriction
-  "Given a state, a block, a parse vector, and a predicate IRI string,
-   render the first and second elements in the parse vector
-   and update the state with new quads for the:
-   restriction class, and first and second elements."
-  [s1 block parse predicate]
-  (let [g  (:graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (render-expression s2 block (->> parse filter-ce first))
-        s4 (render-expression s3 block (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (iri rdf "type")       (iri owl "Restriction")]
-       [g b1 (iri owl "onProperty") (:node s3)]
-       [g b1 predicate              (:node s4)]]
-      (:quads s4)))))
-
-;; Unions and intersections are trickier because they include an RDF list.
-;; First generate some blank nodes for the combination class and RDF list.
-;; Then clear the state, and render the first and second elements,
-;; storing the results in new states.
-;; Then update the state resulting from the second element (s4)
-;; with previous quads,
-;; the combination element and RDF list,
-;; and the quads from s4, which include the first and second elements.
-
-(defn render-combination
-  "Given a state, a block, a parse vector, and a predicate IRI string,
-   render the first and second elements in the parse vector
-   and update the state with new quads for the:
-   combination class (i.e. unionOf, intersectionOf),
-   RDF list of elements,
-   first and second elements."
-  [s1 block parse predicate]
-  (let [g  (:graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        b2 (str "_:b" (+ bs 2))
-        b3 (str "_:b" (+ bs 3))
-        s2 (assoc s1 :blank-node-count (+ bs 3) :quads [])
-        s3 (render-expression s2 block (->> parse filter-ce first))
-        s4 (render-expression s3 block (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (iri rdf "type")  (iri owl "Class")]
-       [g b1 predicate         b2]
-       [g b2 (iri rdf "first") (:node s3)]
-       [g b2 (iri rdf "rest")  b3]
-       [g b3 (iri rdf "first") (:node s4)]
-       [g b3 (iri rdf "rest")  (iri rdf "nil")]]
-      (:quads s4)))))
-
-(defn render-expression
-  "Given a state map, a block map, and a parse vector with a Manchester expression
-   return an updated state with quads for the expression."
-  [state block parse]
-  (case (first parse)
-    :MN_CLASS_EXPRESSION
-    (render-expression state block (->> parse filter-ce first))
-
-    :MN_NEGATION
-    (render-negation state block parse)
-
-    :MN_DISJUNCTION
-    (render-combination state block parse (iri owl "unionOf"))
-
-    :MN_CONJUNCTION
-    (render-combination state block parse (iri owl "intersectionOf"))
-
-    :MN_OBJECT_PROPERTY_EXPRESSION
-    (render-expression state block (->> parse filter-ce first))
-
-    :MN_SOME
-    (render-restriction state block parse (iri owl "someValuesFrom"))
-
-    :MN_ONLY
-    (render-restriction state block parse (iri owl "allValuesFrom"))
-
-    :MN_NAME
-    (render-expression state block (->> parse filter-ce first))
-
-    :MN_LABEL
-    (assoc state :node (iri (resolve-name state block [:LABEL (second parse)])))
-
-    :MN_QUOTED_LABEL
-    (assoc state :node (iri (resolve-name state block [:LABEL (nth parse 2)])))
-
-    ; else
-    state))
-
-; TODO: This function is too imperative -- factor out the volatile.
-
-(defn render-statement
-  "Given a state map, a block map, and a concrete object string.
-   mutate the state to update the :subjects key,
-   and apply the reducing function to all the generated quads."
-  [old-state block object]
-  (let [{:keys [arrows predicate content]} block
-        state     (volatile! old-state)
-        graph     (:graph @state)
-        subject   (if (string/blank? arrows)
-                    (-> @state :subjects first second)
-                    (do
-                      (vswap! state update-in [:blank-node-count] (fnil inc 0))
-                      (str "_:b" (:blank-node-count @state))))
-        predicate (iri (resolve-name @state block predicate))]
-
-    ; When this is a HOWL-valid rdfs:label, add it to the map of labels.
-    (when (and (string/blank? arrows)
-               (= predicate (iri rdfs "label"))
-               (core/valid-label? content))
-      (vswap! state assoc-in [:label-iri content] (unwrap-iri subject)))
-
-    ; Add this quad to the stack of subjects.
-    (vswap! state
-            assoc
-            :subjects
-            (conj (vec (take (count arrows) (:subjects @state)))
-                  [graph subject predicate object]))
-
-    [@state
-     ; Two cases
-     (if (string/blank? arrows)
-       ; normal literal node
-       [[graph subject predicate object]]
-       ; annotation (maybe nested)
-       (let [[_ annotatedSource annotatedProperty annotatedTarget]
-             (get-in @state [:subjects (dec (count arrows))])]
-         [[graph subject (iri rdf "type") (iri owl "Axiom")]
-          [graph subject (iri owl "annotatedSource") annotatedSource]
-          [graph subject (iri owl "annotatedProperty") annotatedProperty]
-          [graph subject (iri owl "annotatedTarget") annotatedTarget]
-          [graph subject predicate object]]))]))
-
-(defn render-block
-  "Given a state map and a block map,
-   return a vector
-   with an updated state map,
-   and either a sequence of N-Quad vectors to render
-   or nil if there are no new N-Quads to render."
-  [state block]
-  (try
-    (case (:block-type block)
-      :BASE_BLOCK
-      (let [iri (resolve-name state block (:base block))]
-       [(assoc state :base iri)
-        nil])
-
-      :PREFIX_BLOCK
-      (let [iri (resolve-name state block (:prefixed block))]
-       [(assoc-in state [:prefix-iri (:prefix block)] iri)
-        nil])
-
-      :LABEL_BLOCK
-      (let [iri (resolve-name state block (:identifier block))]
-        [(assoc-in state [:label-iri (:label block)] iri)
-         nil])
-
-      :TYPE_BLOCK
-      (let [predicate-iri (resolve-name state block (:predicate block))]
-        [(cond
-           (:language block)
-           (assoc-in
-            state
-            [:types-language predicate-iri]
-            (:language block))
-           (:datatype block)
-           (assoc-in
-            state
-            [:types-datatype predicate-iri]
-            (resolve-name state block (:datatype block))))
-         nil])
-
-      :GRAPH_BLOCK
-      (let [graph (when (:graph block)
-                    (resolve-name state block (:graph block)))]
-        [(if graph
-           (assoc state :graph (iri graph) :subjects [[(iri graph) (iri graph)]])
-           (dissoc state :graph :subjects))
-         nil])
-
-      :SUBJECT_BLOCK
-      (let [subject (resolve-name state block (:subject block))]
-        [(assoc state :subjects [[(:graph state) (iri subject)]])
-         nil])
-
-      :LITERAL_BLOCK
-      (render-statement
-       state
-       block
-       (format-literal state block))
-
-      :LINK_BLOCK
-      (render-statement
-       state
-       block
-       (iri (resolve-name state block (:object block))))
-
-      :EXPRESSION_BLOCK
-      (let [new-state (render-expression state block (:expression block))
-            {:keys [arrows predicate content]} block
-            graph     (:graph state)
-            subject   (-> state :subjects first second)
-            predicate (iri (resolve-name state block predicate))
-            object    (:node new-state)]
-        [(-> new-state
-             (dissoc :node :quads)
-             (assoc :subjects [[graph subject predicate object]]))
-         (concat
-          [[graph subject predicate object]]
-          (:quads new-state))])
-
-      ; else
-      [state nil])
-
-    (catch #? (:clj Exception :cljs :default) e
-      (util/throw-exception
-       (util/format
-        "Error while serializing to Nquads:\n%s line %d: %s\n%s"
-        (:file-name block)
-        (:line-number block)
-        (:block block)
-        e)))))
-
-
 
 ;; We convert HOWL to EDN-LD, then to N-Quads.
 ;; EDN-LD quads are vectors [g s p o],
@@ -380,6 +77,154 @@
    (convert-single-statement state)
    (convert-annotation state)))
 
+
+;; The most complex conversion is the Manchester syntax.
+;; The expression is a tree,
+;; but we represent it in very flat RDF graph.
+
+(defn filter-ce
+  "Given a parse vector,
+   remove the elements that don't matter for Manchester."
+  [parse]
+  (->> parse
+       (filter vector?)
+       (remove #(= :MN_SPACE (first %)))
+       (remove #(= :SPACES (first %)))))
+
+(declare convert-expression)
+
+;; This is very imperative code that is somewhat awkward in Clojure.
+;; The code is a little cleaner if the nodes are rendered in reverse order,
+;; but this way the results are easier to read.
+
+;; First get a new blank node for the complementOf class.
+;; Then clear the state (s2) and render the negated class expression.
+;; Update that result (s3) with quads for the complement and s3.
+
+(defn convert-negation
+  "Given a state and a parse vector,
+   convert the first elements in the parse vector
+   and update the state with new quads for the
+   complement class and first element."
+  [s1 parse]
+  (let [g  (:current-graph s1)
+        bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
+        s3 (convert-expression s2 (->> parse filter-ce first))]
+    (assoc
+     s3
+     :node b1
+     :quads
+     (concat
+      (:quads s1)
+      [[g b1 (str rdf "type")         (str owl "Class")]
+       [g b1 (str owl "complementOf") (:node s3)]]
+      (:quads s3)))))
+
+;; Like convert-negation, but with two elements:
+;; the object property expression and the class expression.
+
+(defn convert-restriction
+  "Given a state, a parse vector, and a predicate IRI string,
+   convert the first and second elements in the parse vector
+   and update the state with new quads for the:
+   restriction class, and first and second elements."
+  [s1 parse predicate]
+  (let [g  (:current-graph s1)
+        bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
+        s3 (convert-expression s2 (->> parse filter-ce first))
+        s4 (convert-expression s3 (->> parse filter-ce second))]
+    (assoc
+     s4
+     :node b1
+     :quads
+     (concat
+      (:quads s1)
+      [[g b1 (str rdf "type")       (str owl "Restriction")]
+       [g b1 (str owl "onProperty") (:node s3)]
+       [g b1 predicate              (:node s4)]]
+      (:quads s4)))))
+
+;; Unions and intersections are trickier because they include an RDF list.
+;; First generate some blank nodes for the combination class and RDF list.
+;; Then clear the state, and render the first and second elements,
+;; storing the results in new states.
+;; Then update the state resulting from the second element (s4)
+;; with previous quads,
+;; the combination element and RDF list,
+;; and the quads from s4, which include the first and second elements.
+
+(defn convert-combination
+  "Given a state, a parse vector, and a predicate IRI string,
+   render the first and second elements in the parse vector
+   and update the state with new quads for the:
+   combination class (i.e. unionOf, intersectionOf),
+   RDF list of elements,
+   first and second elements."
+  [s1 parse predicate]
+  (let [g  (:current-graph s1)
+        bs (get s1 :blank-node-count 0)
+        b1 (str "_:b" (+ bs 1))
+        b2 (str "_:b" (+ bs 2))
+        b3 (str "_:b" (+ bs 3))
+        s2 (assoc s1 :blank-node-count (+ bs 3) :quads [])
+        s3 (convert-expression s2 (->> parse filter-ce first))
+        s4 (convert-expression s3 (->> parse filter-ce second))]
+    (assoc
+     s4
+     :node b1
+     :quads
+     (concat
+      (:quads s1)
+      [[g b1 (str rdf "type")  (str owl "Class")]
+       [g b1 predicate         b2]
+       [g b2 (str rdf "first") (:node s3)]
+       [g b2 (str rdf "rest")  b3]
+       [g b3 (str rdf "first") (:node s4)]
+       [g b3 (str rdf "rest")  (str rdf "nil")]]
+      (:quads s4)))))
+
+(defn convert-expression
+  "Given a state map, and a parse vector with a Manchester expression
+   return an updated state with quads for the expression."
+  [state parse]
+  (case (first parse)
+    :MN_CLASS_EXPRESSION
+    (convert-expression state (->> parse filter-ce first))
+
+    :MN_NEGATION
+    (convert-negation state parse)
+
+    :MN_DISJUNCTION
+    (convert-combination state parse (str owl "unionOf"))
+
+    :MN_CONJUNCTION
+    (convert-combination state parse (str owl "intersectionOf"))
+
+    :MN_OBJECT_PROPERTY_EXPRESSION
+    (convert-expression state (->> parse filter-ce first))
+
+    :MN_SOME
+    (convert-restriction state parse (str owl "someValuesFrom"))
+
+    :MN_ONLY
+    (convert-restriction state parse (str owl "allValuesFrom"))
+
+    :MN_NAME
+    (convert-expression state (->> parse filter-ce first))
+
+    :ABSOLUTE_IRI
+    (assoc state :node (second parse))
+
+    ; else
+    state))
+
+; TODO: This function is too imperative -- factor out the volatile.
+
+
 (defn convert-quads
   "Given a state (usually the output of expand-names),
    if it has a :block key,
@@ -391,28 +236,27 @@
      (case (:block-type block)
        :LITERAL_BLOCK
        (convert-statement state)
+
        :LINK_BLOCK
        (convert-statement state)
-       ;:EXPRESSION_BLOCK
-       ;(let [new-state (render-expression state block (:expression block))
-       ;      {:keys [arrows predicate content]} block
-       ;      graph     (:graph state)
-       ;      subject   (-> state :subjects first second)
-       ;      predicate (iri (resolve-name state block predicate))
-       ;      object    (:node new-state)]
-       ;  [(-> new-state
-       ;       (dissoc :node :quads)
-       ;       (assoc :subjects [[graph subject predicate object]]))
-       ;   (concat
-       ;    [[graph subject predicate object]]
-       ;    (:quads new-state))])
+
+       :EXPRESSION_BLOCK
+       (let [new-state (convert-expression state (:expression block))
+             g (:current-graph state)
+             s (:current-subject state)
+             p (get-in state [:block :predicate 1])
+             o (:node new-state)
+             statement [g s p o]]
+         (-> new-state
+             (dissoc :node)
+             (assoc :statements [statement])
+             (assoc :quads (concat [statement] (:quads new-state)))))
 
        ; else
        state)
 
      (catch #?(:clj Exception :cljs :default) e
        (util/throw-exception e (core/locate state))))))
-
 
 
 ;; It's easy to convert an EDN-LD quad to an N-Quad:
@@ -448,25 +292,6 @@
        (string/join " ")))
 
 
-
-(defn render-quads
-  "Given a starting state map (or no arguments)
-   return a stateful transducer
-   that takes parse maps and returns quads (vectors of strings)."
-  ([] (render-quads {}))
-  ([starting-state]
-   (fn
-     [xf]
-     (let [state (volatile! starting-state)]
-       (fn
-         ([] (xf))
-         ([result] (xf result))
-         ([result block]
-          (let [[new-state quads] (render-block @state block)]
-            (vreset! state new-state)
-            (if quads
-              (apply xf result quads)
-              result))))))))
 
 (defn render-statement-2
   "Given an arrow string (for depth),

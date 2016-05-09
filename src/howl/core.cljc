@@ -465,6 +465,21 @@
   [state name]
   [:ABSOLUTE_IRI (expand state name)])
 
+(defn expand-manchester-labels
+  "Given a nested Manchester expression parse vector,
+   return with labels replaced at all depths."
+  [state expression]
+  (clojure.walk/postwalk
+   (fn [x]
+     (cond
+      (and (vector? x) (= :MN_LABEL (first x)))
+      (expand-name state [:LABEL (second x)])
+      (and (vector? x) (= :MN_QUOTED_LABEL (first x)))
+      (expand-name state [:LABEL (get x 2)])
+      :else
+      x))
+   expression))
+
 (defn expand-names
   "Given a state map,
    if it has a :block key
@@ -547,16 +562,7 @@
           (assoc-in [:block :predicate] (expand-name state (:predicate block)))
           (assoc-in
            [:block :expression]
-           (clojure.walk/postwalk
-            (fn [x]
-              (cond
-               (and (vector? x) (= :MN_LABEL (first x)))
-               (expand-name state [:LABEL (second x)])
-               (and (vector? x) (= :MN_QUOTED_LABEL (first x)))
-               (expand-name state [:LABEL (nth 2 x)])
-               :else
-               x))
-            (:expression block))))
+           (expand-manchester-labels state (:expression block))))
 
       ;else
       state)
