@@ -15,17 +15,17 @@ label: FOO
 GRAPH <baz>
 label: BAZ")
 
-(def test-quads
+(def test-nquads
   "<http://foo.com/foo> <http://ex.com/label> \"FOO\"@en .
-_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedSource> <http://foo.com/foo> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://ex.com/label> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedTarget> \"FOO\"@en .
-_:b1 <http://ex.com/label> \"BAR\"@en .
+_:b0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
+_:b0 <http://www.w3.org/2002/07/owl#annotatedSource> <http://foo.com/foo> .
+_:b0 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://ex.com/label> .
+_:b0 <http://www.w3.org/2002/07/owl#annotatedTarget> \"FOO\"@en .
+_:b0 <http://ex.com/label> \"BAR\"@en .
 <http://foo.com/baz> <http://ex.com/label> \"BAZ\"@en <http://foo.com/baz> .")
 
-#_(deftest test-render-quads
+(deftest test-howl-to-nquads
   (testing "Render some HOWL to N-Quads"
-    (is (= (convert-to-quads test-howl)
-           test-quads))))
+    (is (= (howl-to-nquads test-howl)
+           test-nquads))))
 

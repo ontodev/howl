@@ -111,7 +111,7 @@ C
              :base [:ABSOLUTE_IRI "http://foo.com"]
              :eol ""}})))
   (testing "multiple lines"
-    (is (= (process-lines
+    (is (= (lines-to-blocks
             (fn [state line]
               (-> (merge-line state line)
                   parse-block
@@ -154,7 +154,7 @@ C
     (is (thrown-with-msg?
          Exception
          #"Line '1234' is not a string at line 1:"
-         (process-lines
+         (lines-to-blocks
             (fn [state line]
               (-> (merge-line state line)
                   parse-block

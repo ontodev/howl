@@ -81,7 +81,11 @@
 
 ;; ## General Processing Functions
 
-(defn line-transducer
+(defn line-to-block-transducer
+  "Given a processing function
+   (that takes a state map and a line, and returns updated state with a :block key),
+   a starting state, and a sequence of lines,
+   return stateful transducer that emits a sequence of blocks."
   [processing-function starting-state]
   (fn
     [xf]
@@ -100,14 +104,14 @@
              (xf result (:block new-state))
              result)))))))
 
-(defn process-lines
+(defn lines-to-blocks
   "Given a processing function
    (that takes a state map and a line, and returns updated state with a :block key),
    a starting state, and a sequence of lines,
    return a sequence of blocks."
   [processing-function starting-state lines]
   (transduce
-   (line-transducer processing-function starting-state)
+   (line-to-block-transducer processing-function starting-state)
    conj
    []
    lines))
@@ -129,10 +133,10 @@
     (util/format "Line '%s' is not a string" line))
 
    (.startsWith line "  ")
-   (update state :merging-lines (fnil conj [] (subs line 2)))
+   (update state :merging-lines (fnil conj []) (subs line 2))
 
    (string/blank? line)
-   (update state :merging-lines (fnil conj [] line))
+   (update state :merging-lines (fnil conj []) line)
 
    :else
    (-> state
@@ -524,13 +528,13 @@
                (assoc-in [:block :type] datatype)))))
 
       :GRAPH_BLOCK
-      (if (:graph state)
+      (if (:graph block)
         (let [absolute (expand-name state (:graph block))]
           (-> state
               (assoc :current-graph (second absolute))
               (assoc :current-subject (second absolute))
               (assoc-in [:block :graph] absolute)))
-        (dissoc state :graph))
+        (dissoc state :current-graph :current-subject))
 
       :SUBJECT_BLOCK
       (let [absolute (expand-name state (:subject block))]

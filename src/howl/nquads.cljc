@@ -224,17 +224,14 @@
     ; else
     state))
 
-; TODO: This function is too imperative -- factor out the volatile.
-
-
 (defn convert-quads
   "Given a state (usually the output of expand-names),
    if it has a :block key,
    return an updated state with a :quads vector (maybe nil)
    with entries in EDN-LD Quads format."
   [state]
-  (if-let [block (:block state)]
-    (try
+  (try
+   (if-let [block (:block state)]
      (case (:block-type block)
        :LITERAL_BLOCK
        (convert-statement state)
@@ -255,10 +252,45 @@
              (assoc :quads (concat [statement] (:quads new-state)))))
 
        ; else
-       state)
+       (dissoc state :quads))
+     (dissoc state :quads))
+   (catch #?(:clj Exception :cljs :default) e
+     (util/throw-exception e (core/locate state)))))
 
-     (catch #?(:clj Exception :cljs :default) e
-       (util/throw-exception e (core/locate state))))))
+(defn line-to-quads-transducer
+  "Given a processing function
+   (that takes a state map and a line, and returns updated state with a :quads key),
+   a starting state, and a sequence of lines,
+   return stateful transducer that emits a sequence of quads."
+  [processing-function starting-state]
+  (fn
+    [xf]
+    (let [state (volatile! starting-state)]
+      (fn
+        ([] (xf))
+        ([result] (apply xf result (get (processing-function @state "EOL") :quads [])))
+        ([result line]
+         (let [new-state (processing-function @state line)]
+           (when (:errors new-state)
+             (util/throw-exception
+              (string/join " " (:errors new-state))
+              (core/locate new-state)))
+           (vreset! state new-state)
+           (if (:quads new-state)
+             (apply xf result (:quads new-state))
+             result)))))))
+
+(defn lines-to-quads
+  "Given a processing function
+   (that takes a state map and a line, and returns updated state with a :quads key),
+   a starting state, and a sequence of lines,
+   return a sequence of quads"
+  [processing-function starting-state lines]
+  (transduce
+   (line-to-quads-transducer processing-function starting-state)
+   conj
+   []
+   lines))
 
 
 ;; It's easy to convert an EDN-LD quad to an N-Quad:
@@ -269,8 +301,8 @@
   [iri]
   (cond
    (not (string? iri)) iri
-   (.startsWith iri "_:") iri)
-   :else (str "<" iri ">"))
+   (.startsWith iri "_:") iri
+   :else (str "<" iri ">")))
 
 (defn object-to-string
   "Given an EDN-LD object, return an N-Quads literal or IRI."
