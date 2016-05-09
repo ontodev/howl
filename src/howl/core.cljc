@@ -58,6 +58,26 @@
   [state & messages]
   (update state :errors (fnil concat []) messages))
 
+(defn ensure-sorted-iri-prefix
+  "Given a state,
+   ensure that it contains a special sorted-map for :iri-prefix."
+  [state]
+  (if (map? (:iri-prefix state))
+    state
+    (assoc state :iri-prefix (sorted-map-by (fn [a b] (> (count a) (count b)))))))
+
+(defn find-prefix
+  "Given a state map with a sorted :iri-prefix map,
+   return the first [prefix-iri prefix] pair
+   for which the given iri starts with the prefix-iri."
+  [state iri]
+  (->> state
+       :iri-prefix
+       (filter
+        (fn [[prefix-iri prefix]]
+          (.startsWith iri prefix-iri)))
+       first))
+
 
 ;; ## General Processing Functions
 
@@ -274,9 +294,9 @@
      {:predicate (get-in parse [3 1])}
      (case (get-in parse [5 0])
        :LANG
-       {:language (get-in parse [5 1])}
+       {:lang (get-in parse [5 1])}
        :DATATYPE
-       {:datatype (get-in parse [5 1])}))
+       {:type (get-in parse [5 1])}))
 
     :GRAPH_BLOCK
     (case (count parse)
@@ -294,8 +314,8 @@
       :content   (get-in parse [4 1])}
      (case (count (get-in parse [4]))
        2 {}
-       3 {:language (get-in parse [4 2 1])}
-       4 {:datatype (get-in parse [4 3 1])}
+       3 {:lang (get-in parse [4 2 1])}
+       4 {:type (get-in parse [4 3 1])}
        {}))
 
     :LINK_BLOCK
@@ -376,45 +396,46 @@
        (util/format "Could not expand label '%s'" label)
        (locate state)))))
 
-(defn expand-absolute
+(defn check-absolute
+  "Given an IRI string,
+   return it if it is absolute or blank,
+   otherwise throw an exception."
+  [state iri]
+  (if (and (string? iri)
+           (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
+    iri
+    (util/throw-exception
+     (util/format "Expanded IRI '%s' is not absolute or blank" iri)
+     (locate state))))
+
+(defn expand
   "Given a state map and a parse vector for a name,
    return an absolute IRI string,
    or throw an exception."
   [state name]
-  (case (first name)
-    :ABSOLUTE_IRI
-    (second name)
-    :WRAPPED_IRI
-    (expand-wrapped-iri state name)
-    :PREFIXED_NAME
-    (expand-prefixed-name state name)
-    :LABEL
-    (expand-label state name)
-    ; else
-    (util/throw-exception
-     (util/format "Could not expand name '%s'" name)
-     (locate state))))
+  (check-absolute
+   state
+   (case (first name)
+     :ABSOLUTE_IRI
+     (second name)
+     :WRAPPED_IRI
+     (expand-wrapped-iri state name)
+     :PREFIXED_NAME
+     (expand-prefixed-name state name)
+     :LABEL
+     (expand-label state name)
+     ; else
+     (util/throw-exception
+      (util/format "Could not expand name '%s'" name)
+      (locate state)))))
 
-(defn expand-name
-  "Given a state map, a block map, and a parse vector,
-   expand the name to an absolute IRI or blank node,
-   check the result and return it,
-   or throw an exception."
-  [state name]
-  (let [iri (expand-absolute state name)]
-    (if (and (string? iri)
-             (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
-      iri
-      (util/throw-exception
-       (util/format "Expanded IRI '%s' is not absolute or blank" iri)
-       (locate state)))))
-
+; TODO: Remove this
 (defn resolve-name
   [state block name]
-  (expand-name state name))
+  (expand state name))
 
 
-
+;; To track the rdfs:labels, we need to know what a valid label is.
 
 (defn valid-label?
   "Given a string, check whether it can be a HOWL label."
@@ -436,41 +457,110 @@
     (.endsWith   label " ") false
     :else true))
 
-(defn reverse-labels
+(defn expand-name
+  "Given a state map and a parse vector for a name,
+   expand the name to an absolute IRI or blank node,
+   check the result and return a parse vector,
+   or throw an exception."
+  [state name]
+  [:ABSOLUTE_IRI (expand state name)])
+
+(defn expand-names
   "Given a state map,
-   return it with a :iri-label map added
-   that maps from IRI to label."
+   if it has a :block key
+   expand any names and return the updated state
+   or throw an error."
   [state]
-  (->> state
-       :label-iri
-       (map (juxt second first))
-       (into {})
-       (assoc state :iri-label)))
+  (if-let [block (get state :block)]
+    (case (:block-type block)
+      :BASE_BLOCK
+      (let [absolute (expand-name state (:base block))]
+        (-> state
+            (assoc :base (second absolute))
+            (assoc-in [:block :base] absolute)))
 
-(defn prefix-sequence
-  "Given a state map,
-   return it with a :prefix-sequence vector added
-   where each entry is a [prefix-iri prefix] pair,
-   sorted from longest prefix-iri to shortest."
-  [state]
-  (->> state
-       :prefix-iri
-       (map (juxt second first))
-       (sort-by (comp count first) >)
-       (assoc state :prefix-sequence)))
+      :PREFIX_BLOCK
+      (let [absolute (expand-name state (:prefixed block))]
+        (-> state
+            ensure-sorted-iri-prefix
+            (assoc-in [:prefix-iri (:prefix block)] (second absolute))
+            (assoc-in [:iri-prefix (second absolute)] (:prefix block))
+            (assoc-in [:block :prefixed] absolute)))
 
-(defn find-prefix
-  "Given a state map with a :prefix-sequence vector and an IRI string,
-   return the first [prefix-iri prefix] pair
-   for which the given iri starts with the prefix-iri."
-  [state iri]
-  (->> state
-       :prefix-sequence
-       (filter
-        (fn [[prefix-iri prefix]]
-          (.startsWith iri prefix-iri)))
-       first))
+      :LABEL_BLOCK
+      (let [absolute (expand-name state (:identifier block))]
+        (-> state
+            (assoc-in [:label-iri (:label block)] (second absolute))
+            (assoc-in [:iri-label (second absolute)] (:label block))
+            (assoc-in [:block :identifier] absolute)))
 
+      :TYPE_BLOCK
+      (let [absolute (expand-name state (:predicate block))]
+        (cond
+         (:lang block)
+         (-> state
+             (assoc-in [:iri-type (second absolute) :lang] (:lang block))
+             (assoc-in [:block :predicate] absolute))
+         (:type block)
+         (let [datatype (expand-name state (:type block))]
+           (-> state
+               (assoc-in [:iri-type (second absolute) :type] (second datatype))
+               (assoc-in [:block :predicate] absolute)
+               (assoc-in [:block :type] datatype)))))
+
+      :GRAPH_BLOCK
+      (if (:graph state)
+        (let [absolute (expand-name state (:graph block))]
+          (-> state
+              (assoc :current-graph (second absolute))
+              (assoc :current-subject (second absolute))
+              (assoc-in [:block :graph] absolute)))
+        (dissoc state :graph))
+
+      :SUBJECT_BLOCK
+      (let [absolute (expand-name state (:subject block))]
+        (-> state
+            (assoc :current-subject (second absolute))
+            (assoc-in [:block :subject] absolute)))
+
+      :LITERAL_BLOCK
+      (let [state (if (:type block)
+                    (assoc-in state [:block :type] (expand-name state (:type block)))
+                    state)
+            absolute (expand-name state (:predicate block))]
+        (if (and (= (second absolute) "http://www.w3.org/2000/01/rdf-schema#label")
+                 (string? (:current-subject state))
+                 (valid-label? (:content block)))
+          (-> state
+              (assoc-in [:label-iri (:content block)] (:current-subject state))
+              (assoc-in [:iri-label (:current-subject state)] (:content block))
+              (assoc-in [:block :predicate] absolute))
+          (assoc-in state [:block :predicate] absolute)))
+
+      :LINK_BLOCK
+      (-> state
+          (assoc-in [:block :predicate] (expand-name state (:predicate block)))
+          (assoc-in [:block :object]    (expand-name state (:object block))))
+
+      :EXPRESSION_BLOCK
+      (-> state
+          (assoc-in [:block :predicate] (expand-name state (:predicate block)))
+          (assoc-in
+           [:block :expression]
+           (clojure.walk/postwalk
+            (fn [x]
+              (cond
+               (and (vector? x) (= :MN_LABEL (first x)))
+               (expand-name state [:LABEL (second x)])
+               (and (vector? x) (= :MN_QUOTED_LABEL (first x)))
+               (expand-name state [:LABEL (nth 2 x)])
+               :else
+               x))
+            (:expression block))))
+
+      ;else
+      state)
+    state))
 
 
 ;; We can also change absolute IRIs back into names,
