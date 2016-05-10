@@ -45,6 +45,9 @@ C
            {:block {:line "1"}
             :line-number 11
             :merging-lines ["2"]})))
+  (testing "partial merge"
+    (is (= (merge-line {} "    1")
+           {:merging-lines ["  1"]})))
   (testing "merge error"
     (is (= (merge-line
             {:line-number 10

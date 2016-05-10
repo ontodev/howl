@@ -124,7 +124,8 @@
 (defn merge-line
   "Given a state map and a line string
    return the updated state
-   with a :line string if a merge was completed."
+   with a :block with a :line string if a merge was completed,
+   otherwise no :block."
   [state line]
   (cond
    (not (string? line))
@@ -133,10 +134,14 @@
     (util/format "Line '%s' is not a string" line))
 
    (.startsWith line "  ")
-   (update state :merging-lines (fnil conj []) (subs line 2))
+   (-> state
+       (update :merging-lines (fnil conj []) (subs line 2))
+       (dissoc :block))
 
    (string/blank? line)
-   (update state :merging-lines (fnil conj []) line)
+   (-> state
+       (update :merging-lines (fnil conj []) line)
+       (dissoc :block))
 
    :else
    (-> state
