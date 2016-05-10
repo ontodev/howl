@@ -350,8 +350,10 @@
      :block
      (merge
       (:block state)
-      {:block-type  (-> parse first)
-       :eol         (-> parse last last)}
+      {:block-type (-> parse first)
+       :eol        (if (= "" (-> parse last last))
+                     "\n"
+                     (-> parse last last))}
       (annotate-parse parse)))
     state))
 
@@ -656,10 +658,90 @@
   [name]
   (apply str (rest name)))
 
+(defn space-blocks
+  [blocks this-block]
+  (let [this-type  (:block-type this-block)
+        last-block (last blocks)
+        last-type  (:block-type last-block)
+        last-eol   (:eol last-block)]
+    (cond
+     (and (nil? last-block)
+          (= :BLANK_BLOCK this-type)
+          (= "\n" (:eol this-block)))
+     []
+
+     (and (= :PREFIX_BLOCK last-type)
+          (not= :PREFIX_BLOCK this-type))
+     (conj (vec (butlast blocks))
+           (assoc last-block :eol (str last-eol "\n"))
+           this-block)
+
+     (and (= :LABEL_BLOCK last-type)
+          (not= :LABEL_BLOCK this-type))
+     (conj (vec (butlast blocks))
+           (assoc last-block :eol (str last-eol "\n"))
+           this-block)
+
+     (and (= :TYPE_BLOCK last-type)
+          (not= :TYPE_BLOCK this-type))
+     (conj (vec (butlast blocks))
+           (assoc last-block :eol (str last-eol "\n"))
+           this-block)
+
+     (and last-type
+          (= :GRAPH_BLOCK this-type))
+     (conj (vec (butlast blocks))
+           (assoc last-block :eol (str last-eol "\n"))
+           this-block)
+
+     (and last-type
+          (= :SUBJECT_BLOCK this-type))
+     (conj (vec (butlast blocks))
+           (assoc last-block :eol (str last-eol "\n"))
+           this-block)
+
+     :else
+     (conj blocks this-block))))
+
 (defn block-to-line
   "Given a block map, return a printable HOWL string."
   [block]
   (case (:block-type block)
+    :BLANK_BLOCK
+    (:eol block)
+
+    :COMMENT_BLOCK
+    (str (:hash block)
+         (:comment block)
+         (:eol block))
+
+    :BASE_BLOCK
+    (str "BASE "
+         (render-name (:base block))
+         (:eol block))
+
+    :PREFIX_BLOCK
+    (str "PREFIX "
+         (:prefix block)
+         ":> "
+         (render-name (:prefixed block))
+         (:eol block))
+
+    :LABEL_BLOCK
+    (str "LABEL "
+         (render-name (:identifier block))
+         ": "
+         (:label block)
+         (:eol block))
+
+    :TYPE_BLOCK
+    (str "TYPE "
+         (render-name (:predicate block))
+         ":> "
+         (when (:lang block) (str "@" (:lang block)))
+         (when (:type block) (render-name (:type block)))
+         (:eol block))
+
     :GRAPH_BLOCK
     (str "GRAPH"
          (when (:graph block) (str " " (render-name (:graph block))))
@@ -674,6 +756,8 @@
          (render-name (:predicate block))
          ": "
          (:value block)
+         (when (:lang block) (str "@" (:lang block)))
+         (when (:type block) (str "^^" (render-name (:type block))))
          (:eol block))
 
     :LINK_BLOCK
@@ -704,5 +788,6 @@
   [state blocks]
   (->> blocks
        (map (partial rename state))
+       (reduce space-blocks [])
        (map block-to-line)
        (apply str)))

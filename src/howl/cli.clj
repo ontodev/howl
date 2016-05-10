@@ -18,11 +18,12 @@
    return a lazy sequence of HOWL block maps."
   [file-name]
   (with-open [reader (io/reader file-name)]
-    (transduce
-     (comp
-      (core/merge-lines file-name)
-      (map core/parse-block))
-     conj
+    (core/lines-to-blocks
+     (fn [state line]
+       (->> (core/merge-line state line)
+            core/parse-block
+            core/annotate-block))
+     {:file-name file-name}
      (line-seq reader))))
 
 (defn parse-rdf-file
@@ -42,13 +43,11 @@
    return a lazy sequence of HOWL block maps."
   [file-name]
   (cond
-   (.endsWith file-name "howl")
-   (parse-howl-file file-name)
-
-   ; TODO: more formats
-
-   :else
-   (parse-rdf-file file-name)))
+    (.endsWith file-name "howl")
+    (parse-howl-file file-name)
+    ; TODO: more formats
+    :else
+    (parse-rdf-file file-name)))
 
 (defn parse-files
   "Given a sequence of file names,
@@ -59,21 +58,15 @@
 (defn get-context
   "Given an option map,
    return a state map build from the --context entries."
-  [{:keys [context]}]
-  (->> (apply parse-files context)
-       (reduce (comp first nq/render-block) {})
-       core/reverse-labels
-       core/prefix-sequence))
-
-(defn print-howl
-  "Given a sequence of file names, print HOWL."
-  [options file-names]
-  (let [state (get-context options)]
-    (->> (apply parse-files file-names)
-         (map (partial core/rename state))
-         (map core/render-block)
-         (map println)
-         doall)))
+  [{:keys [context] :as options}]
+  (reduce
+   (fn [state block]
+     (-> state
+         (assoc :block block)
+         core/expand-names
+         (dissoc :block)))
+   {}
+   (apply parse-files context)))
 
 (defn print-parses
   "Given a sequence of file names,
@@ -84,25 +77,45 @@
        (map println)
        doall))
 
+(defn print-howl
+  "Given a sequence of file names, print HOWL."
+  [options file-names]
+  (let [state (get-context options)]
+    (->> (apply parse-files file-names)
+         (map (partial core/rename state))
+         (reduce core/space-blocks [])
+         (map core/block-to-line)
+         (map print)
+         doall)))
+
 (defn print-quads
-  "Given a sequence of file names
+  "Given a map of options and a sequence of file names
    print a sequence of N-Quads."
-  [file-names]
+  [options file-names]
   (->> (apply parse-files file-names)
-       (transduce (nq/render-quads) conj)
+       (nq/lines-to-quads
+        (fn [state block]
+          (->> (assoc state :block block)
+               core/expand-names
+               nq/convert-quads))
+        (get-context options))
        (map nq/quad-to-string)
        (map println)
        doall))
 
 (defn print-triples
-  "Given a sequence of file names
+  "Given a map of options and a sequence of file names
    print a sequence of N-Triples from the default graph."
-  [file-names]
+  [options file-names]
   (->> (apply parse-files file-names)
-       (transduce (nq/render-quads) conj)
-       (filter #(nil? (first %)))
-       (map rest)
-       (map (partial apply format "%s %s %s ."))
+       (nq/lines-to-quads
+        (fn [state block]
+          (->> (assoc state :block block)
+               core/expand-names
+               nq/convert-quads))
+        (get-context options))
+       (map #(assoc % 0 nil))
+       (map nq/quad-to-string)
        (map println)
        doall))
 
@@ -166,9 +179,9 @@
       (not= (count arguments) 1) (exit 1 (usage summary))
       errors (exit 1 (error-msg errors)))
     ;; Execute program with options
-    (case (-> options (get :output "ntriples") string/lower-case format-map)
-      "howl"     (print-howl options arguments)
+    (case (-> options (get :output "nquads") string/lower-case format-map)
       "parses"   (print-parses arguments)
-      "nquads"   (print-quads arguments)
-      "ntriples" (print-triples arguments)
+      "howl"     (print-howl options arguments)
+      "nquads"   (print-quads options arguments)
+      "ntriples" (print-triples options arguments)
       (exit 1 (usage summary)))))

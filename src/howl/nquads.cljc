@@ -341,10 +341,7 @@
     :eol "\n"}
    (cond
     (map? object)
-    {:block-type :LITERAL_BLOCK
-     :content (:value object)
-     ; TODO: language, datatype
-     }
+    (assoc object :block-type :LITERAL_BLOCK)
     (vector? object)
     {:block-type :EXPRESSION_BLOCK
      :expression object}

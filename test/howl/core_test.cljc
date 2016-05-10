@@ -93,7 +93,7 @@ C
               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
               [:EOL ""]]
              :base [:ABSOLUTE_IRI "http://foo.com"]
-             :eol ""}}))))
+             :eol "\n"}}))))
 
 (deftest test-composition
   (testing "one line"
@@ -112,7 +112,7 @@ C
               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
               [:EOL ""]]
              :base [:ABSOLUTE_IRI "http://foo.com"]
-             :eol ""}})))
+             :eol "\n"}})))
   (testing "multiple lines"
     (is (= (lines-to-blocks
             (fn [state line]
@@ -124,7 +124,7 @@ C
            [{:block-type :BLANK_BLOCK
              :line ""
              :parse [:BLANK_BLOCK [:EOL ""]]
-             :eol ""}
+             :eol "\n"}
             {:block-type :BASE_BLOCK
              :line "BASE http://foo.com"
              :parse
@@ -134,12 +134,12 @@ C
               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
               [:EOL ""]]
              :base [:ABSOLUTE_IRI "http://foo.com"]
-             :eol ""}
+             :eol "\n"}
             {:block-type :SUBJECT_BLOCK
              :line "2"
              :parse [:SUBJECT_BLOCK [:SUBJECT [:LABEL "2"]] [:EOL ""]]
              :subject [:LABEL "2"]
-             :eol ""}
+             :eol "\n"}
             {:block-type :LITERAL_BLOCK
              :line "3: 4\n  5"
              :parse [:LITERAL_BLOCK
@@ -151,7 +151,7 @@ C
              :arrows ""
              :predicate [:LABEL "3"]
              :value "4\n  5"
-             :eol ""}
+             :eol "\n"}
             ])))
   (testing "error"
     (is (thrown-with-msg?

@@ -52,32 +52,52 @@
     (is (= bs blocks))
     (is (= result howl))))
 
-#_(deftest test-rdf-to-howl
-    (testing "Convert statement"
-      (test-trig-equals-howl
-       "<foo> rdfs:label \"FOO\"@en ."
-       [{:block-type :SUBJECT_BLOCK
-         :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
-         :eol "\n"}
-        {:block-type :LITERAL_BLOCK
-         :arrows ""
-         :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
-         :value "FOO"
-         :eol "\n"}]
-       "<foo>
-label: FOO
+(deftest test-rdf-to-howl
+  (testing "Convert statement"
+    (test-trig-equals-howl
+     "<foo> rdfs:label \"FOO\"@en ."
+     [{:block-type :SUBJECT_BLOCK
+       :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "FOO"
+       :lang "en"
+       :eol "\n"}]
+     "<foo>
+label: FOO@en
 ")))
 
-#_(deftest test-rdf-to-howl
-    (testing "Convert named graph"
-      (test-trig-equals-howl
-       "<foo> rdfs:label \"FOO\"@en .
+(deftest test-rdf-to-howl
+  (testing "Convert named graph"
+    (test-trig-equals-howl
+     "<foo> rdfs:label \"FOO\"@en .
 <baz> { <baz> rdfs:label \"BAZ\"@en }"
-       "<foo>
-label: FOO
+     [{:block-type :SUBJECT_BLOCK
+       :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "FOO"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :GRAPH_BLOCK
+       :graph [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAZ"
+       :lang "en"
+       :eol "\n"}]
+     "<foo>
+label: FOO@en
 
 GRAPH <baz>
-label: BAZ")))
+label: BAZ@en
+")))
 
 ; Case 1: RDF Quads
 
