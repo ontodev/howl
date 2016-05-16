@@ -1,5 +1,6 @@
 (ns howl.manchester-test
   (:require [clojure.test :refer :all]
+            [clojure.string :as string]
             [howl.nquads :refer [rdf owl] :as nq]
             [howl.core :as core]))
 
@@ -7,7 +8,11 @@
   {:label-iri
    {"foo"      "http://foo"
     "bar"      "http://bar"
-    "has part" "http://part"}})
+    "has part" "http://part"}
+   :iri-label
+   {"http://foo"  "foo"
+    "http://bar"  "bar"
+    "http://part" "has part"}})
 
 (def obo "http://purl.obolibrary.org/obo/")
 
@@ -41,7 +46,23 @@
   (is (= result
          (nq/convert-expression
           {}
-          (core/expand-manchester-labels start-state parse)))))
+          (core/expand-manchester-labels start-state parse))))
+  ; TODO: roundtrip Manchester tests
+  #_(if (:quads result)
+    (is (= (->> result
+                :quads
+                (concat [[nil "http://X" (str nq/rdfs "subClassOf") "_:b1"]])
+                nq/graphify
+                first
+                second
+                nq/process-expressions
+                (#(get-in % ["http://X" (str nq/rdfs "subClassOf")]))
+                first
+                key
+                (core/expand-manchester-labels start-state)
+                (core/rename-in-expression start-state)
+                core/expression-to-string)
+           manchester))))
 
 (deftest test-manchester-class-expression
   (testing "Simple label"

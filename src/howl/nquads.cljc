@@ -9,6 +9,7 @@
 (def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 (def rdfs "http://www.w3.org/2000/01/rdf-schema#")
 (def owl "http://www.w3.org/2002/07/owl#")
+(def obo "http://purl.obolibrary.org/obo/")
 (def plain-literal "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
 (def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
 (def xsd-string "http://www.w4.org/2001/XMLSchema#string")
@@ -51,7 +52,7 @@
   "Given a state map with :current-subject and :block keys,
    where the :block has no :arrows,
    form a single quad,
-   and return the update state."
+   and return the updated state."
   [state]
   (let [g (:current-graph state)
         s (str "_:b" (get state :blank-node-count 0))
@@ -61,7 +62,7 @@
         a (count (get-in state [:block :arrows]))
         annotated (get-in state [:statements (dec a)])]
    (-> state
-       (update :blank-nodes (fnil inc 0))
+       (update :blank-node-count (fnil inc 0))
        (assoc
         :statements
         (conj (vec (take a (:statements state))) statement))
@@ -307,12 +308,15 @@
 (defn object-to-string
   "Given an EDN-LD object, return an N-Quads literal or IRI."
   [o]
-  (cond
-   (and (map? o) (:lang o)) (str "\"" (:value o) "\"@" (:lang o))
-   (and (map? o) (:type o)) (str "\"" (:value o) "\"^^" (wrap-iri (:type o)))
-   (map? o) (str "\"" (:value o) "\"")
-   (string? o) (wrap-iri o)
-   :else nil))
+  (let [value (-> (get o :value "NULL")
+                  (string/replace "\n" "\\n")
+                  (string/replace "\"" "\\\""))]
+    (cond
+     (and (map? o) (:lang o)) (str "\"" value "\"@" (:lang o))
+     (and (map? o) (:type o)) (str "\"" value "\"^^" (wrap-iri (:type o)))
+     (map? o) (str "\"" value "\"")
+     (string? o) (wrap-iri o)
+     :else nil)))
 
 (defn quad-to-string
   "Given an EDN-LD Quad vector return an N-Quads string."
@@ -327,7 +331,7 @@
 
 
 
-(defn render-statement-2
+(defn render-statement
   "Given an arrow string (for depth),
    a predicate IRI, and an object,
    return a HOWL statement block map."
@@ -357,7 +361,7 @@
    return a sequence of HOWL statement block maps."
   [arrows predicate-iri object-map]
   (concat
-   [(render-statement-2 arrows predicate-iri (first object-map))]
+   [(render-statement arrows predicate-iri (first object-map))]
    (render-predicates (str arrows ">") (second object-map))))
 
 (defn render-predicate
@@ -367,13 +371,31 @@
   [arrows predicate-iri object-list]
   (mapcat (partial render-statements arrows predicate-iri) object-list))
 
+(def predicate-sort-list
+  [(str rdfs "label")
+   (str rdf "type")
+   (str obo "IAO_0000115") ; definition
+   (str obo "IAO_0000119") ; definition source
+   (str obo "IAO_0000112") ; example of usage
+   (str owl "equivalentClass")
+   (str rdfs "subClassOf")
+   (str obo "IAO_0000118") ; alternative term
+   ])
+
+(def predicate-sort
+  (->> predicate-sort-list
+       (map-indexed (fn [i v] [v i]))
+       (into {})))
+
 (defn render-predicates
   "Given an arrow string (for depth), and a predicate map,
    return a sequence of HOWL statement block maps."
   [arrows predicate-map]
   (->> predicate-map
        keys
+       (map (juxt #(get predicate-sort % 100) identity))
        sort
+       (map second)
        (mapcat #(render-predicate arrows % (get predicate-map %)))))
 
 (defn render-subject
@@ -515,30 +537,13 @@
              (remove (comp nil? second))
              (into {}))]
     (->> (apply dissoc subject-map (keys expressions))
-    (map
-     (fn [[k v]]
-       [k
-       (clojure.walk/prewalk
-        (fn [x] (get expressions x x))
-        v)]))
-    (into {}))))
-
-(defn render-expression-2
-  "Given a subject map and the IRI of an OWL expression,
-   return an updated subject map with the OWL expression
-   'folded in' to the object map of the appropriate parent."
-  [subject-map node]
-  (assoc-in
-   (dissoc subject-map node)
-   [(ffirst (get-in subject-map [node (str owl "annotatedSource")]))
-    (ffirst (get-in subject-map [node (str owl "annotatedProperty")]))
-    (ffirst (get-in subject-map [node (str owl "annotatedTarget")]))]
-   (dissoc
-    (get subject-map node)
-    (str rdf "type")
-    (str owl "annotatedSource")
-    (str owl "annotatedProperty")
-    (str owl "annotatedTarget"))))
+         (map
+          (fn [[k v]]
+            [k
+             (clojure.walk/prewalk
+              (fn [x] (get expressions x x))
+              v)]))
+         (into {}))))
 
 (defn get-annotation-deps
   "Given a subject map,
@@ -597,16 +602,15 @@
    return a sequnce of HOWL block maps for the subjects."
   [subject-map]
   (let [subject-map
-        subject-map
-        ; TODO: process annotations and expressions
-        ;(->> subject-map
-        ;     process-annotations
-        ;     process-expressions
-        ;     )
-        ]
+        (->> subject-map
+             process-annotations
+             process-expressions)]
     (->> subject-map
          keys
-         sort ; TODO: better predicate sorting
+         ; TODO: better subject sorting
+         (map (juxt #(if (.startsWith % "_:") 2 1) identity))
+         sort
+         (map second)
          (mapcat #(render-subject % (get subject-map %))))))
 
 (def arq-default-graph
@@ -622,6 +626,18 @@
      :eol "\n"}]
    (render-predicates "" (get subject-map graph-iri))
    (render-subjects (dissoc subject-map graph-iri))))
+
+(defn render-labels
+  [quads]
+  (->> quads
+       (filter (fn [[g s p o d l]] (= p (str rdfs "label"))))
+       (filter (fn [[g s p o d l]] (map? o)))
+       (remove (fn [[g s p o d l]] (.startsWith s "_:")))
+       (map (fn [[g s p o d l]]
+              {:block-type :LABEL_BLOCK
+               :identifier [:ABSOLUTE_IRI s]
+               :label (:value o)
+               :eol "\n"}))))
 
 (defn render-graphs
   "Given a graph map,
@@ -673,11 +689,15 @@
   "Given a sequence of quads,
    return a sequence of HOWL block maps."
   [quads]
-  (render-graphs (graphify quads)))
+  (concat
+   (render-labels quads)
+   (render-graphs (graphify quads))))
 
 (defn triples-to-howl
   "Given a sequence of triples,
    return a sequence of HOWL block maps."
   [quads]
-  (render-subjects (triplify quads)))
+  (concat
+   (render-labels quads)
+   (render-subjects (triplify quads))))
 

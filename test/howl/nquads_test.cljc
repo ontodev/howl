@@ -74,7 +74,7 @@
              :arrows ">>"
              :predicate [:ABSOLUTE_IRI (str rdfs "seeAlso")]
              :object [:ABSOLUTE_IRI (str owl "Class")]}
-            :blank-nodes 1
+            :blank-node-count 1
             :statements
             ["A"
              [nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]

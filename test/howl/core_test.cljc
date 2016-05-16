@@ -70,6 +70,18 @@ C
               "BASE"
               [:SPACES " "]
               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:EOL ""]]}})))
+  ; TODO: Fix absolute IRIs as predicates
+  #_(testing "absolute IRI then colon"
+    (is (= (parse-block {:block {:line "http://foo.com: FOO"}})
+           {:block
+            {:line "http://foo.com: FOO"
+             :parse
+             [:LITERAL_BLOCK
+              [:ARROWS "" ""]
+              [:PREDICATE [:ABSOLUTE_IRI "http://foo.com"]]
+              [:COLON "" ":" " "]
+              [:LITERAL "FOO"]
               [:EOL ""]]}}))))
 
 (deftest test-annotate
@@ -203,18 +215,26 @@ C
             {:block
              {:block-type :PREFIX_BLOCK
               :prefix "rdfs"
-              :prefixed [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#"]
-              }})
+              :prefixed [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#"]}})
            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
             :iri-prefix {"http://www.w3.org/2000/01/rdf-schema#" "rdfs"}
+            :sorted-iri-prefix [["http://www.w3.org/2000/01/rdf-schema#" "rdfs"]]
             :block
             {:block-type :PREFIX_BLOCK
              :prefix "rdfs"
              :prefixed [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#"]}})))
+  (testing "prefixes"
+    (is (= (-> {}
+               (assoc-in [:iri-prefix "http://"] "obo")
+               (assoc-in [:iri-prefix "http://BFO_"] "BFO")
+               (assoc-in [:iri-prefix "http://OBI_"] "OBI")
+               (assoc-in [:iri-prefix "http://IAO_"] "IAO")
+               sort-iri-prefix
+               (get-name nil [:ABSOLUTE_IRI "http://OBI_1234"]))
+           [:PREFIXED_NAME "OBI" ":" "1234"])))
   (testing "type"
     (is (= (expand-names
-            {
-             :label-iri {"2" "http://foo.com/2"}
+            {:label-iri {"2" "http://foo.com/2"}
              :block
              {:block-type :TYPE_BLOCK
               :predicate [:LABEL "2"]

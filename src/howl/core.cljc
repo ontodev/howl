@@ -58,21 +58,22 @@
   [state & messages]
   (update state :errors (fnil concat []) messages))
 
-(defn ensure-sorted-iri-prefix
-  "Given a state,
-   ensure that it contains a special sorted-map for :iri-prefix."
+(defn sort-iri-prefix
+  "Given a state with an :iri-prefix map,
+   update the state with a :sorted-iri-prefix sequence."
   [state]
-  (if (map? (:iri-prefix state))
-    state
-    (assoc state :iri-prefix (sorted-map-by (fn [a b] (> (count a) (count b)))))))
+  (assoc
+   state
+   :sorted-iri-prefix
+   (->> state :iri-prefix (sort-by (comp count first) >))))
 
 (defn find-prefix
   "Given a state map with a sorted :iri-prefix map,
-   return the first [prefix-iri prefix] pair
+   return the [prefix-iri prefix] pair
    for which the given iri starts with the prefix-iri."
   [state iri]
   (->> state
-       :iri-prefix
+       :sorted-iri-prefix
        (filter
         (fn [[prefix-iri prefix]]
           (.startsWith iri prefix-iri)))
@@ -212,10 +213,10 @@
     DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     LITERAL    = #'.+(?=@(\\w|-)+)' LANG /
                  #'.+(?=\\^\\^\\S+)' '^^' DATATYPE /
-                 #'(\n|.)+.+'
+                 #'(\n|.)*.+'
 
     PREFIX        = #'(\\w|-)+'
-    BLANK_NODE    = '_:' #'(\\w|-)+'
+    BLANK_NODE    = '_:' #'(\\w|-|:)+'
     PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:]*'
     WRAPPED_IRI   = '<' #'[^>\\s]+' '>'
     ABSOLUTE_IRI  = #'\\w+:/[^>\\s]+'
@@ -413,7 +414,8 @@
    otherwise throw an exception."
   [state iri]
   (if (and (string? iri)
-           (re-matches #"^_:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
+           ; TODO: Better IRI checking
+           (re-matches #"^_:\S+$|^urn:\S+$|^mailto:\S+$|^\w+://\S+$" iri))
     iri
     (util/throw-exception
      (util/format "Expanded IRI '%s' is not absolute or blank" iri)
@@ -429,6 +431,8 @@
    (case (first name)
      :ABSOLUTE_IRI
      (second name)
+     :BLANK_NODE
+     (apply str (rest name))
      :WRAPPED_IRI
      (expand-wrapped-iri state name)
      :PREFIXED_NAME
@@ -508,9 +512,9 @@
       :PREFIX_BLOCK
       (let [absolute (expand-name state (:prefixed block))]
         (-> state
-            ensure-sorted-iri-prefix
             (assoc-in [:prefix-iri (:prefix block)] (second absolute))
             (assoc-in [:iri-prefix (second absolute)] (:prefix block))
+            sort-iri-prefix
             (assoc-in [:block :prefixed] absolute)))
 
       :LABEL_BLOCK
@@ -554,7 +558,8 @@
                     (assoc-in state [:block :type] (expand-name state (:type block)))
                     state)
             absolute (expand-name state (:predicate block))]
-        (if (and (= (second absolute) "http://www.w3.org/2000/01/rdf-schema#label")
+        (if (and (string/blank? (:arrows block))
+                 (= (second absolute) "http://www.w3.org/2000/01/rdf-schema#label")
                  (string? (:current-subject state))
                  (valid-label? (:value block)))
           (-> state
@@ -607,6 +612,17 @@
      :else
      [:ABSOLUTE_IRI iri])))
 
+(defn rename-in-expression
+  [state expression]
+  (clojure.walk/postwalk
+      (fn [x]
+        (let [label (get-in state [:iri-label x])]
+          (cond
+           (and (string? label) (re-find #"\s" label)) (str "'" label "'")
+           label label
+           :else x)))
+      expression))
+
 (defn rename
   "Given a state map and a block,
    return the block with nicer names."
@@ -639,14 +655,7 @@
      :predicate
      (get-name state block (:predicate block))
      :expression
-     (clojure.walk/postwalk
-      (fn [x]
-        (let [label (get-in state [:iri-label x])]
-          (cond
-           (and (string? label) (re-find #"\s" label)) (str "'" label "'")
-           label label
-           :else x)))
-      (:expression block)))
+     (rename-in-expression state (:expression block)))
 
     ;else
     block))
@@ -703,6 +712,16 @@
      :else
      (conj blocks this-block))))
 
+(defn expression-to-string
+  [expression]
+  (->> expression
+       (#(if (and (= "(" (second %)) (= ")" (last %)))
+           (concat [(first %)] (drop 2 (butlast %)) )
+           %))
+       flatten
+       (filter string?)
+       (apply str)))
+
 (defn block-to-line
   "Given a block map, return a printable HOWL string."
   [block]
@@ -755,7 +774,10 @@
     (str (:arrows block)
          (render-name (:predicate block))
          ": "
-         (:value block)
+         (-> (:value block)
+             (string/replace "\n" "\n  ")
+             (string/replace "\n \n" "\n\n")
+             (string/replace "\n  \n" "\n\n"))
          (when (:lang block) (str "@" (:lang block)))
          (when (:type block) (str "^^" (render-name (:type block))))
          (:eol block))
@@ -771,14 +793,7 @@
     (str (:arrows block)
          (render-name (:predicate block))
          ":>> "
-         (->> block
-              :expression
-              (#(if (and (= "(" (second %)) (= ")" (last %)))
-                  (concat [(first %)] (drop 2 (butlast %)) )
-                  %))
-              flatten
-              (filter string?)
-              (apply str))
+         (expression-to-string (:expression block))
          (:eol block))
 
     ;else

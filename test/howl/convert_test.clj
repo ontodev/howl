@@ -56,7 +56,11 @@
   (testing "Convert statement"
     (test-trig-equals-howl
      "<foo> rdfs:label \"FOO\"@en ."
-     [{:block-type :SUBJECT_BLOCK
+     [{:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :label "FOO"}
+      {:block-type :SUBJECT_BLOCK
        :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
        :eol "\n"}
       {:block-type :LITERAL_BLOCK
@@ -65,16 +69,24 @@
        :value "FOO"
        :lang "en"
        :eol "\n"}]
-     "<foo>
-label: FOO@en
-")))
+     "LABEL http://foo.com/foo: FOO
 
-(deftest test-rdf-to-howl
+<foo>
+label: FOO@en
+"))
   (testing "Convert named graph"
     (test-trig-equals-howl
      "<foo> rdfs:label \"FOO\"@en .
-<baz> { <baz> rdfs:label \"BAZ\"@en }"
-     [{:block-type :SUBJECT_BLOCK
+      <baz> { <baz> rdfs:label \"BAZ\"@en }"
+     [{:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :label "FOO"}
+      {:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :label "BAZ"}
+      {:block-type :SUBJECT_BLOCK
        :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
        :eol "\n"}
       {:block-type :LITERAL_BLOCK
@@ -92,96 +104,168 @@ label: FOO@en
        :value "BAZ"
        :lang "en"
        :eol "\n"}]
-     "<foo>
+     "LABEL http://foo.com/foo: FOO
+LABEL http://foo.com/baz: BAZ
+
+<foo>
 label: FOO@en
 
 GRAPH <baz>
 label: BAZ@en
-")))
+"))
+  (testing "multiple OWL annotations"
+    (test-trig-equals-howl
+     "<foo> rdfs:label \"FOO\"@en .
+_:b1 rdf:type owl:Axiom ;
+  owl:annotatedSource <foo> ;
+  owl:annotatedProperty rdfs:label ;
+  owl:annotatedTarget \"FOO\"@en ;
+  rdfs:label \"BAR\"@en ;
+  rdfs:label \"BAT\"@en .
+<baz> { <baz> rdfs:label \"BAZ\"@en }"
+     [{:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :label "FOO"}
+      {:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :label "BAZ"}
+      {:block-type :SUBJECT_BLOCK
+       :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "FOO"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows "> "
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAR"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows "> "
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAT"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :GRAPH_BLOCK
+       :graph [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAZ"
+       :lang "en"
+       :eol "\n"}]
+     "LABEL http://foo.com/foo: FOO
+LABEL http://foo.com/baz: BAZ
 
-; Case 1: RDF Quads
-
-(def test-howl "<foo>
-label: FOO
-
-GRAPH <baz>
-label: BAZ")
-
-(def test-quad-string
-  "<http://foo.com/foo> <http://ex.com/label> \"FOO\"@en .
-<http://foo.com/baz> <http://ex.com/label> \"BAZ\"@en <http://foo.com/baz> .")
-
-(def test-quads
-  (second (edn-ld.jena/read-quad-string test-quad-string "n-quads")))
-
-
-#_(deftest test-render-howl
-    (testing "Render N-Quads to HOWL"
-      (is (= (render-quads test-state test-quads)
-             test-howl))))
-
-
-; Case 2: OWL annotations
-
-(def test-howl-2 "
 <foo>
-label: FOO
-> label: BAR
->> label: BAT
+label: FOO@en
+> label: BAR@en
+> label: BAT@en
 
 GRAPH <baz>
-label: BAZ")
+label: BAZ@en
+"))
+  (testing "nested OWL annotations"
+    (test-trig-equals-howl
+     "<foo> rdfs:label \"FOO\"@en .
+_:b1 rdf:type owl:Axiom ;
+  owl:annotatedSource <foo> ;
+  owl:annotatedProperty rdfs:label ;
+  owl:annotatedTarget \"FOO\"@en ;
+  rdfs:label \"BAR\"@en .
+_:b2 rdf:type owl:Axiom ;
+  owl:annotatedSource _:b1 ;
+  owl:annotatedProperty rdfs:label ;
+  owl:annotatedTarget \"BAR\"@en ;
+  rdfs:label \"BAT\"@en .
+<baz> { <baz> rdfs:label \"BAZ\"@en }"
+     [{:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :label "FOO"}
+      {:block-type :LABEL_BLOCK
+       :eol "\n"
+       :identifier [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :label "BAZ"}
+      {:block-type :SUBJECT_BLOCK
+       :subject [:ABSOLUTE_IRI "http://foo.com/foo"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "FOO"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows "> "
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAR"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ">> "
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAT"
+       :lang "en"
+       :eol "\n"}
+      {:block-type :GRAPH_BLOCK
+       :graph [:ABSOLUTE_IRI "http://foo.com/baz"]
+       :eol "\n"}
+      {:block-type :LITERAL_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
+       :value "BAZ"
+       :lang "en"
+       :eol "\n"}]
+     "LABEL http://foo.com/foo: FOO
+LABEL http://foo.com/baz: BAZ
 
-(def test-quad-string-2
-  "<http://foo.com/foo> <http://ex.com/label> \"FOO\"@en .
-_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedSource> <http://foo.com/foo> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://ex.com/label> .
-_:b1 <http://www.w3.org/2002/07/owl#annotatedTarget> \"FOO\"@en .
-_:b1 <http://ex.com/label> \"BAR\"@en .
-_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
-_:b2 <http://www.w3.org/2002/07/owl#annotatedSource> _:b1 .
-_:b2 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://ex.com/label> .
-_:b2 <http://www.w3.org/2002/07/owl#annotatedTarget> \"BAR\"@en .
-_:b2 <http://ex.com/label> \"BAT\"@en .
-<http://foo.com/baz> <http://ex.com/label> \"BAZ\"@en <http://foo.com/baz> .")
+<foo>
+label: FOO@en
+> label: BAR@en
+>> label: BAT@en
 
-(def test-quads-2
-  (second (edn-ld.jena/read-quad-string test-quad-string-2 "n-quads")))
-
-#_(deftest test-render-howl-2
-    (testing "Render N-Quads to HOWL with nested OWL annotations"
-      (is (= (render-quads test-state test-quads-2)
-             test-howl-2))))
-
-
-;; Case 3: Manchester
-
-(def test-howl-3 "
-<C>
-label: C
-subclass of:>> 'has part' some (not B)")
-
-(def test-quad-string-3
-  "<http://foo.com/C> <http://ex.com/label> \"C\"@en .
-<http://foo.com/C> <http://www.w3.org/2000/01/rdf-schema#subClassOf> _:b1 .
-_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> .
-_:b1 <http://www.w3.org/2002/07/owl#onProperty> <http://foo.com/A> .
-_:b1 <http://www.w3.org/2002/07/owl#someValuesFrom> _:b2 .
-_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
-_:b2 <http://www.w3.org/2002/07/owl#complementOf> <http://foo.com/B> .")
-
-(def test-quads-3
-  (second (edn-ld.jena/read-quad-string test-quad-string-3 "n-quads")))
-
-(def test-subject-map-3 (get (nq/graphify test-quads-3) nq/arq-default-graph))
-
-#_(deftest test-reduce-expression
-    (testing "Reduce 'some'"
-      (is (= (nq/process-expressions test-subject-map-3)
-             nil))))
-
-#_(deftest test-render-howl-3
-    (testing "Render N-Quads to HOWL with OWL logic"
-      (is (= (render-quads test-state test-quads-3)
-             test-howl-3))))
+GRAPH <baz>
+label: BAZ@en
+"))
+  (testing "Manchester"
+    (test-trig-equals-howl
+     "<C> rdfs:subClassOf _:b1 .
+_:b1 rdf:type owl:Restriction ;
+  owl:onProperty <A> ;
+  owl:someValuesFrom _:b2 .
+_:b2 rdf:type owl:Class ;
+  owl:complementOf <B> ."
+     [{:block-type :SUBJECT_BLOCK
+       :subject [:ABSOLUTE_IRI "http://foo.com/C"]
+       :eol "\n"}
+      {:block-type :EXPRESSION_BLOCK
+       :arrows ""
+       :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#subClassOf"]
+       :expression
+       [:MN_CLASS_EXPRESSION
+        "("
+        [:MN_SOME
+         [:MN_OBJECT_PROPERTY_EXPRESSION "http://foo.com/A"]
+         [:MN_SPACE " "]
+         "some"
+         [:MN_SPACE " "]
+         [:MN_CLASS_EXPRESSION
+          "("
+          [:MN_NEGATION
+           "not"
+           [:MN_SPACE " "]
+           "http://foo.com/B"]
+          ")"]]
+        ")"]
+       :eol "\n"}]
+     "<C>
+subclass of:>> 'has part' some (not B)
+")))

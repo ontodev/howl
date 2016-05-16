@@ -1,4 +1,4 @@
-(def project-version "0.2.1-SNAPSHOT")
+(def project-version "0.3.0-SNAPSHOT")
 
 (defproject howl project-version
   :description "Tools for processing HOWL format"
