@@ -55,9 +55,9 @@ and the [Makefile](Makefile).
 
 ## Status
 
-The 0.2 series supports:
+The [0.2](https://github.com/ontodev/howl/tree/v0.2.0) series supports:
 
-- draft HOWL syntax (some changes from 0.1)
+- draft HOWL syntax (some changes from [0.1](https://github.com/ontodev/howl/tree/v0.1.1))
 - basic OWL class expressions from [Protégé](http://protege.stanford.edu):
   `not`, `and`, `or`, `some`, `only`
 - converting HOWL to N-Triples, N-Quads, or JSON
