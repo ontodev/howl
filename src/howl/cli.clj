@@ -22,6 +22,7 @@
      (fn [state line]
        (->> (core/merge-line state line)
             core/parse-block
+            core/preprocess-block
             core/annotate-block))
      {:file-name file-name}
      (line-seq reader))))
