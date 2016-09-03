@@ -12,7 +12,8 @@
                  [org.clojure/data.json "0.2.6"]
                  [edn-ld "0.2.2"]]
   :plugins [[lein-cljsbuild "1.1.3"]
-            [lein-project-version "0.1.0"]]
+            [lein-project-version "0.1.0"]
+            [lein-cljfmt "0.5.3"]]
   :main howl.cli
   :aot [howl.cli]
   :manifest {"Implementation-Version" ~project-version}

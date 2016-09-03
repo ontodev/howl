@@ -212,7 +212,7 @@
     OBJECT     = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     LITERAL    = CHAR+ LANG /
-                 CHAR+ <'^^'> DATATYPE /
+                 CHAR+ '^^' DATATYPE /
                  #'(\n|.)*.+'
 
     PREFIX        = #'(\\w|-)+'
@@ -286,20 +286,18 @@
 (defn preprocess-block
   "Given a state map,
    if it has a :block key with a :parse key,
-   run some post-processing steps on the :parse."
+   run some post-processing steps on the :parse.
+   Currently, this collapses :LITERAL_BLOCK characters into a string. It will
+   eventuallly run additional pre-annotation tasks."
   [state]
-  (println "COLLAPSING")
   (if-let [parse (get-in state [:block :parse])]
-    (do (println " DEALING WITH" parse)
-     (case (first parse)
-       :LITERAL_BLOCK  (do
-                        (println "   LITERAL BLOCK!")
-                        (assoc
-                         state
-                         :block
-                         (merge (get state :block)
-                                {:parse (preprocess-literal parse)})))
-       state))
+    (case (first parse)
+      :LITERAL_BLOCK  (assoc
+                       state
+                       :block
+                       (merge (get state :block)
+                              {:parse (preprocess-literal parse)}))
+      state)
     state))
 
 ;; Once we have the parse vector,
