@@ -179,29 +179,8 @@
     SUBJECT_BLOCK    = SUBJECT EOL
     LITERAL_BLOCK    = ARROWS PREDICATE COLON LITERAL EOL
     LINK_BLOCK       = ARROWS PREDICATE COLON_ARROW OBJECT EOL
-    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS MN_CLASS_EXPRESSION EOL
-
-    MN_CLASS_EXPRESSION = '(' MN_SPACE? MN_CLASS_EXPRESSION MN_SPACE? ')'
-      | MN_DISJUNCTION
-      | MN_CONJUNCTION
-      | MN_NEGATION
-      | MN_RESTRICTION
-      | MN_NAME
-
-    MN_DISJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'or'  MN_SPACE MN_CLASS_EXPRESSION
-    MN_CONJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'and' MN_SPACE MN_CLASS_EXPRESSION
-    MN_NEGATION = 'not' MN_SPACE (MN_RESTRICTION | MN_NAME)
-
-    <MN_RESTRICTION> = MN_SOME | MN_ONLY
-    MN_SOME = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'some' MN_SPACE MN_CLASS_EXPRESSION
-    MN_ONLY = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'only' MN_SPACE MN_CLASS_EXPRESSION
-
-    MN_OBJECT_PROPERTY_EXPRESSION = 'inverse' MN_SPACE MN_NAME | MN_NAME
-
-    MN_NAME = MN_QUOTED_LABEL | MN_LABEL
-    MN_QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
-    MN_LABEL = #'\\w+'
-    MN_SPACE = #'\\s+'
+    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS EXPRESSION EOL
+    EXPRESSION = #'.+'
 
     IDENTIFIER = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI
     BASE       = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
@@ -229,6 +208,30 @@
     LABEL         = #'[^:\n]+'
     EOL           = #'(\r|\n|\\s)*'
     "))
+
+(def manchester-parser
+  (insta/parser
+   "CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')'
+      | DISJUNCTION
+      | CONJUNCTION
+      | NEGATION
+      | RESTRICTION
+      | NAME
+
+    DISJUNCTION = CLASS_EXPRESSION SPACE 'or'  SPACE CLASS_EXPRESSION
+    CONJUNCTION = CLASS_EXPRESSION SPACE 'and' SPACE CLASS_EXPRESSION
+    NEGATION = 'not' SPACE (RESTRICTION | NAME)
+
+    <RESTRICTION> = SOME | ONLY
+    SOME = OBJECT_PROPERTY_EXPRESSION SPACE 'some' SPACE CLASS_EXPRESSION
+    ONLY = OBJECT_PROPERTY_EXPRESSION SPACE 'only' SPACE CLASS_EXPRESSION
+
+    OBJECT_PROPERTY_EXPRESSION = 'inverse' SPACE NAME | NAME
+
+    NAME = QUOTED_LABEL | LABEL
+    QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
+    LABEL = #'\\w+'
+    SPACE = #'\\s+'"))
 
 (defn instaparse-reason
   "Provides special case for printing negative lookahead reasons"
@@ -274,6 +277,35 @@
         (assoc-in state [:block :parse] (second parse))))
     state))
 
+(defn preprocess-literal [literal-block-parse]
+  (map
+   (fn [elem]
+     (if (and (vector? elem) (= :LITERAL (first elem)))
+       [:LITERAL (string/join (drop 1 (butlast elem))) (last elem)]
+       elem))
+   literal-block-parse))
+
+(defn preprocess-expression [expression-block-parse]
+  (let [[_ exp] expression-block-parse]
+    [:MANCHESTER_EXPRESSION (manchester-parser exp)]))
+
+(defn preprocess-block
+  "Given a state map,
+   if it has a :block key with a :parse key,
+   run some post-processing steps on the :parse.
+   Currently, this collapses :LITERAL_BLOCK characters into a string. It will
+   eventuallly run additional pre-annotation tasks."
+  [state]
+  (if-let [parse (get-in state [:block :parse])]
+    (assoc
+     state
+     :block
+     (merge (get state :block)
+            (case (first parse)
+              :LITERAL_BLOCK {:parse (preprocess-literal parse)}
+              :EXPRESSION    {:parse (preprocess-expression parse)}
+              {})))
+    state))
 
 ;; Once we have the parse vector,
 ;; we process that into a nicer "block map".
@@ -487,9 +519,9 @@
   (clojure.walk/postwalk
    (fn [x]
      (cond
-      (and (vector? x) (= :MN_LABEL (first x)))
+      (and (vector? x) (= :LABEL (first x)))
       (expand-name state [:LABEL (second x)])
-      (and (vector? x) (= :MN_QUOTED_LABEL (first x)))
+      (and (vector? x) (= :QUOTED_LABEL (first x)))
       (expand-name state [:LABEL (get x 2)])
       :else
       x))

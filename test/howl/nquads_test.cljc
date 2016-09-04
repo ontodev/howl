@@ -91,12 +91,12 @@
              :block
              {:block-type :EXPRESSION_BLOCK
               :predicate [:ABSOLUTE_IRI (str rdf "type")]
-              :expression [:MN_NAME [:ABSOLUTE_IRI (str owl "Class")]]}})
+              :expression [:NAME [:ABSOLUTE_IRI (str owl "Class")]]}})
            {:current-subject "http://foo.com/foo"
             :block
             {:block-type :EXPRESSION_BLOCK
              :predicate [:ABSOLUTE_IRI (str rdf "type")]
-             :expression [:MN_NAME [:ABSOLUTE_IRI (str owl "Class")]]}
+             :expression [:NAME [:ABSOLUTE_IRI (str owl "Class")]]}
             :statements
             [[nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]]
             :quads
@@ -121,5 +121,3 @@
             "_:b0 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ."
             "_:b0 <http://www.w3.org/2002/07/owl#annotatedTarget> <http://www.w3.org/2002/07/owl#Class> ."
             "_:b0 <http://www.w3.org/2000/01/rdf-schema#seeAlso> <http://www.w3.org/2002/07/owl#Class> ."]))))
-
-

@@ -91,7 +91,7 @@
   [parse]
   (->> parse
        (filter vector?)
-       (remove #(= :MN_SPACE (first %)))
+       (remove #(= :SPACE (first %)))
        (remove #(= :SPACES (first %)))))
 
 (declare convert-expression)
@@ -195,28 +195,28 @@
    return an updated state with quads for the expression."
   [state parse]
   (case (first parse)
-    :MN_CLASS_EXPRESSION
+    :CLASS_EXPRESSION
     (convert-expression state (->> parse filter-ce first))
 
-    :MN_NEGATION
+    :NEGATION
     (convert-negation state parse)
 
-    :MN_DISJUNCTION
+    :DISJUNCTION
     (convert-combination state parse (str owl "unionOf"))
 
-    :MN_CONJUNCTION
+    :CONJUNCTION
     (convert-combination state parse (str owl "intersectionOf"))
 
-    :MN_OBJECT_PROPERTY_EXPRESSION
+    :OBJECT_PROPERTY_EXPRESSION
     (convert-expression state (->> parse filter-ce first))
 
-    :MN_SOME
+    :SOME
     (convert-restriction state parse (str owl "someValuesFrom"))
 
-    :MN_ONLY
+    :ONLY
     (convert-restriction state parse (str owl "allValuesFrom"))
 
-    :MN_NAME
+    :NAME
     (convert-expression state (->> parse filter-ce first))
 
     :ABSOLUTE_IRI
@@ -438,14 +438,14 @@
     (get-in predicate-map [(str owl "onProperty")])
     (get-in predicate-map [(str owl "someValuesFrom")])
     (= 3 (count predicate-map)))
-   [:MN_CLASS_EXPRESSION
+   [:CLASS_EXPRESSION
     "("
-    [:MN_SOME
-     [:MN_OBJECT_PROPERTY_EXPRESSION
+    [:SOME
+     [:OBJECT_PROPERTY_EXPRESSION
       (ffirst (get predicate-map (str owl "onProperty")))]
-     [:MN_SPACE " "]
+     [:SPACE " "]
      "some"
-     [:MN_SPACE " "]
+     [:SPACE " "]
      (ffirst (get predicate-map (str owl "someValuesFrom")))]
      ")"]
 
@@ -455,14 +455,14 @@
     (get-in predicate-map [(str owl "onProperty")])
     (get-in predicate-map [(str owl "allValuesFrom")])
     (= 3 (count predicate-map)))
-   [:MN_CLASS_EXPRESSION
+   [:CLASS_EXPRESSION
     "("
-    [:MN_ONLY
-     [:MN_OBJECT_PROPERTY_EXPRESSION
+    [:ONLY
+     [:OBJECT_PROPERTY_EXPRESSION
       (ffirst (get predicate-map (str owl "onProperty")))]
-     [:MN_SPACE " "]
+     [:SPACE " "]
      "only"
-     [:MN_SPACE " "]
+     [:SPACE " "]
      (ffirst (get predicate-map (str owl "allValuesFrom")))]
      ")"]
 
@@ -471,11 +471,11 @@
     (get-in predicate-map [(str rdf "type") (str owl "Class")])
     (get-in predicate-map [(str owl "complementOf")])
     (= 2 (count predicate-map)))
-   [:MN_CLASS_EXPRESSION
+   [:CLASS_EXPRESSION
     "("
-    [:MN_NEGATION
+    [:NEGATION
      "not"
-     [:MN_SPACE " "]
+     [:SPACE " "]
      (ffirst (get predicate-map (str owl "complementOf")))]
     ")"]
 
@@ -484,9 +484,9 @@
     (get-in predicate-map [(str rdf "type") (str owl "Class")])
     (get-in predicate-map [(str owl "intersectionOf")])
     (= 2 (count predicate-map)))
-   [:MN_CLASS_EXPRESSION
+   [:CLASS_EXPRESSION
     "("
-    [:MN_CONJUNCTION
+    [:CONJUNCTION
      (ffirst (get predicate-map (str owl "intersectionOf")))]
     ")"]
 
@@ -495,9 +495,9 @@
     (get-in predicate-map [(str rdf "type") (str owl "Class")])
     (get-in predicate-map [(str owl "unionOf")])
     (= 2 (count predicate-map)))
-   [:MN_CLASS_EXPRESSION
+   [:CLASS_EXPRESSION
     "("
-    [:MN_DISJUNCTION
+    [:DISJUNCTION
      (ffirst (get predicate-map (str owl "unionOf")))]
     ")"]
 
@@ -700,4 +700,3 @@
   (concat
    (render-labels quads)
    (render-subjects (triplify quads))))
-

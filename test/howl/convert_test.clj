@@ -250,18 +250,18 @@ _:b2 rdf:type owl:Class ;
        :arrows ""
        :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#subClassOf"]
        :expression
-       [:MN_CLASS_EXPRESSION
+       [:CLASS_EXPRESSION
         "("
-        [:MN_SOME
-         [:MN_OBJECT_PROPERTY_EXPRESSION "http://foo.com/A"]
-         [:MN_SPACE " "]
+        [:SOME
+         [:OBJECT_PROPERTY_EXPRESSION "http://foo.com/A"]
+         [:SPACE " "]
          "some"
-         [:MN_SPACE " "]
-         [:MN_CLASS_EXPRESSION
+         [:SPACE " "]
+         [:CLASS_EXPRESSION
           "("
-          [:MN_NEGATION
+          [:NEGATION
            "not"
-           [:MN_SPACE " "]
+           [:SPACE " "]
            "http://foo.com/B"]
           ")"]]
         ")"]

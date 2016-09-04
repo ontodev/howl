@@ -32,6 +32,7 @@
   [manchester]
   (->> {:block {:line (str "subclass of:>> " manchester)}}
        core/parse-block
+       core/preprocess-block
        core/annotate-block
        :block
        :expression))
@@ -69,25 +70,25 @@
     (test-expression
      example-state
      "foo"
-     [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]
+     [:CLASS_EXPRESSION [:NAME [:LABEL "foo"]]]
      {:node "http://foo"}))
 
   (testing "Quoted label"
     (test-expression
      example-state
      "'foo'"
-     [:MN_CLASS_EXPRESSION
-      [:MN_NAME [:MN_QUOTED_LABEL "'" "foo" "'"]]]
+     [:CLASS_EXPRESSION
+      [:NAME [:QUOTED_LABEL "'" "foo" "'"]]]
      {:node "http://foo"}))
 
   (testing "Parens"
     (test-expression
      example-state
      "(foo )"
-     [:MN_CLASS_EXPRESSION
+     [:CLASS_EXPRESSION
       "("
-      [:MN_CLASS_EXPRESSION
-       [:MN_NAME [:MN_LABEL "foo"]]] [:MN_SPACE " "]
+      [:CLASS_EXPRESSION
+       [:NAME [:LABEL "foo"]]] [:SPACE " "]
       ")"]
      {:node "http://foo"}))
 
@@ -95,11 +96,11 @@
     (test-expression
      example-state
      "not foo"
-     [:MN_CLASS_EXPRESSION
-      [:MN_NEGATION
+     [:CLASS_EXPRESSION
+      [:NEGATION
        "not"
-       [:MN_SPACE " "]
-       [:MN_NAME [:MN_LABEL "foo"]]]]
+       [:SPACE " "]
+       [:NAME [:LABEL "foo"]]]]
      {:blank-node-count 1
       :node "_:b1"
       :quads
@@ -110,13 +111,13 @@
     (test-expression
      example-state
      "foo or bar"
-     [:MN_CLASS_EXPRESSION
-      [:MN_DISJUNCTION
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:DISJUNCTION
+       [:CLASS_EXPRESSION [:NAME [:LABEL "foo"]]]
+       [:SPACE " "]
        "or"
-       [:MN_SPACE " "]
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "bar"]]]]]
+       [:SPACE " "]
+       [:CLASS_EXPRESSION [:NAME [:LABEL "bar"]]]]]
      {:blank-node-count 3
       :node "_:b1"
       :quads
@@ -131,13 +132,13 @@
     (test-expression
      example-state
      "foo and bar"
-     [:MN_CLASS_EXPRESSION
-      [:MN_CONJUNCTION
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:CONJUNCTION
+       [:CLASS_EXPRESSION [:NAME [:LABEL "foo"]]]
+       [:SPACE " "]
        "and"
-       [:MN_SPACE " "]
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "bar"]]]]]
+       [:SPACE " "]
+       [:CLASS_EXPRESSION [:NAME [:LABEL "bar"]]]]]
      {:blank-node-count 3
       :node "_:b1"
       :quads
@@ -152,14 +153,14 @@
     (test-expression
      example-state
      "'has part' some foo"
-     [:MN_CLASS_EXPRESSION
-      [:MN_SOME
-       [:MN_OBJECT_PROPERTY_EXPRESSION
-        [:MN_NAME [:MN_QUOTED_LABEL "'" "has part" "'"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:SOME
+       [:OBJECT_PROPERTY_EXPRESSION
+        [:NAME [:QUOTED_LABEL "'" "has part" "'"]]]
+       [:SPACE " "]
        "some"
-       [:MN_SPACE " "]
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]]]
+       [:SPACE " "]
+       [:CLASS_EXPRESSION [:NAME [:LABEL "foo"]]]]]
      {:blank-node-count 1
       :node "_:b1"
       :quads
@@ -171,18 +172,18 @@
     (test-expression
      example-state
      "'has part' some not foo"
-     [:MN_CLASS_EXPRESSION
-      [:MN_SOME
-       [:MN_OBJECT_PROPERTY_EXPRESSION
-        [:MN_NAME [:MN_QUOTED_LABEL "'" "has part" "'"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:SOME
+       [:OBJECT_PROPERTY_EXPRESSION
+        [:NAME [:QUOTED_LABEL "'" "has part" "'"]]]
+       [:SPACE " "]
        "some"
-       [:MN_SPACE " "]
-       [:MN_CLASS_EXPRESSION
-        [:MN_NEGATION
+       [:SPACE " "]
+       [:CLASS_EXPRESSION
+        [:NEGATION
          "not"
-         [:MN_SPACE " "]
-         [:MN_NAME [:MN_LABEL "foo"]]]]]]
+         [:SPACE " "]
+         [:NAME [:LABEL "foo"]]]]]]
      {:blank-node-count 2
       :node "_:b1"
       :quads
@@ -196,17 +197,17 @@
     (test-expression
      example-state
      "foo and not bar"
-     [:MN_CLASS_EXPRESSION
-      [:MN_CONJUNCTION
-       [:MN_CLASS_EXPRESSION [:MN_NAME [:MN_LABEL "foo"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:CONJUNCTION
+       [:CLASS_EXPRESSION [:NAME [:LABEL "foo"]]]
+       [:SPACE " "]
        "and"
-       [:MN_SPACE " "]
-       [:MN_CLASS_EXPRESSION
-        [:MN_NEGATION
+       [:SPACE " "]
+       [:CLASS_EXPRESSION
+        [:NEGATION
          "not"
-         [:MN_SPACE " "]
-         [:MN_NAME [:MN_LABEL "bar"]]]]]]
+         [:SPACE " "]
+         [:NAME [:LABEL "bar"]]]]]]
      {:blank-node-count 4
       :node "_:b1"
       :quads
@@ -225,33 +226,33 @@
      "'is about' some
     ('material entity'
      and ('has role' some 'evaluant role'))"
-     [:MN_CLASS_EXPRESSION
-      [:MN_SOME
-       [:MN_OBJECT_PROPERTY_EXPRESSION
-        [:MN_NAME [:MN_QUOTED_LABEL "'" "is about" "'"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:SOME
+       [:OBJECT_PROPERTY_EXPRESSION
+        [:NAME [:QUOTED_LABEL "'" "is about" "'"]]]
+       [:SPACE " "]
        "some"
-       [:MN_SPACE "\n    "]
-       [:MN_CLASS_EXPRESSION
+       [:SPACE "\n    "]
+       [:CLASS_EXPRESSION
         "("
-        [:MN_CLASS_EXPRESSION
-         [:MN_CONJUNCTION
-          [:MN_CLASS_EXPRESSION
-           [:MN_NAME [:MN_QUOTED_LABEL "'" "material entity" "'"]]]
-          [:MN_SPACE "\n     "]
+        [:CLASS_EXPRESSION
+         [:CONJUNCTION
+          [:CLASS_EXPRESSION
+           [:NAME [:QUOTED_LABEL "'" "material entity" "'"]]]
+          [:SPACE "\n     "]
           "and"
-          [:MN_SPACE " "]
-          [:MN_CLASS_EXPRESSION
+          [:SPACE " "]
+          [:CLASS_EXPRESSION
            "("
-           [:MN_CLASS_EXPRESSION
-            [:MN_SOME
-             [:MN_OBJECT_PROPERTY_EXPRESSION
-              [:MN_NAME [:MN_QUOTED_LABEL "'" "has role" "'"]]]
-             [:MN_SPACE " "]
+           [:CLASS_EXPRESSION
+            [:SOME
+             [:OBJECT_PROPERTY_EXPRESSION
+              [:NAME [:QUOTED_LABEL "'" "has role" "'"]]]
+             [:SPACE " "]
              "some"
-             [:MN_SPACE " "]
-             [:MN_CLASS_EXPRESSION
-              [:MN_NAME [:MN_QUOTED_LABEL "'" "evaluant role" "'"]]]]]
+             [:SPACE " "]
+             [:CLASS_EXPRESSION
+              [:NAME [:QUOTED_LABEL "'" "evaluant role" "'"]]]]]
            ")"]]]
         ")"]]]
      {:blank-node-count 5
@@ -283,51 +284,51 @@
  and ('is about' some
     ('material entity'
      and ('has role' some 'evaluant role'))))"
-     [:MN_CLASS_EXPRESSION
-      [:MN_SOME
-       [:MN_OBJECT_PROPERTY_EXPRESSION
-        [:MN_NAME [:MN_LABEL "has_specified_output"]]]
-       [:MN_SPACE " "]
+     [:CLASS_EXPRESSION
+      [:SOME
+       [:OBJECT_PROPERTY_EXPRESSION
+        [:NAME [:LABEL "has_specified_output"]]]
+       [:SPACE " "]
        "some"
-       [:MN_SPACE "\n"]
-       [:MN_CLASS_EXPRESSION
+       [:SPACE "\n"]
+       [:CLASS_EXPRESSION
         "("
-        [:MN_CLASS_EXPRESSION
-         [:MN_CONJUNCTION
-          [:MN_CLASS_EXPRESSION
-           [:MN_NAME [:MN_QUOTED_LABEL "'" "information content entity" "'"]]]
-          [:MN_SPACE "\n "]
+        [:CLASS_EXPRESSION
+         [:CONJUNCTION
+          [:CLASS_EXPRESSION
+           [:NAME [:QUOTED_LABEL "'" "information content entity" "'"]]]
+          [:SPACE "\n "]
           "and"
-          [:MN_SPACE " "]
-          [:MN_CLASS_EXPRESSION
+          [:SPACE " "]
+          [:CLASS_EXPRESSION
            "("
-           [:MN_CLASS_EXPRESSION
-            [:MN_SOME
-             [:MN_OBJECT_PROPERTY_EXPRESSION
-              [:MN_NAME [:MN_QUOTED_LABEL "'" "is about" "'"]]]
-             [:MN_SPACE " "]
+           [:CLASS_EXPRESSION
+            [:SOME
+             [:OBJECT_PROPERTY_EXPRESSION
+              [:NAME [:QUOTED_LABEL "'" "is about" "'"]]]
+             [:SPACE " "]
              "some"
-             [:MN_SPACE "\n    "]
-             [:MN_CLASS_EXPRESSION
+             [:SPACE "\n    "]
+             [:CLASS_EXPRESSION
               "("
-              [:MN_CLASS_EXPRESSION
-               [:MN_CONJUNCTION
-                [:MN_CLASS_EXPRESSION
-                 [:MN_NAME [:MN_QUOTED_LABEL "'" "material entity" "'"]]]
-                [:MN_SPACE "\n     "]
+              [:CLASS_EXPRESSION
+               [:CONJUNCTION
+                [:CLASS_EXPRESSION
+                 [:NAME [:QUOTED_LABEL "'" "material entity" "'"]]]
+                [:SPACE "\n     "]
                 "and"
-                [:MN_SPACE " "]
-                [:MN_CLASS_EXPRESSION
+                [:SPACE " "]
+                [:CLASS_EXPRESSION
                  "("
-                 [:MN_CLASS_EXPRESSION
-                  [:MN_SOME
-                   [:MN_OBJECT_PROPERTY_EXPRESSION
-                    [:MN_NAME [:MN_QUOTED_LABEL "'" "has role" "'"]]]
-                   [:MN_SPACE " "]
+                 [:CLASS_EXPRESSION
+                  [:SOME
+                   [:OBJECT_PROPERTY_EXPRESSION
+                    [:NAME [:QUOTED_LABEL "'" "has role" "'"]]]
+                   [:SPACE " "]
                    "some"
-                   [:MN_SPACE " "]
-                   [:MN_CLASS_EXPRESSION
-                    [:MN_NAME [:MN_QUOTED_LABEL "'" "evaluant role" "'"]]]]]
+                   [:SPACE " "]
+                   [:CLASS_EXPRESSION
+                    [:NAME [:QUOTED_LABEL "'" "evaluant role" "'"]]]]]
                  ")"]]]
               ")"]]]
            ")"]]]
