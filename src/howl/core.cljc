@@ -211,8 +211,8 @@
     PREDICATE  = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     OBJECT     = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    LITERAL    = #'.+(?=@(\\w|-)+)' LANG /
-                 #'.+(?=\\^\\^\\S+)' '^^' DATATYPE /
+    LITERAL    = CHAR+ LANG /
+                 CHAR+ '^^' DATATYPE /
                  #'(\n|.)*.+'
 
     PREFIX        = #'(\\w|-)+'
@@ -228,6 +228,7 @@
     ARROWS        = #'>*' #'\\s*'
     LABEL         = #'[^:\n]+'
     EOL           = #'(\r|\n|\\s)*'
+    <CHAR> = #'.'
     "))
 
 (defn instaparse-reason
@@ -274,6 +275,30 @@
         (assoc-in state [:block :parse] (second parse))))
     state))
 
+(defn preprocess-literal [literal-block-parse]
+  (map
+   (fn [elem]
+     (if (and (vector? elem) (= :LITERAL (first elem)))
+       [:LITERAL (string/join (drop 1 (butlast elem))) (last elem)]
+       elem))
+   literal-block-parse))
+
+(defn preprocess-block
+  "Given a state map,
+   if it has a :block key with a :parse key,
+   run some post-processing steps on the :parse.
+   Currently, this collapses :LITERAL_BLOCK characters into a string. It will
+   eventuallly run additional pre-annotation tasks."
+  [state]
+  (if-let [parse (get-in state [:block :parse])]
+    (case (first parse)
+      :LITERAL_BLOCK  (assoc
+                       state
+                       :block
+                       (merge (get state :block)
+                              {:parse (preprocess-literal parse)}))
+      state)
+    state))
 
 ;; Once we have the parse vector,
 ;; we process that into a nicer "block map".
