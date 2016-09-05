@@ -9,7 +9,6 @@ HOWL makes it easy for humans to read and write [RDF](http://www.w3.org/TR/rdf11
 
 This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues) is appreciated!
 
-
 ## Example
 
     PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -159,7 +158,7 @@ Behind the scenes:
 - line-based format for stream processing
 - JSON format for parse information, for language agnostic tooling
 
-HOWL is designed to be simple and predictable. The most common mistakes will probably be using a label that has not been defined, or using the wrong separator. 
+HOWL is designed to be simple and predictable. The most common mistakes will probably be using a label that has not been defined, or using the wrong separator.
 
 - `: ` for text, numbers, dates, and other literal values
 - `:> ` for links
@@ -219,7 +218,7 @@ If a HOWL stream starts with blank lines, these will be parsed as blank blocks. 
 
 This blank block:
 
-        
+
 
 is parsed into this JSON object:
 
@@ -402,7 +401,7 @@ is parsed into this JSON object:
 
 ### Subject
 
-A subject block is just the identifier or label for a subject. It specifies the current 
+A subject block is just the identifier or label for a subject. It specifies the current
 
 This subject block:
 

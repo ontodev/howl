@@ -1,0 +1,3 @@
+comment: A comment on 'Foo'.@en
+> comment: An annotation on a comment.^^xsd:string
+>> comment: An annotation on an annotation.^^xsd:string

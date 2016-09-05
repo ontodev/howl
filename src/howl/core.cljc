@@ -2,7 +2,9 @@
   "Parse HOWL."
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [howl.util :as util]))
+
+            [howl.util :as util]
+            [howl.expression :as exp]))
 
 ;; HOWL is a human-readable format for RDF and OWL.
 ;; It is a pretty flat "block"-based format,
@@ -190,8 +192,8 @@
     PREDICATE  = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     OBJECT     = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
     DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    LITERAL    = #'.+(?=@(\\w|-)+)' LANG /
-                 #'.+(?=\\^\\^\\S+)' '^^' DATATYPE /
+    LITERAL    = CHAR+ LANG /
+                 CHAR+ '^^' DATATYPE /
                  #'(\n|.)*.+'
 
     PREFIX        = #'(\\w|-)+'
@@ -207,31 +209,8 @@
     ARROWS        = #'>*' #'\\s*'
     LABEL         = #'[^:\n]+'
     EOL           = #'(\r|\n|\\s)*'
+    <CHAR> = #'.'
     "))
-
-(def manchester-parser
-  (insta/parser
-   "CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')'
-      | DISJUNCTION
-      | CONJUNCTION
-      | NEGATION
-      | RESTRICTION
-      | NAME
-
-    DISJUNCTION = CLASS_EXPRESSION SPACE 'or'  SPACE CLASS_EXPRESSION
-    CONJUNCTION = CLASS_EXPRESSION SPACE 'and' SPACE CLASS_EXPRESSION
-    NEGATION = 'not' SPACE (RESTRICTION | NAME)
-
-    <RESTRICTION> = SOME | ONLY
-    SOME = OBJECT_PROPERTY_EXPRESSION SPACE 'some' SPACE CLASS_EXPRESSION
-    ONLY = OBJECT_PROPERTY_EXPRESSION SPACE 'only' SPACE CLASS_EXPRESSION
-
-    OBJECT_PROPERTY_EXPRESSION = 'inverse' SPACE NAME | NAME
-
-    NAME = QUOTED_LABEL | LABEL
-    QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
-    LABEL = #'\\w+'
-    SPACE = #'\\s+'"))
 
 (defn instaparse-reason
   "Provides special case for printing negative lookahead reasons"
@@ -285,9 +264,6 @@
        elem))
    literal-block-parse))
 
-(defn preprocess-expression [expression-block-parse]
-  (let [[_ exp] expression-block-parse]
-    [:MANCHESTER_EXPRESSION (manchester-parser exp)]))
 
 (defn preprocess-block
   "Given a state map,
@@ -303,7 +279,7 @@
      (merge (get state :block)
             (case (first parse)
               :LITERAL_BLOCK {:parse (preprocess-literal parse)}
-              :EXPRESSION    {:parse (preprocess-expression parse)}
+              :EXPRESSION    {:parse (exp/parse-expression-block parse)}
               {})))
     state))
 
@@ -621,7 +597,6 @@
 ;; which is what we want to do when converting N-Quads to HOWL.
 ;; Again we define a reducing function that tracks the state,
 ;; and a transducer that just returns the sequence of blocks.
-
 
 (defn get-name
   "Given a state map and an IRI string,
