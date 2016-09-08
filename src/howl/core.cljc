@@ -2,7 +2,9 @@
   "Parse HOWL."
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [howl.util :as util]))
+
+            [howl.util :as util]
+            [howl.expression :as exp]))
 
 ;; HOWL is a human-readable format for RDF and OWL.
 ;; It is a pretty flat "block"-based format,
@@ -179,29 +181,8 @@
     SUBJECT_BLOCK    = SUBJECT EOL
     LITERAL_BLOCK    = ARROWS PREDICATE COLON LITERAL EOL
     LINK_BLOCK       = ARROWS PREDICATE COLON_ARROW OBJECT EOL
-    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS MN_CLASS_EXPRESSION EOL
-
-    MN_CLASS_EXPRESSION = '(' MN_SPACE? MN_CLASS_EXPRESSION MN_SPACE? ')'
-      | MN_DISJUNCTION
-      | MN_CONJUNCTION
-      | MN_NEGATION
-      | MN_RESTRICTION
-      | MN_NAME
-
-    MN_DISJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'or'  MN_SPACE MN_CLASS_EXPRESSION
-    MN_CONJUNCTION = MN_CLASS_EXPRESSION MN_SPACE 'and' MN_SPACE MN_CLASS_EXPRESSION
-    MN_NEGATION = 'not' MN_SPACE (MN_RESTRICTION | MN_NAME)
-
-    <MN_RESTRICTION> = MN_SOME | MN_ONLY
-    MN_SOME = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'some' MN_SPACE MN_CLASS_EXPRESSION
-    MN_ONLY = MN_OBJECT_PROPERTY_EXPRESSION MN_SPACE 'only' MN_SPACE MN_CLASS_EXPRESSION
-
-    MN_OBJECT_PROPERTY_EXPRESSION = 'inverse' MN_SPACE MN_NAME | MN_NAME
-
-    MN_NAME = MN_QUOTED_LABEL | MN_LABEL
-    MN_QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
-    MN_LABEL = #'\\w+'
-    MN_SPACE = #'\\s+'
+    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS EXPRESSION EOL
+    EXPRESSION = #'.+'
 
     IDENTIFIER = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI
     BASE       = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
@@ -283,6 +264,7 @@
        elem))
    literal-block-parse))
 
+
 (defn preprocess-block
   "Given a state map,
    if it has a :block key with a :parse key,
@@ -291,13 +273,14 @@
    eventuallly run additional pre-annotation tasks."
   [state]
   (if-let [parse (get-in state [:block :parse])]
-    (case (first parse)
-      :LITERAL_BLOCK  (assoc
-                       state
-                       :block
-                       (merge (get state :block)
-                              {:parse (preprocess-literal parse)}))
-      state)
+    (assoc
+     state
+     :block
+     (merge (get state :block)
+            (case (first parse)
+              :LITERAL_BLOCK {:parse (preprocess-literal parse)}
+              :EXPRESSION    {:parse (exp/parse-expression-block parse)}
+              {})))
     state))
 
 ;; Once we have the parse vector,
@@ -512,9 +495,9 @@
   (clojure.walk/postwalk
    (fn [x]
      (cond
-      (and (vector? x) (= :MN_LABEL (first x)))
+      (and (vector? x) (= :LABEL (first x)))
       (expand-name state [:LABEL (second x)])
-      (and (vector? x) (= :MN_QUOTED_LABEL (first x)))
+      (and (vector? x) (= :QUOTED_LABEL (first x)))
       (expand-name state [:LABEL (get x 2)])
       :else
       x))
@@ -614,7 +597,6 @@
 ;; which is what we want to do when converting N-Quads to HOWL.
 ;; Again we define a reducing function that tracks the state,
 ;; and a transducer that just returns the sequence of blocks.
-
 
 (defn get-name
   "Given a state map and an IRI string,

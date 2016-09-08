@@ -21,7 +21,7 @@
 (def test-merge "
 A
   indented
-   
+
   (that was a blank line)
 
 B
@@ -282,15 +282,15 @@ C
              {:block-type :EXPRESSION_BLOCK
               :predicate [:PREFIXED_NAME "rdfs" ":" "subClassOf"]
               :expression
-              [:MN_CLASS_EXPRESSION
-               [:MN_NEGATION "not" [:MN_NAME [:MN_LABEL "2"]]]]}})
+              [:CLASS_EXPRESSION
+               [:NEGATION "not" [:NAME [:LABEL "2"]]]]}})
            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
             :label-iri {"2" "http://foo.com/2"}
             :block
             {:block-type :EXPRESSION_BLOCK
              :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#subClassOf"]
              :expression
-             [:MN_CLASS_EXPRESSION
-              [:MN_NEGATION
+             [:CLASS_EXPRESSION
+              [:NEGATION
                "not"
-               [:MN_NAME [:ABSOLUTE_IRI "http://foo.com/2"]]]]}}))))
+               [:NAME [:ABSOLUTE_IRI "http://foo.com/2"]]]]}}))))
