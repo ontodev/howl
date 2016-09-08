@@ -218,7 +218,7 @@ If a HOWL stream starts with blank lines, these will be parsed as blank blocks. 
 
 This blank block:
 
-
+        
 
 is parsed into this JSON object:
 

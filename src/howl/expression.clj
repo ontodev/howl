@@ -28,10 +28,9 @@
     LABEL = #'\\w+'
     SPACE = #'\\s+'"))
 
-(defn string-to-parse [string]
-  [:MANCHESTER_EXPRESSION (manchester-parser string)])
-
 (defn manchester-format [mn-tree]
+  "Given a parsed Manchester expression tree (without leading expression type tag),
+   returns the stringified version of that tree."
   (if (string? mn-tree)
     mn-tree
     (case (first mn-tree)
@@ -44,10 +43,26 @@
       (:SPACE :LABEL) (second mn-tree)
       :QUOTED_LABEL (apply str (rest mn-tree)))))
 
-(defn parse-to-string [expression-parse]
-  (let [[exp-type parse-tree] expression-parse]
-    (manchester-format parse-tree)))
+(defn parse-to-string
+  "Given a parsed expression tree (with the leading expression type tag),
+   emits the stringified version of that tree. The intent is for this tree
+   to be character-equivalent to the input expression that generated the
+   parse tree to begin with.
 
-(defn parse-expression-block [expression-parse]
-  (let [[_ exp] expression-parse]
-    (string-to-parse exp)))
+   At the moment, deals only with Manchester expression trees, but will
+   shortly be able to emit other syntax trees depending on the leading tag."
+  [[exp-type parse-tree]]
+  (manchester-format parse-tree))
+
+(defn string-to-parse [string]
+  "Given a string representing an unparsed expression, returns the parsed
+   expression tree. Currently always returns Manchester expression trees,
+   but will eventually try multiple syntaxes, only defaulting to Manchester."
+  [:MANCHESTER_EXPRESSION (manchester-parser string)])
+
+(defn parse-expression-block
+  "Given an unparsed expression tree, parse the given expression string
+   into a parse tree. The parser tries a number of expression syntaxes
+   before defaulting to Manchester syntax."
+  [[_ exp]]
+  (string-to-parse exp))
