@@ -4,6 +4,7 @@
             [clojure.set]
             [edn-ld.core :as edn-ld]
             [howl.util :as util]
+            [howl.expression :as exp]
             [howl.core :refer [resolve-name] :as core]))
 
 (def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
@@ -80,151 +81,6 @@
    (convert-single-statement state)
    (convert-annotation state)))
 
-
-;; The most complex conversion is the Manchester syntax.
-;; The expression is a tree,
-;; but we represent it in very flat RDF graph.
-
-(defn filter-ce
-  "Given a parse vector,
-   remove the elements that don't matter for Manchester."
-  [parse]
-  (->> parse
-       (filter vector?)
-       (remove #(= :SPACE (first %)))
-       (remove #(= :SPACES (first %)))))
-
-(declare convert-expression)
-
-;; This is very imperative code that is somewhat awkward in Clojure.
-;; The code is a little cleaner if the nodes are rendered in reverse order,
-;; but this way the results are easier to read.
-
-;; First get a new blank node for the complementOf class.
-;; Then clear the state (s2) and render the negated class expression.
-;; Update that result (s3) with quads for the complement and s3.
-
-(defn convert-negation
-  "Given a state and a parse vector,
-   convert the first elements in the parse vector
-   and update the state with new quads for the
-   complement class and first element."
-  [s1 parse]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))]
-    (assoc
-     s3
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")         (str owl "Class")]
-       [g b1 (str owl "complementOf") (:node s3)]]
-      (:quads s3)))))
-
-;; Like convert-negation, but with two elements:
-;; the object property expression and the class expression.
-
-(defn convert-restriction
-  "Given a state, a parse vector, and a predicate IRI string,
-   convert the first and second elements in the parse vector
-   and update the state with new quads for the:
-   restriction class, and first and second elements."
-  [s1 parse predicate]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))
-        s4 (convert-expression s3 (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")       (str owl "Restriction")]
-       [g b1 (str owl "onProperty") (:node s3)]
-       [g b1 predicate              (:node s4)]]
-      (:quads s4)))))
-
-;; Unions and intersections are trickier because they include an RDF list.
-;; First generate some blank nodes for the combination class and RDF list.
-;; Then clear the state, and render the first and second elements,
-;; storing the results in new states.
-;; Then update the state resulting from the second element (s4)
-;; with previous quads,
-;; the combination element and RDF list,
-;; and the quads from s4, which include the first and second elements.
-
-(defn convert-combination
-  "Given a state, a parse vector, and a predicate IRI string,
-   render the first and second elements in the parse vector
-   and update the state with new quads for the:
-   combination class (i.e. unionOf, intersectionOf),
-   RDF list of elements,
-   first and second elements."
-  [s1 parse predicate]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        b2 (str "_:b" (+ bs 2))
-        b3 (str "_:b" (+ bs 3))
-        s2 (assoc s1 :blank-node-count (+ bs 3) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))
-        s4 (convert-expression s3 (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")  (str owl "Class")]
-       [g b1 predicate         b2]
-       [g b2 (str rdf "first") (:node s3)]
-       [g b2 (str rdf "rest")  b3]
-       [g b3 (str rdf "first") (:node s4)]
-       [g b3 (str rdf "rest")  (str rdf "nil")]]
-      (:quads s4)))))
-
-(defn convert-expression
-  "Given a state map, and a parse vector with a Manchester expression
-   return an updated state with quads for the expression."
-  [state parse]
-  (case (first parse)
-    :CLASS_EXPRESSION
-    (convert-expression state (->> parse filter-ce first))
-
-    :NEGATION
-    (convert-negation state parse)
-
-    :DISJUNCTION
-    (convert-combination state parse (str owl "unionOf"))
-
-    :CONJUNCTION
-    (convert-combination state parse (str owl "intersectionOf"))
-
-    :OBJECT_PROPERTY_EXPRESSION
-    (convert-expression state (->> parse filter-ce first))
-
-    :SOME
-    (convert-restriction state parse (str owl "someValuesFrom"))
-
-    :ONLY
-    (convert-restriction state parse (str owl "allValuesFrom"))
-
-    :NAME
-    (convert-expression state (->> parse filter-ce first))
-
-    :ABSOLUTE_IRI
-    (assoc state :node (second parse))
-
-    ; else
-    state))
-
 (defn convert-quads
   "Given a state (usually the output of expand-names),
    if it has a :block key,
@@ -241,7 +97,7 @@
        (convert-statement state)
 
        :EXPRESSION_BLOCK
-       (let [new-state (convert-expression state (:expression block))
+       (let [new-state (exp/convert-expression state (:expression block))
              g (:current-graph state)
              s (:current-subject state)
              p (get-in state [:block :predicate 1])
