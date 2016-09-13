@@ -76,7 +76,6 @@
     LITERAL    = CHAR+ LANG /
                  CHAR+ '^^' DATATYPE /
                  #'(\n|.)*.+'
-
     PREFIX        = #'(\\w|-)+'
     BLANK_NODE    = '_:' #'(\\w|-|:)+'
     PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:]*'
@@ -99,13 +98,19 @@
   ((fn rec [groups ct]
      (when (not (empty? groups))
        (let [g (first groups)]
-         (println "DEALING WITH" (first (insta/parse block-parser (string/join g))))
          (lazy-seq
           (cons (with-meta
-                  {:exp (first (insta/parse block-parser (string/join g)))}
+                  {:exp (first (insta/parse block-parser (string/join \newline g)))}
                   {:origin {:name source :line ct}})
                 (rec (rest groups) (+ ct (count g))))))))
    (group-lines lines) 1))
+
+(defn parse-tree->string [parse-tree]
+  (if (string? parse-tree)
+    parse-tree
+    (case (first parse-tree)
+      (:LABEL :PREFIX :EOL :SPACES :ABSOLUte_IRI) (second parse-tree)
+      (string/join (map parse-tree->string (rest parse-tree))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Condense step
@@ -166,5 +171,7 @@
         (map parse-expressions)
         (#(environments % starting-env)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Error basics
 (defn locate [block]
-  "PLACEHOLDER ERROR HERE")
+  ((meta block) :origin))
