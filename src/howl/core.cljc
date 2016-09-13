@@ -8,30 +8,40 @@
 
 ;; Parsing works like this:
 ;;
-;; 1. lines->blocks
-;;     - converts a lazy seq of lines to a lazy seq of blocks
-;;     - lines will be associated with the previous lines if there's indentation
+;; 1. lines->parse-trees
+;;     - converts a lazy seq of lines to a lazy seq of {:exp [:PARSE_TREE ...]},
+;;       complete with metadata designating origin name/line-number
+;;     - groups lines into blocks before parsing each block (done in one step, 'cause
+;;       it's otherwise difficult to factor in the error reporting hooks we need)
 ;;
-;; 2. (mapcat block-parser)
-;;     - parses each block into a syntax tree represented by a vector
-;; 3. (map pre-process-block)
-;;     - replaces :EXPRESSION blocks with their parse trees, and condenses :LITERAL blocks
+;; 2. (map condense-chars)
+;;     - some parse blocks emit characters. As in, things like [:TAG "f" "o" "o" "b" "a" "r"].
+;;       This step condenses such blocks down to [:TAG "foobar"]
+;;
+;; 3. (map parse-expressions)
+;;     - some blocks contain sub-expressions expressed in a different syntax.
+;;       The preliminary parse leaves such expressions as strings to be dealt
+;;       with separately. This step deals with them.
 ;;
 ;; 4. environments
-;;     - pulls out name information from a series of blocks.
+;;     - some blocks introduce new bindings to be used by other expressions. Mostly prefixes
+;;       and new labels.
+;;       This step extracts those bindings and puts them in the appropriate :env key.
+;;     - Each environment includes the previous, and environments survive past end of file for
+;;       usability reasons.
 ;;     - Each name is valid from the point where it's declared to the point where it's shadowed.
-;;     - This section could be greatly simplified if we were ok with disallowing shadowing.
 ;;
 
-(defn lines->blocks [lines]
-  "Given a sequence of lines, returns a lazy sequence of blocks."
-  (map (partial string/join \newline)
-       (partition-by
-        (let [ct (volatile! 0)]
-          #(do (when (not (or (string/blank? %) (.startsWith % "  ")))
-                 (vswap! ct inc))
-               @ct))
-        lines)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Preliminary parse
+(defn group-lines [lines]
+  "Given a sequence of lines, returns a lazy sequence of grouped lines"
+  (partition-by
+   (let [ct (volatile! 0)]
+     #(do (when (not (or (string/blank? %) (.startsWith % "  ")))
+            (vswap! ct inc))
+          @ct))
+   lines))
 
 (def block-parser
   (insta/parser
@@ -83,51 +93,76 @@
     <CHAR> = #'.'
     "))
 
-(defn pre-process-literal-block [parsed-literal-block]
-  (map (fn [elem]
-         (if (and (vector? elem)
-                  (> (count elem) 2)
-                  (= :LITERAL (first elem)))
-           [:LITERAL (string/join (butlast (rest elem))) (last elem)]
-           elem))
-       parsed-literal-block))
+(defn lines->parse-trees
+  "Takes a seq of lines. Returns a seq of {:exp [:PARSE_TREE ...]} objects."
+  [lines & {:keys [source] :or {source "interactive"}}]
+  ((fn rec [groups ct]
+     (when (not (empty? groups))
+       (let [g (first groups)]
+         (println "DEALING WITH" (first (insta/parse block-parser (string/join g))))
+         (lazy-seq
+          (cons (with-meta
+                  {:exp (first (insta/parse block-parser (string/join g)))}
+                  {:origin {:name source :line ct}})
+                (rec (rest groups) (+ ct (count g))))))))
+   (group-lines lines) 1))
 
-(defn pre-process-expression-block [parsed-expression-block]
-  (map (fn [elem]
-         (if (and (vector? elem)
-                  (= :EXPRESSION (first elem)))
-           (exp/string-to-parse (second elem))
-           elem))
-       parsed-expression-block))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Condense step
+(defn condense-literal-block [parsed-literal-block]
+  (vec
+   (map (fn [elem]
+          (if (and (vector? elem)
+                   (> (count elem) 2)
+                   (= :LITERAL (first elem)))
+            [:LITERAL (string/join (butlast (rest elem))) (last elem)]
+            elem))
+        parsed-literal-block)))
 
-(defn pre-process-block [parsed-block]
-  (case (first parsed-block)
-    :LITERAL_BLOCK (pre-process-literal-block parsed-block)
-    :EXPRESSION_BLOCK (pre-process-expression-block parsed-block)
+(defn condense-chars [block]
+  (case (first (block :exp))
+    :LITERAL_BLOCK (assoc block :exp (condense-literal-block (block :exp)))
+    block))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Parsing expressions
+(defn parse-expressions [parsed-block]
+  (if (= :EXPRESSION_BLOCK (first parsed-block))
+    (vec
+     (map (fn [elem]
+            (if (and (vector? elem)
+                     (= :EXPRESSION (first elem)))
+              (exp/string-to-parse (second elem))
+              elem))
+          parsed-block))
     parsed-block))
 
-(defn parsed-block->names [parsed-block]
-  (case (first parsed-block)
-    :PREFIX_BLOCK (let [[_ _ _ [_ name] _ [_ val]] parsed-block]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Extracting environments
+(defn parse-tree->names [parse-tree]
+  (case (first parse-tree)
+    :PREFIX_BLOCK (let [[_ _ _ [_ name] _ [_ val]] parse-tree]
                     {:prefixes {name val}})
-    :LABEL_BLOCK (let [[_ _ _ val [ name]] parsed-block]
+    :LABEL_BLOCK (let [[_ _ _ val [ name]] parse-tree]
                    {:labels {name val}})
     {}))
 
-(defn environments [parsed-blocks]
-  (reverse
-   (:collected
-    (reduce
-     (fn [{:keys [current collected]} parsed-block]
-       (let [next (merge-with merge current (parsed-block->names parsed-block))]
-         {:current next
-          :collected (conj collected {:env next :exp parsed-block})}))
-     {}
-     parsed-blocks))))
+(defn environments
+  ([parsed-blocks] (environments parsed-blocks {}))
+  ([parsed-blocks env]
+   (when (not (empty? parsed-blocks))
+     (lazy-seq
+      (let [block (first parsed-blocks)
+            next-env (merge-with merge env (parse-tree->names (block :exp)))]
+        (cons (assoc block :env next-env)
+              (environments (rest parsed-blocks) next-env)))))))
 
 (defn parse-file [filename]
   (->> (line-seq (clojure.java.io/reader filename))
-       lines->blocks
-       (mapcat block-parser ,,,)
-       (map pre-process-block ,,,)
+       (#(lines->parse-trees % :source filename))
+       (map condense-chars)
+       (map parse-expressions)
        environments))
+
+(defn locate [block]
+  "PLACEHOLDER ERROR HERE")

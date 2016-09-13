@@ -4,7 +4,7 @@
             [clojure.set]
             [edn-ld.core :as edn-ld]
             [howl.util :as util]
-            [howl.core :refer [resolve-name] :as core]))
+            [howl.core :as core]))
 
 (def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 (def rdfs "http://www.w3.org/2000/01/rdf-schema#")
