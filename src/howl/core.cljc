@@ -157,12 +157,14 @@
         (cons (assoc block :env next-env)
               (environments (rest parsed-blocks) next-env)))))))
 
-(defn parse-file [filename]
-  (->> (line-seq (clojure.java.io/reader filename))
-       (#(lines->parse-trees % :source filename))
-       (map condense-chars)
-       (map parse-expressions)
-       environments))
+(defn parse-file
+  ([filename] (parse-file {}))
+  ([filename starting-env]
+   (->> (line-seq (clojure.java.io/reader filename))
+        (#(lines->parse-trees % :source filename))
+        (map condense-chars)
+        (map parse-expressions)
+        (#(environments % starting-env)))))
 
 (defn locate [block]
   "PLACEHOLDER ERROR HERE")
