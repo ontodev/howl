@@ -171,7 +171,11 @@
         (map parse-expressions)
         (#(environments % starting-env)))))
 
+(defn expand-names [& args] nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Error basics
 (defn locate [block]
-  ((meta block) :origin))
+  (if-let [m (meta block)]
+    (m :origin)
+    (str block)))
