@@ -4,18 +4,22 @@
             [howl.core :as core]
             [howl.nquads :as nq]))
 
+;; FIXME
+
 (defn ^:export howl-to-nquads
   "Given an input string in HOWL format,
    return a string of N-Quads."
   [content]
-  (->> (string/split-lines content)
-       (nq/lines-to-quads
-        (fn [state line]
-          (->> (core/merge-line state line)
-               core/parse-block
-               core/annotate-block
-               core/expand-names
-               nq/convert-quads))
-        {:file-name "local"})
-       (map nq/quad-to-string)
-       (string/join "\n")))
+  ;; (->> (string/split-lines content)
+  ;;      (nq/lines-to-quads
+  ;;       (fn [state line]
+  ;;         (->> (core/merge-line state line)
+  ;;              core/parse-block
+  ;;              core/annotate-block
+  ;;              core/expand-names
+  ;;              nq/convert-quads))
+  ;;       {:file-name "local"})
+  ;;      (map nq/quad-to-string)
+  ;;      (string/join "\n"))
+  ""
+  )

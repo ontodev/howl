@@ -31,6 +31,13 @@
 ;;       usability reasons.
 ;;     - Each name is valid from the point where it's declared to the point where it's shadowed.
 ;;
+;; 5. (map expand-block)
+;;     - this step expands prefixed names into literals, and
+
+;; Principal Datastructure
+;; type block = {:env environment :exp parse-tree}
+;; type parse-tree = Vector (keyword | string | parse-tree)
+;; type env = {labels prefixes graph subject}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Preliminary parse
@@ -114,20 +121,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Condense step
-(defn condense-literal-block [parsed-literal-block]
-  (vec
-   (map (fn [elem]
-          (if (and (vector? elem)
-                   (> (count elem) 2)
-                   (= :LITERAL (first elem)))
-            [:LITERAL (string/join (butlast (rest elem))) (last elem)]
-            elem))
-        parsed-literal-block)))
+(defn condense-tree [tree]
+  (if (or (string? tree) (keyword? tree) (nil? tree) (number? tree))
+    tree
+    (case (first tree)
+      :IRIREF [:IRIREF (string/join (rest tree))]
+      :LITERAL [:LITERAL (string/join (butlast (rest tree))) (last tree)]
+      (:EOL) tree
+      (vec (map condense-tree tree)))))
 
 (defn condense-chars [block]
-  (case (first (block :exp))
-    :LITERAL_BLOCK (assoc block :exp (condense-literal-block (block :exp)))
-    block))
+  (assoc block :exp (condense-tree (block :exp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing expressions
@@ -144,13 +148,40 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Extracting environments
+(defn first-vector-starting-with [keyword parse-tree]
+  (first (filter #(and (vector? %) (= keyword (first %))) parse-tree)))
+
+(defn name-from-node [prefixes node]
+  (case (first node)
+    :BLANK_NODE (get node 2)
+    :ABSOLUTE_IRI (second node)
+    :WRAPPED_IRI (get node 2)
+    :PREFIXED_NAME (str (get prefixes (second node))
+                        (get node 3))))
+
 (defn parse-tree->names [parse-tree]
   (case (first parse-tree)
     :PREFIX_BLOCK (let [[_ _ _ [_ name] _ [_ val]] parse-tree]
                     {:prefixes {name val}})
     :LABEL_BLOCK (let [[_ _ _ val [ name]] parse-tree]
                    {:labels {name val}})
+    :GRAPH_BLOCK (if-let [graph (first-vector-starting-with :GRAPH parse-tree)]
+                   {:graph (second graph)}
+                   {})
+    :SUBJECT_BLOCK (if-let [subject (first-vector-starting-with :SUBJECT parse-tree)]
+                     {:subject (second subject)}
+                     {})
+    :BASE_BLOCK (if-let [base (first-vector-starting-with :BASE parse-tree)]
+                  {:base (second base)}
+                  {})
     {}))
+
+(defn merge-environments [a b]
+  {:prefixes (merge (a :prefixes) (b :prefixes))
+   :labels (merge (a :labels) (b :labels))
+   :graph (or (b :graph) (a :graph))
+   :subject (or (b :subject) (a :subject))
+   :base (or (b :base) (a :base))})
 
 (defn environments
   ([parsed-blocks] (environments parsed-blocks {}))
@@ -158,12 +189,20 @@
    (when (not (empty? parsed-blocks))
      (lazy-seq
       (let [block (first parsed-blocks)
-            next-env (merge-with merge env (parse-tree->names (block :exp)))]
+            next-env (merge-environments env (parse-tree->names (block :exp)))]
         (cons (assoc block :env next-env)
               (environments (rest parsed-blocks) next-env)))))))
 
+(defn expand-tree [env parse-tree]
+  )
+
+(defn expand-block [block]
+  ;; expand [:env :graph] and [:env :subject]
+  ;; expand any PREFIXED_NAMEs in :exp
+  )
+
 (defn parse-file
-  ([filename] (parse-file {}))
+  ([filename] (parse-file filename {}))
   ([filename starting-env]
    (->> (line-seq (clojure.java.io/reader filename))
         (#(lines->parse-trees % :source filename))
@@ -171,7 +210,9 @@
         (map parse-expressions)
         (#(environments % starting-env)))))
 
-(defn expand-names [& args] nil)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Converting to nquads
+(defn block->nquads [block])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Error basics

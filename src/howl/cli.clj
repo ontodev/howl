@@ -17,15 +17,7 @@
   "Given the name of a HOWL file,
    return a lazy sequence of HOWL block maps."
   [file-name]
-  (with-open [reader (io/reader file-name)]
-    (core/lines-to-blocks
-     (fn [state line]
-       (->> (core/merge-line state line)
-            core/parse-block
-            core/preprocess-block
-            core/annotate-block))
-     {:file-name file-name}
-     (line-seq reader))))
+  (core/parse-file file-name))
 
 (defn parse-rdf-file
   "Given the name of a file that Apache Jena can read,
@@ -64,7 +56,7 @@
    (fn [state block]
      (-> state
          (assoc :block block)
-         core/expand-names
+         ;; FIXME core/expand-names
          (dissoc :block)))
    {}
    (apply parse-files context)))
@@ -83,9 +75,7 @@
   [options file-names]
   (let [state (get-context options)]
     (->> (apply parse-files file-names)
-         (map (partial core/rename state))
-         (reduce core/space-blocks [])
-         (map core/block-to-line)
+         (map core/parse-tree->string)
          (map print)
          doall)))
 
@@ -97,7 +87,7 @@
        (nq/lines-to-quads
         (fn [state block]
           (->> (assoc state :block block)
-               core/expand-names
+               ;; FIXME core/expand-names
                nq/convert-quads))
         (get-context options))
        (map nq/quad-to-string)
@@ -112,7 +102,7 @@
        (nq/lines-to-quads
         (fn [state block]
           (->> (assoc state :block block)
-               core/expand-names
+               ;; FIXME core/expand-names
                nq/convert-quads))
         (get-context options))
        (map #(assoc % 0 nil))

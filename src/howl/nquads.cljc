@@ -14,7 +14,6 @@
 (def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
 (def xsd-string "http://www.w4.org/2001/XMLSchema#string")
 
-
 ;; We convert HOWL to EDN-LD, then to N-Quads.
 ;; EDN-LD quads are vectors [g s p o],
 ;; where g, s, and p are absolute IRI strings or blank node strings,
@@ -79,7 +78,6 @@
   (if (string/blank? (:arrows block))
    (convert-single-statement state)
    (convert-annotation state)))
-
 
 ;; The most complex conversion is the Manchester syntax.
 ;; The expression is a tree,
@@ -328,8 +326,6 @@
         "."]
        (remove nil?)
        (string/join " ")))
-
-
 
 (defn render-statement
   "Given an arrow string (for depth),
