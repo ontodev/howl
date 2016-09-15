@@ -151,29 +151,36 @@
 (defn first-vector-starting-with [keyword parse-tree]
   (first (filter #(and (vector? %) (= keyword (first %))) parse-tree)))
 
-(defn name-from-node [prefixes node]
+(defn contents-of-vector [keyword parse-tree]
+  (second (first-vector-starting-with keyword parse-tree)))
+
+(defn name-from-node [env node]
   (case (first node)
     :BLANK_NODE (get node 2)
     :ABSOLUTE_IRI (second node)
-    :WRAPPED_IRI (get node 2)
-    :PREFIXED_NAME (str (get prefixes (second node))
+    :WRAPPED_IRI (let [iri (get node 2)]
+                   (if (.startsWith iri "http")
+                     iri
+                     (str (env :base) iri)))
+    :PREFIXED_NAME (str (get-in env [:prefixes (second node)])
                         (get node 3))))
 
-(defn parse-tree->names [parse-tree]
+(defn maybe-name [env keyword parse-tree dest-keyword]
+  (if-let [cont (contents-of-vector keyword parse-tree)]
+    {dest-keyword (name-from-node env cont)}
+    {}))
+
+(defn parse-tree->names [env parse-tree]
   (case (first parse-tree)
-    :PREFIX_BLOCK (let [[_ _ _ [_ name] _ [_ val]] parse-tree]
-                    {:prefixes {name val}})
-    :LABEL_BLOCK (let [[_ _ _ val [ name]] parse-tree]
-                   {:labels {name val}})
-    :GRAPH_BLOCK (if-let [graph (first-vector-starting-with :GRAPH parse-tree)]
-                   {:graph (second graph)}
-                   {})
-    :SUBJECT_BLOCK (if-let [subject (first-vector-starting-with :SUBJECT parse-tree)]
-                     {:subject (second subject)}
-                     {})
-    :BASE_BLOCK (if-let [base (first-vector-starting-with :BASE parse-tree)]
-                  {:base (second base)}
-                  {})
+    :PREFIX_BLOCK {:prefixes
+                   {(contents-of-vector :PREFIX parse-tree)
+                    (name-from-node env (contents-of-vector :PREFIXED parse-tree))}}
+    :LABEL_BLOCK {:labels
+                  {(contents-of-vector :LABEL parse-tree)
+                   (name-from-node env (contents-of-vector :IDENTIFIER parse-tree))}}
+    :GRAPH_BLOCK (maybe-name env :GRAPH parse-tree :graph)
+    :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
+    :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
     {}))
 
 (defn merge-environments [a b]
@@ -189,7 +196,7 @@
    (when (not (empty? parsed-blocks))
      (lazy-seq
       (let [block (first parsed-blocks)
-            next-env (merge-environments env (parse-tree->names (block :exp)))]
+            next-env (merge-environments env (parse-tree->names env (block :exp)))]
         (cons (assoc block :env next-env)
               (environments (rest parsed-blocks) next-env)))))))
 
@@ -197,7 +204,6 @@
   )
 
 (defn expand-block [block]
-  ;; expand [:env :graph] and [:env :subject]
   ;; expand any PREFIXED_NAMEs in :exp
   )
 

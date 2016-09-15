@@ -7,16 +7,21 @@
 (deftest test-name-from-node
   (testing "get the name out of a blank node"
     (is (= "testing"
-           (name-from-node {} [:BLANK_NODE "_:" "testing"]))))
+           (name-from-node
+            {} [:BLANK_NODE "_:" "testing"]))))
   (testing "get the IRI out of an absolute IRI"
     (is (= "http://example.com/"
-           (name-from-node {} [:ABSOLUTE_IRI "http://example.com/"]))))
+           (name-from-node
+            {} [:ABSOLUTE_IRI "http://example.com/"]))))
   (testing "get the IRI out of a wrapped IRI"
     (is (= "http://example.com/"
-           (name-from-node {} [:WRAPPED_IRI "<" "http://example.com/" ">"]))))
+           (name-from-node
+            {} [:WRAPPED_IRI "<" "http://example.com/" ">"]))))
   (testing "expand the prefix and get the resulting absolute IRI out of a prefixed name"
     (is (= "http://example.com/subClassOf"
-           (name-from-node {"ex" "http://example.com/"} [:PREFIXED_NAME "ex" ":" "subClassOf"])))))
+           (name-from-node
+            {:prefixes {"ex" "http://example.com/"}}
+            [:PREFIXED_NAME "ex" ":" "subClassOf"] )))))
 
 (deftest test-locate
   (testing "file, number, line"
