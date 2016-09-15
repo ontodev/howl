@@ -113,6 +113,8 @@
    (group-lines lines) 1))
 
 (defn parse-tree->string [parse-tree]
+  "Takes a parse-tree that came from the block-parser, and
+   returns the corresponding string"
   (if (string? parse-tree)
     parse-tree
     (case (first parse-tree)
@@ -121,30 +123,33 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Condense step
-(defn condense-tree [tree]
-  (if (or (string? tree) (keyword? tree) (nil? tree) (number? tree))
-    tree
-    (case (first tree)
-      :IRIREF [:IRIREF (string/join (rest tree))]
-      :LITERAL [:LITERAL (string/join (butlast (rest tree))) (last tree)]
-      (:EOL) tree
-      (vec (map condense-tree tree)))))
+(defn condense-tree [parse-tree]
+  "Takes a parse-tree and condenses single-character strings into a single string."
+  (if (or (string? parse-tree) (keyword? parse-tree) (nil? parse-tree) (number? parse-tree))
+    parse-tree
+    (case (first parse-tree)
+      :IRIREF [:IRIREF (string/join (rest parse-tree))]
+      :LITERAL [:LITERAL (string/join (butlast (rest parse-tree))) (last parse-tree)]
+      (:EOL) parse-tree
+      (vec (map condense-tree parse-tree)))))
 
 (defn condense-chars [block]
   (assoc block :exp (condense-tree (block :exp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing expressions
-(defn parse-expressions [parsed-block]
-  (if (= :EXPRESSION_BLOCK (first parsed-block))
+(defn parse-expressions [parse-tree]
+  "Takes a parse-tree. Runs a separate parser on
+   any contained :EXPRESSION_BLOCKs"
+  (if (= :EXPRESSION_BLOCK (first parse-tree))
     (vec
      (map (fn [elem]
             (if (and (vector? elem)
                      (= :EXPRESSION (first elem)))
               (exp/string-to-parse (second elem))
               elem))
-          parsed-block))
-    parsed-block))
+          parse-tree))
+    parse-tree))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Extracting environments
@@ -155,6 +160,10 @@
   (second (first-vector-starting-with keyword parse-tree)))
 
 (defn name-from-node [env node]
+  "Takes an environment and a node, and returns the absolute name
+   contained in the node.
+   Does not work on all nodes, just :BLANK_NODE, :ABSOLUTE_IRI,
+   :WRAPPED_IRI or :PREFIXED_NAME nodes"
   (case (first node)
     :BLANK_NODE (get node 2)
     :ABSOLUTE_IRI (second node)
@@ -171,6 +180,10 @@
     {}))
 
 (defn parse-tree->names [env parse-tree]
+  "Takes an environment and a parse tree.
+   Returns the names found in the parse tree.
+   This function needs an environment, because the given parse-tree
+   might contain relative/prefixed names which need to be expanded."
   (case (first parse-tree)
     :PREFIX_BLOCK {:prefixes
                    {(contents-of-vector :PREFIX parse-tree)
@@ -184,6 +197,9 @@
     {}))
 
 (defn merge-environments [a b]
+  "Merges two environments.
+   We could dispense with this if we wanted to introduce an extra
+   level of map for the keys [:graph :subject :base]."
   {:prefixes (merge (a :prefixes) (b :prefixes))
    :labels (merge (a :labels) (b :labels))
    :graph (or (b :graph) (a :graph))
@@ -191,22 +207,35 @@
    :base (or (b :base) (a :base))})
 
 (defn environments
-  ([parsed-blocks] (environments parsed-blocks {}))
-  ([parsed-blocks env]
-   (when (not (empty? parsed-blocks))
+  "Takes a sequence of blocks and a starting environment.
+   Returns a sequence of blocks decorated with local environments."
+  ([blocks] (environments blocks {}))
+  ([blocks env]
+   (when (not (empty? blocks))
      (lazy-seq
-      (let [block (first parsed-blocks)
+      (let [block (first blocks)
             next-env (merge-environments env (parse-tree->names env (block :exp)))]
         (cons (assoc block :env next-env)
-              (environments (rest parsed-blocks) next-env)))))))
+              (environments (rest blocks) next-env)))))))
 
-(defn expand-tree [env parse-tree]
-  )
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Name expansion
+(defn expand-tree
+  "Takes an environment and a parse tree.
+   Returns a parse tree with WRAPPED_IRIs and PREFIXED_NAMEs
+   expanded to ABSOLUTE_IRIs"
+  [env parse-tree]
+  (if (or (keyword? parse-tree) (string? parse-tree) (number? parse-tree))
+    parse-tree
+    (case (first parse-tree)
+      (:WRAPPED_IRI :PREFIXED_NAME) [:ABSOLUTE_IRI (name-from-node env parse-tree)]
+      (map #(expand-tree env %)))))
 
 (defn expand-block [block]
-  ;; expand any PREFIXED_NAMEs in :exp
-  )
+  (assoc block :exp (expand-tree (block :env) (block :exp))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Top-level interface
 (defn parse-file
   ([filename] (parse-file filename {}))
   ([filename starting-env]
