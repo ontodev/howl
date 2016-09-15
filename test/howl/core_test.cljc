@@ -24,18 +24,11 @@
             [:PREFIXED_NAME "ex" ":" "subClassOf"] )))))
 
 (deftest test-locate
-  (testing "file, number, line"
-    (is (= (locate ^{:origin {:name "local" :line 3}} {:file-name "local" :line-number 3 :line "FOO"})
-           "in 'local' at line 3:\nFOO")))
-  (testing "number and line"
-    (is (= (locate {:line-number 3 :line "FOO"})
-           "at line 3:\nFOO")))
-  (testing "number and block"
-    (is (= (locate {:line-number 3 :block #{"FOO"}})
-           "at line 3:\n#{\"FOO\"}")))
-  (testing "just state"
-    (is (= (locate :just-a-state)
-           ":just-a-state"))))
+  (testing "origin tag in meta"
+    (is (= (locate ^{:origin {:name "local" :line 3}} [:BLOCK])
+           {:name "local" :line 3})))
+  (testing "no origin tag in meta"
+    (is (= (locate [:BLOCK]) (str [:BLOCK])))))
 
 (def test-merge "
 A
