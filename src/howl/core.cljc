@@ -236,14 +236,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Top-level interface
+(defn parse-lines
+  [lines & {:keys [starting-env source]
+            :or {starting-env {} source "interactive"}}]
+  (->> lines
+       (#(lines->parse-trees % :source source))
+       (map condense-chars)
+       (map parse-expressions)
+       (#(environments % starting-env))))
+
 (defn parse-file
   ([filename] (parse-file filename {}))
   ([filename starting-env]
-   (->> (line-seq (clojure.java.io/reader filename))
-        (#(lines->parse-trees % :source filename))
-        (map condense-chars)
-        (map parse-expressions)
-        (#(environments % starting-env)))))
+   (parse-lines
+    (line-seq (clojure.java.io/reader filename))
+    :starting-env starting-env :source filename)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads

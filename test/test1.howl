@@ -1,17 +1,18 @@
-PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
-PREFIX rdfs:> http://www.w3.org/2000/01/rdf-schema#
-PREFIX xsd:> http://www.w4.org/2001/XMLSchema#
-PREFIX owl:> http://www.w3.org/2002/07/owl#
-PREFIX obo:> http://purl.obolibrary.org/obo/
-PREFIX ex:> http://example.com/
+PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:> <http://www.w4.org/2001/XMLSchema#>
+PREFIX owl:> <http://www.w3.org/2002/07/owl#>
+PREFIX obo:> <http://purl.obolibrary.org/obo/>
+PREFIX ex:> <http://example.com/>
 
 LABEL rdf:type: type
 LABEL rdfs:label: label
 LABEL rdfs:comment: comment
 LABEL rdfs:subClassOf: subClassOf
 
-TYPE label:> @en
-TYPE comment:> xsd:string
+DEFAULT label LANGUAGE en
+DEFAULT comment TYPE xsd:string
+DEFAULT subClassOf TYPE <http://www.w3.org/TR/owl2-manchester-syntax/>
 
 ex:ontology
 label: Example Ontology
@@ -20,9 +21,9 @@ type:> owl:Ontology
 ex:foo
 label: Foo
 type:> owl:Class
-comment: A comment on 'Foo'.@en
-> comment: An annotation on a comment.^^xsd:string
->> comment: An annotation on an annotation.^^xsd:string
+comment LANGUAGE en: A comment on 'Foo'.
+> comment TYPE xsd:string: An annotation on a comment.
+>> comment TYPE xsd:string: An annotation on an annotation.
 > rdfs:seeAlso:> ex:bat
 comment: Values can span multiple lines,
   and include blank lines...
@@ -53,12 +54,12 @@ label: evaluant role
 ex:bar
 label: Bar
 type:> owl:Class
-subClassOf:>> 'has part' some Foo
-subClassOf:>> has_specified_output some
-    ('information content entity'
-     and ('is about' some
-        ('material entity'
-         and ('has role' some 'evaluant role'))))
+#subClassOf TYPE:> 'has part' some Foo
+#subClassOf TYPE:> has_specified_output some
+#    ('information content entity'
+#     and ('is about' some
+#        ('material entity'
+#         and ('has role' some 'evaluant role'))))
 
 GRAPH ex:graph
 label: Named Graph
