@@ -54,49 +54,60 @@
   (insta/parser
    "<BLOCK> = BLANK_BLOCK / COMMENT_BLOCK /
               BASE_BLOCK / PREFIX_BLOCK /
-              LABEL_BLOCK / TYPE_BLOCK /
+              DEFAULT_BLOCK / LABEL_BLOCK /
               GRAPH_BLOCK / SUBJECT_BLOCK /
               LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
 
     BLANK_BLOCK      = EOL
     COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
     BASE_BLOCK       = 'BASE'   SPACES BASE EOL
-    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX     COLON_ARROW PREFIXED EOL
-    LABEL_BLOCK      = 'LABEL'  SPACES IDENTIFIER COLON       LABEL EOL
-    TYPE_BLOCK       = 'TYPE'   SPACES PREDICATE  COLON_ARROW (LANG | DATATYPE) EOL
-    GRAPH_BLOCK      = 'GRAPH'  EOL /
-                       'GRAPH'  SPACES GRAPH EOL
+    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX COLON_ARROW PREFIXED EOL
+    LABEL_BLOCK      = 'LABEL'  SPACES SUBJECT COLON LABEL EOL
+    DEFAULT_BLOCK    = 'DEFAULT' SPACES PREDICATE
+                       (SPACES 'LANGUAGE' LANGUAGE | SPACES 'TYPE' DATATYPE | SPACES 'NONE')
+                       EOL
+    GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)? EOL
     SUBJECT_BLOCK    = SUBJECT EOL
-    LITERAL_BLOCK    = ARROWS PREDICATE COLON LITERAL EOL
+    LITERAL_BLOCK    = ARROWS PREDICATE
+                       (SPACES 'LANGUAGE' LANGUAGE | SPACES 'TYPE' DATATYPE)?
+                       COLON LITERAL EOL
     LINK_BLOCK       = ARROWS PREDICATE COLON_ARROW OBJECT EOL
-    EXPRESSION_BLOCK = PREDICATE COLON_ARROWS EXPRESSION EOL
-    EXPRESSION = #'(?:.|\r?\n)+'
+    EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' DATATYPE)?
+                       COLON_ARROWS EXPRESSION EOL
 
-    IDENTIFIER = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI
-    BASE       = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
-    PREFIXED   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
-    GRAPH      = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI  / LABEL
-    SUBJECT    = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    PREDICATE  = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    OBJECT     = BLANK_NODE / PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    DATATYPE   = PREFIXED_NAME / WRAPPED_IRI / ABSOLUTE_IRI / LABEL
-    LITERAL    = CHAR+ LANG /
-                 CHAR+ '^^' DATATYPE /
-                 #'(\n|.)*.+'
+    NAME      = IRIREF / PREFIXED_NAME / LABEL
+    <ANYNAME>   = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
+    BASE      = IRIREF
+    PREFIXED  = IRIREF
+    GRAPH     = NAME
+    SUBJECT   = ANYNAME
+    PREDICATE = NAME
+    OBJECT    = ANYNAME
+    DATATYPE  = ANYNAME
+
+    (* TERMINALS *)
     PREFIX        = #'(\\w|-)+'
-    BLANK_NODE    = '_:' #'(\\w|-|:)+'
-    PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:]*'
-    WRAPPED_IRI   = '<' #'[^>\\s]+' '>'
-    ABSOLUTE_IRI  = #'\\w+:/[^>\\s]+'
-    LANG          = '@' #'(\\w|-)+'
+    PREFIXED_NAME = PREFIX ':' #'[^\\s:/][^\\s:]*'
     COLON         = #' *' ':'  #' +'
     COLON_ARROW   = #' *' ':>' #' +'
     COLON_ARROWS  = #' *' ':>>' #' +'
     SPACES        = #' +'
     ARROWS        = #'>*' #'\\s*'
     LABEL         = #'[^:\n]+'
+    LITERAL       = #'(\n|.)*.+'
+    EXPRESSION    = #'(?:.|\r?\n)+'
     EOL           = #'(\r|\n|\\s)*'
-    <CHAR> = #'.'
+
+    (* Adapted from the NQuads spec *)
+    (* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF ? *)
+    LANGUAGE = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'
+    IRIREF = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
+    BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
+    UCHAR = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
+    PN_CHARS_BASE = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]'
+    PN_CHARS_U = PN_CHARS_BASE | '_' | ':'
+    PN_CHARS = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
+    HEX = #'[0-9A-Fa-f]+'
     "))
 
 (defn lines->parse-trees
@@ -128,7 +139,10 @@
   (if (or (string? parse-tree) (keyword? parse-tree) (nil? parse-tree) (number? parse-tree))
     parse-tree
     (case (first parse-tree)
-      :IRIREF [:IRIREF (string/join (rest parse-tree))]
+      :IRIREF [:IRIREF
+               (second parse-tree)
+               (string/join (drop 2 (drop-last parse-tree)))
+               (last parse-tree)]
       :LITERAL [:LITERAL (string/join (butlast (rest parse-tree))) (last parse-tree)]
       (:EOL) parse-tree
       (vec (map condense-tree parse-tree)))))
@@ -163,16 +177,17 @@
   "Takes an environment and a node, and returns the absolute name
    contained in the node.
    Does not work on all nodes, just :BLANK_NODE, :ABSOLUTE_IRI,
-   :WRAPPED_IRI or :PREFIXED_NAME nodes"
+   :IRIREF or :PREFIXED_NAME nodes"
   (case (first node)
     :BLANK_NODE (get node 2)
     :ABSOLUTE_IRI (second node)
-    :WRAPPED_IRI (let [iri (get node 2)]
+    :IRIREF (let [iri (get node 2)]
                    (if (.startsWith iri "http")
                      iri
                      (str (env :base) iri)))
-    :PREFIXED_NAME (str (get-in env [:prefixes (second node)])
-                        (get node 3))))
+    :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
+                     (str (get-in env [:prefixes prefix]) name))
+    (:SUBJECT) (name-from-node env (second node))))
 
 (defn maybe-name [env keyword parse-tree dest-keyword]
   (if-let [cont (contents-of-vector keyword parse-tree)]
@@ -190,7 +205,7 @@
                     (name-from-node env (contents-of-vector :PREFIXED parse-tree))}}
     :LABEL_BLOCK {:labels
                   {(contents-of-vector :LABEL parse-tree)
-                   (name-from-node env (contents-of-vector :IDENTIFIER parse-tree))}}
+                   (name-from-node env (contents-of-vector :SUBJECT parse-tree))}}
     :GRAPH_BLOCK (maybe-name env :GRAPH parse-tree :graph)
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
@@ -206,6 +221,13 @@
    :subject (or (b :subject) (a :subject))
    :base (or (b :base) (a :base))})
 
+(defn environment-of [prev-env block]
+  "Takes an environment and a block, and returns the new environment.
+   Most of the time, it'll be the same one, but some forms (such as DEFAULT,
+   LABEL, PREFIX, GRAPH and SUBJECT) introduce new name associations
+   which will either add to the env or shadow something from it."
+  (merge-environments prev-env (parse-tree->names prev-env (block :exp))))
+
 (defn environments
   "Takes a sequence of blocks and a starting environment.
    Returns a sequence of blocks decorated with local environments."
@@ -214,7 +236,7 @@
    (when (not (empty? blocks))
      (lazy-seq
       (let [block (first blocks)
-            next-env (merge-environments env (parse-tree->names env (block :exp)))]
+            next-env (environment-of env block)]
         (cons (assoc block :env next-env)
               (environments (rest blocks) next-env)))))))
 
@@ -222,13 +244,13 @@
 ;;;;; Name expansion
 (defn expand-tree
   "Takes an environment and a parse tree.
-   Returns a parse tree with WRAPPED_IRIs and PREFIXED_NAMEs
+   Returns a parse tree with IRIREFs and PREFIXED_NAMEs
    expanded to ABSOLUTE_IRIs"
   [env parse-tree]
   (if (or (keyword? parse-tree) (string? parse-tree) (number? parse-tree))
     parse-tree
     (case (first parse-tree)
-      (:WRAPPED_IRI :PREFIXED_NAME) [:ABSOLUTE_IRI (name-from-node env parse-tree)]
+      (:IRIREF :PREFIXED_NAME) [:ABSOLUTE_IRI (name-from-node env parse-tree)]
       (map #(expand-tree env %)))))
 
 (defn expand-block [block]

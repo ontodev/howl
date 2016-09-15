@@ -30,6 +30,10 @@
   (testing "no origin tag in meta"
     (is (= (locate [:BLOCK]) (str [:BLOCK])))))
 
+(deftest howl-smoke-test
+  (testing "high-level smoke test for the howl parer"
+    (is (map? (parse-file "test/test1.howl")))))
+
 (def test-merge "
 A
   indented
