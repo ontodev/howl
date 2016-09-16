@@ -63,8 +63,8 @@
     BASE_BLOCK       = 'BASE'   SPACES BASE EOL
     PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX COLON_ARROW PREFIXED EOL
     LABEL_BLOCK      = 'LABEL'  SPACES SUBJECT COLON LABEL EOL
-    DEFAULT_BLOCK    = 'DEFAULT' SPACES PREDICATE
-                       (SPACES 'LANGUAGE' LANGUAGE | SPACES 'TYPE' DATATYPE | SPACES 'NONE')
+    DEFAULT_BLOCK    = 'DEFAULT' SPACES PREDICATE SPACES
+                       ('LANGUAGE' SPACES LANGUAGE | 'TYPE' SPACES DATATYPE | 'NONE')
                        EOL
     GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)? EOL
     SUBJECT_BLOCK    = SUBJECT EOL
@@ -93,7 +93,9 @@
     COLON_ARROWS  = #' *' ':>>' #' +'
     SPACES        = #' +'
     ARROWS        = #'>*' #'\\s*'
-    LABEL         = #'[^:\n]+'
+    LABEL   = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
+    KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
+    WORD = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
     LITERAL       = #'(\n|.)*.+'
     EXPRESSION    = #'(?:.|\r?\n)+'
     EOL           = #'(\r|\n|\\s)*'
@@ -187,7 +189,7 @@
                      (str (env :base) iri)))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
-    (:SUBJECT) (name-from-node env (second node))))
+    (:SUBJECT :NAME) (name-from-node env (second node))))
 
 (defn maybe-name [env keyword parse-tree dest-keyword]
   (if-let [cont (contents-of-vector keyword parse-tree)]

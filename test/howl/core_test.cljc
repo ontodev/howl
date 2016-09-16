@@ -2,6 +2,8 @@
   "Test core functions."
   (:require [clojure.test :refer :all]
             [clojure.string :as string]
+            [instaparse.core :as insta]
+
             [howl.core :refer :all]))
 
 (deftest test-name-from-node
@@ -16,12 +18,19 @@
   (testing "get the IRI out of a wrapped IRI"
     (is (= "http://example.com/"
            (name-from-node
-            {} [:WRAPPED_IRI "<" "http://example.com/" ">"]))))
+            {} [:IRIREF "<" "http://example.com/" ">"]))))
   (testing "expand the prefix and get the resulting absolute IRI out of a prefixed name"
     (is (= "http://example.com/subClassOf"
            (name-from-node
             {:prefixes {"ex" "http://example.com/"}}
-            [:PREFIXED_NAME "ex" ":" "subClassOf"] )))))
+            [:PREFIXED_NAME [:PREFIX "ex"] ":" "subClassOf"] ))))
+  (testing "recur into :SUBJECT and :NAME"
+    (is (= "http://example.com/"
+           (name-from-node
+            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))
+    (is (= "http://example.com/"
+           (name-from-node
+            {} [:NAME [:ABSOLUTE_IRI "http://example.com/"]])))))
 
 (deftest test-locate
   (testing "origin tag in meta"
@@ -32,7 +41,27 @@
 
 (deftest howl-smoke-test
   (testing "high-level smoke test for the howl parer"
-    (is (map? (parse-file "test/test1.howl")))))
+    (is (let [parse (parse-file "test/test1.howl")]
+          (and (seq? parse)
+               (every? map? parse))))))
+
+(def bad-labels
+ ["DEFAULT foo"
+  "GRAPH"
+  "PREFIX bar: <baz>"
+  "gru TYPE integer"
+  "gru LANGUAGE integer"
+  "# comment"
+  ">> annotation"
+  "trailing space "
+  "trailing colon:"
+  "trailing colon arrow:>"])
+
+(deftest test-labels-parse
+ (testing "Bad labels either cause an outright parse failure, or return a parse tree that does not designate a :LABEL_BLOCK"
+   (doseq [bad-label bad-labels]
+     (is (or (insta/failure? (block-parser bad-label))
+             (not= :LABEL_BLOCK (first (block-parser bad-label))))))))
 
 (def test-merge "
 A
