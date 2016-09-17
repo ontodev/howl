@@ -277,6 +277,13 @@
     :starting-env starting-env :source filename)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Error basics
+(defn locate [block]
+  (if-let [m (meta block)]
+    (m :origin)
+    (str block)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
 (defn block->nquads [block]
   (case (first (block :exp))
@@ -289,10 +296,3 @@
           #{:PREFIX_BLOCK :LABEL_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :COMMENT_BOCK}
           (take 1 (% :exp)))
         block-sequence)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Error basics
-(defn locate [block]
-  (if-let [m (meta block)]
-    (m :origin)
-    (str block)))
