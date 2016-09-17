@@ -24,13 +24,10 @@
            (name-from-node
             {:prefixes {"ex" "http://example.com/"}}
             [:PREFIXED_NAME [:PREFIX "ex"] ":" "subClassOf"] ))))
-  (testing "recur into :SUBJECT and :NAME"
+  (testing "recur into :SUBJECT"
     (is (= "http://example.com/"
            (name-from-node
-            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))
-    (is (= "http://example.com/"
-           (name-from-node
-            {} [:NAME [:ABSOLUTE_IRI "http://example.com/"]])))))
+            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))))
 
 (deftest test-locate
   (testing "origin tag in meta"
