@@ -56,7 +56,7 @@
               BASE_BLOCK / PREFIX_BLOCK /
               DEFAULT_BLOCK / LABEL_BLOCK /
               GRAPH_BLOCK / SUBJECT_BLOCK /
-              LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
+              ANNOTATION / LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
 
     BLANK_BLOCK      = EOL
     COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
@@ -68,10 +68,11 @@
                        EOL
     GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)? EOL
     SUBJECT_BLOCK    = SUBJECT EOL
-    LITERAL_BLOCK    = ARROWS? PREDICATE
+    ANNOTATION       = ARROWS (LITERAL_BLOCK | LINK_BLOCK)
+    LITERAL_BLOCK    = PREDICATE
                        (SPACES 'LANGUAGE' SPACES LANGUAGE | SPACES 'TYPE' SPACES DATATYPE)?
                        COLON LITERAL EOL
-    LINK_BLOCK       = ARROWS? PREDICATE COLON_ARROW OBJECT EOL
+    LINK_BLOCK       = PREDICATE COLON_ARROW OBJECT EOL
     EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' DATATYPE)?
                        COLON_ARROWS EXPRESSION EOL
 
@@ -184,9 +185,9 @@
     :BLANK_NODE (get node 2)
     (:ABSOLUTE_IRI :WORD) (second node)
     :IRIREF (let [iri (get node 2)]
-                   (if (.startsWith iri "http")
-                     iri
-                     (str (env :base) iri)))
+              (if (.startsWith iri "http")
+                iri
+                (str (env :base) iri)))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
     :LABEL (get-in env [:labels (second node)])
@@ -209,6 +210,8 @@
     :LABEL_BLOCK {:labels
                   {(contents-of-vector :LABEL parse-tree)
                    (name-from-node env (contents-of-vector :SUBJECT parse-tree))}}
+    ;; TODO - Empty graph block should dissoc the current graph.
+    ;;        This will involve changes in merge-environments as well.
     :GRAPH_BLOCK (maybe-name env :GRAPH parse-tree :graph)
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
@@ -286,19 +289,18 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
-
 (defn block->nquads [block]
-  (case (first (block :exp))
-    :LITERAL_BLOCK (if (= :ARROWS (first (second (block :exp))))
-                     [:TODO--ANNOTATION]
-                     [(get-in block [:env :subject])
-                      (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))
-                      (last (first-vector-starting-with :LITERAL (block :exp))) ;; TODO -- add language/type annotation to the end of this element
-                      ]) ;; Also, add graph block to the end, if present
-    :LINK_BLOCK [(get-in block [:env :subject])
-                 (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))
-                 (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp)))]
-    [:TODO (locate block) (first (block :exp))]))
+  (if (= :ANNOTATION (first (block :exp)))
+    [:TODO]
+    [(get-in block [:env :subject])
+     (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))
+     (case (first (block :exp))
+        :LITERAL_BLOCK
+        (last (first-vector-starting-with :LITERAL (block :exp))) ;; TODO -- add language/type annotation to the end of this
+        :LINK_BLOCK
+        (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp)))
+        [:TODO (locate block) (first (block :exp))])
+     (get-in block [:env :graph])]))
 
 (defn blocks->nquads [block-sequence]
   (map block->nquads
