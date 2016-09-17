@@ -68,10 +68,10 @@
                        EOL
     GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)? EOL
     SUBJECT_BLOCK    = SUBJECT EOL
-    LITERAL_BLOCK    = ARROWS PREDICATE
-                       (SPACES 'LANGUAGE' LANGUAGE | SPACES 'TYPE' DATATYPE)?
+    LITERAL_BLOCK    = ARROWS? PREDICATE
+                       (SPACES 'LANGUAGE' SPACES LANGUAGE | SPACES 'TYPE' SPACES DATATYPE)?
                        COLON LITERAL EOL
-    LINK_BLOCK       = ARROWS PREDICATE COLON_ARROW OBJECT EOL
+    LINK_BLOCK       = ARROWS? PREDICATE COLON_ARROW OBJECT EOL
     EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' DATATYPE)?
                        COLON_ARROWS EXPRESSION EOL
 
@@ -92,7 +92,7 @@
     COLON_ARROW   = #' *' ':>' #' +'
     COLON_ARROWS  = #' *' ':>>' #' +'
     SPACES        = #' +'
-    ARROWS        = #'>*' #'\\s*'
+    ARROWS        = #'>+' #'\\s*'
     LABEL   = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
     KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
     WORD = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
@@ -278,7 +278,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
-(defn block->nquads [block])
+(defn block->nquads [block]
+  (case (first (block :exp))
+    [:TODO (locate block) block]))
+
+(defn blocks->nquads [block-sequence]
+  (map block->nquads
+       (filter
+        #(not-any?
+          #{:PREFIX_BLOCK :LABEL_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :COMMENT_BOCK}
+          (take 1 (% :exp)))
+        block-sequence)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Error basics
