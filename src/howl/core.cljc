@@ -75,7 +75,7 @@
     EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' DATATYPE)?
                        COLON_ARROWS EXPRESSION EOL
 
-    NAME      = IRIREF / PREFIXED_NAME / LABEL
+    <NAME>      = IRIREF / PREFIXED_NAME / LABEL
     <ANYNAME>   = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
     BASE      = IRIREF
     PREFIXED  = IRIREF
@@ -95,7 +95,7 @@
     ARROWS        = #'>+' #'\\s*'
     LABEL   = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
     KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
-    WORD = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
+    <WORD> = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
     LITERAL       = #'(\n|.)*.+'
     EXPRESSION    = #'(?:.|\r?\n)+'
     EOL           = #'(\r|\n|\\s)*'
@@ -182,14 +182,15 @@
    :IRIREF or :PREFIXED_NAME nodes"
   (case (first node)
     :BLANK_NODE (get node 2)
-    :ABSOLUTE_IRI (second node)
+    (:ABSOLUTE_IRI :WORD) (second node)
     :IRIREF (let [iri (get node 2)]
                    (if (.startsWith iri "http")
                      iri
                      (str (env :base) iri)))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
-    (:SUBJECT :NAME) (name-from-node env (second node))))
+    :LABEL (get-in env [:labels (second node)])
+    (:SUBJECT) (name-from-node env (second node))))
 
 (defn maybe-name [env keyword parse-tree dest-keyword]
   (if-let [cont (contents-of-vector keyword parse-tree)]
@@ -285,14 +286,26 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
+
 (defn block->nquads [block]
   (case (first (block :exp))
-    [:TODO (locate block) block]))
+    :LITERAL_BLOCK (if (= :ARROWS (first (second (block :exp))))
+                     [:TODO--ANNOTATION]
+                     [(get-in block [:env :subject])
+                      (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))
+                      (last (first-vector-starting-with :LITERAL (block :exp))) ;; TODO -- add language/type annotation to the end of this element
+                      ]) ;; Also, add graph block to the end, if present
+    :LINK_BLOCK [(get-in block [:env :subject])
+                 (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))
+                 (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp)))]
+    [:TODO (locate block) (first (block :exp))]))
 
 (defn blocks->nquads [block-sequence]
   (map block->nquads
        (filter
         #(not-any?
-          #{:PREFIX_BLOCK :LABEL_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :COMMENT_BOCK}
+          #{:PREFIX_BLOCK :LABEL_BLOCK
+            :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
+            :COMMENT_BLOCK}
           (take 1 (% :exp)))
         block-sequence)))
