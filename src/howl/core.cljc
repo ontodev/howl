@@ -210,9 +210,9 @@
     :LABEL_BLOCK {:labels
                   {(contents-of-vector :LABEL parse-tree)
                    (name-from-node env (contents-of-vector :SUBJECT parse-tree))}}
-    ;; TODO - Empty graph block should dissoc the current graph.
-    ;;        This will involve changes in merge-environments as well.
-    :GRAPH_BLOCK (maybe-name env :GRAPH parse-tree :graph)
+    :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
+                   {:graph (name-from-node env cont)}
+                   {:graph nil})
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
     {}))
@@ -223,7 +223,7 @@
    level of map for the keys [:graph :subject :base]."
   {:prefixes (merge (a :prefixes) (b :prefixes))
    :labels (merge (a :labels) (b :labels))
-   :graph (or (b :graph) (a :graph))
+   :graph (if (contains? b :graph) (b :graph) (a :graph))
    :subject (or (b :subject) (a :subject))
    :base (or (b :base) (a :base))})
 
