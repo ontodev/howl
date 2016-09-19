@@ -210,10 +210,17 @@
     :LABEL_BLOCK {:labels
                   {(contents-of-vector :LABEL parse-tree)
                    (name-from-node env (contents-of-vector :SUBJECT parse-tree))}}
-    :DEFAULT_BLOCK (case (nth parse-tree 5)
-                     "LANGUAGE" {:defaults {:language (contents-of-vector :LANGUAGE parse-tree)}}
-                     "TYPE" {:defaults {:type }}
-                     {})
+    :DEFAULT_BLOCK (let [key (nth parse-tree 5)]
+                     {:defaults
+                      ;; TODO - the below will error when called with a label that hasn't
+                      ;;        already been declared. We should do an explicit validation
+                      ;;        pass at some point to catch that explicitly and provide a
+                      ;;        better error message
+                      {(name-from-node env (contents-of-vector :PREDICATE parse-tree))
+                       {key
+                        (if (= key "LANGUAGE")
+                          (contents-of-vector :LANGUAGE parse-tree)
+                          (name-from-node env (contents-of-vector :DATATYPE parse-tree)))}}})
     :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
                    {:graph (name-from-node env cont)}
                    {:graph nil})
@@ -227,7 +234,7 @@
    level of map for the keys [:graph :subject :base]."
   {:prefixes (merge (a :prefixes) (b :prefixes))
    :labels (merge (a :labels) (b :labels))
-   :defaults (merge (a :defaults) (b :defaults))
+   :defaults (merge-with merge (a :defaults) (b :defaults))
    :graph (if (contains? b :graph) (b :graph) (a :graph))
    :subject (or (b :subject) (a :subject))
    :base (or (b :base) (a :base))})
@@ -308,20 +315,21 @@
 (defn block->nquads [block]
   (if (= :ANNOTATION (first (block :exp)))
     [:TODO]
-    [(get-quoted block [:env :subject])
-     (quoted (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp))))
-     (case (first (block :exp))
-       :LITERAL_BLOCK
-       (let [base (quoted (last (first-vector-starting-with :LITERAL (block :exp))))]
-         (if-let [lang (get-in block [:env :defaults :language])]
-           (str base "@" lang)
-           (if-let [type (get-in block [:env :defaults :type])]
-             (str base "^^" type)
-             base)))
-       :LINK_BLOCK
-       (quoted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
-       [:TODO (locate block) (first (block :exp))])
-     (quoted (get-in block [:env :graph]))]))
+    (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
+      [(get-quoted block [:env :subject])
+       (quoted pred)
+       (case (first (block :exp))
+         :LITERAL_BLOCK
+         (let [base (quoted (last (first-vector-starting-with :LITERAL (block :exp))))]
+           (if-let [type (get-in block [:env :defaults pred "TYPE"])]
+             (str base "^^" (quoted type))
+             (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
+               (str base "@" lang)
+               base)))
+         :LINK_BLOCK
+         (quoted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+         [:TODO (locate block) (first (block :exp))])
+       (quoted (get-in block [:env :graph]))])))
 
 (defn blocks->nquads [block-sequence]
   (map block->nquads
