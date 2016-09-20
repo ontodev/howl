@@ -217,10 +217,12 @@
                       ;;        pass at some point to catch that explicitly and provide a
                       ;;        better error message
                       {(name-from-node env (contents-of-vector :PREDICATE parse-tree))
-                       {key
-                        (if (= key "LANGUAGE")
-                          (contents-of-vector :LANGUAGE parse-tree)
-                          (name-from-node env (contents-of-vector :DATATYPE parse-tree)))}}})
+                       (if (= key "NONE")
+                         {"LANGUAGE" nil "TYPE" nil}
+                         {key
+                          (if (= key "LANGUAGE")
+                            (contents-of-vector :LANGUAGE parse-tree)
+                            (name-from-node env (contents-of-vector :DATATYPE parse-tree)))})}})
     :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
                    {:graph (name-from-node env cont)}
                    {:graph nil})
