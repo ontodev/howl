@@ -314,31 +314,67 @@
 (defn get-quoted [block keys]
   (quoted (get-in block keys)))
 
-(defn block->nquads [block]
-  (if (= :ANNOTATION (first (block :exp)))
-    [:TODO]
-    (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
-      [(get-quoted block [:env :subject])
-       (quoted pred)
-       (case (first (block :exp))
-         :LITERAL_BLOCK
-         (let [base (quoted (last (first-vector-starting-with :LITERAL (block :exp))))]
-           (if-let [type (get-in block [:env :defaults pred "TYPE"])]
-             (str base "^^" (quoted type))
-             (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
-               (str base "@" lang)
-               base)))
-         :LINK_BLOCK
-         (quoted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
-         [:TODO (locate block) (first (block :exp))])
-       (quoted (get-in block [:env :graph]))])))
+(defn simple-block->nquad [block]
+  (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
+    [(get-quoted block [:env :subject])
+     (quoted pred)
+     (case (first (block :exp))
+       :LITERAL_BLOCK
+       (let [base (quoted (last (first-vector-starting-with :LITERAL (block :exp))))]
+         (if-let [type (get-in block [:env :defaults pred "TYPE"])]
+           (str base "^^" (quoted type))
+           (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
+             (str base "@" lang)
+             base)))
+       :LINK_BLOCK
+       (quoted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+       [:TODO (locate block) (first (block :exp))])
+     (quoted (get-in block [:env :graph]))]))
+
+(defn owl> [name]
+  (str "<http://www.w3.org/2002/07/owl#" name ">"))
+(defn rdf> [name]
+  (str "<http://www.w3.org/1999/02/22-rdf-syntax-ns#" name ">"))
+(defn rdf-schema> [name]
+  (str "<http://www.w3.org/2000/01/rdf-schema#" name ">"))
+
+(defn annotation-block->nquads [id [source property target _] block]
+  (let [name (str "_:b" id)
+        base (simple-block->nquad (assoc block :exp (get (block :exp) 2)))]
+    [[name (rdf> "type") (owl> "Axiom") nil]
+     [name (owl> "annotatedSource") source nil]
+     [name (owl> "annotatedProperty") property nil]
+     [name (owl> "annotatedTarget") target nil]
+     (vec (cons name (rest base)))]))
+
+(defn nquad-relevant-blocks [block-sequence]
+  (filter
+   #(not-any?
+     #{:PREFIX_BLOCK :LABEL_BLOCK
+       :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
+       :COMMENT_BLOCK}
+     (take 1 (% :exp)))
+   block-sequence))
 
 (defn blocks->nquads [block-sequence]
-  (map block->nquads
-       (filter
-        #(not-any?
-          #{:PREFIX_BLOCK :LABEL_BLOCK
-            :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
-            :COMMENT_BLOCK}
-          (take 1 (% :exp)))
-        block-sequence)))
+  (let [id (atom 0)
+        prev (atom [])]
+    (mapcat
+     (comp
+      #(do (reset! prev (last %)) %)
+      #(if (= :ANNOTATION (first (% :exp)))
+         (do
+           (swap! id inc)
+           (annotation-block->nquads @id @prev %))
+         [(simple-block->nquad %)]))
+     (nquad-relevant-blocks block-sequence))))
+
+(defn nquads->file! [nquads filename]
+  (with-open [w (clojure.java.io/writer filename)]
+    (doseq [[a b c d] nquads]
+      (println "PRINTING -- " a b c d)
+      (.write w a) (.write w " ")
+      (.write w b) (.write w " ")
+      (.write w c) (.write w " ")
+      (when d (.write w d) (.write w " "))
+      (.write w ".\n"))))
