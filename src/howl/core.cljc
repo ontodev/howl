@@ -280,6 +280,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Top-level interface
 (defn parse-lines
+  "Takes a seq of lines, groups them appropriately, and runs the parsing step on them.
+   Produces a seq of blocks ({:exp :env} maps)"
   [lines & {:keys [starting-env source]
             :or {starting-env {} source "interactive"}}]
   (->> lines
@@ -289,6 +291,8 @@
        (#(environments % starting-env))))
 
 (defn parse-file
+  "Takes a filename, and optionally a starting environment, and parses that
+   file under the given environment."
   ([filename] (parse-file filename {}))
   ([filename starting-env]
    (parse-lines
@@ -305,6 +309,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
 (defn formatted [val]
+  "Takes a sting value, and returns it in an appropriate format for nquad encoding.
+   - Returns angle-brace-surrounded/quoted strings as-is
+   - Surrounds strings beginning with http with angle braces
+   - Otherwise escapes newlines, removes two chars from subsequent lines (to account for our
+     multi-line indentation convention) and quotes the input"
   (when val
     (cond
       (.startsWith val "http") (str "<" val ">")
@@ -321,6 +330,8 @@
   (formatted (get-in block keys)))
 
 (defn simple-block->nquad [block]
+  "Returns an nquad from a simple block. These include any blocks
+   that get translated down to one quad."
   (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
     [(get-formatted block [:env :subject])
      (formatted pred)
@@ -345,6 +356,9 @@
   (str "<http://www.w3.org/2000/01/rdf-schema#" name ">"))
 
 (defn annotation-block->nquads [id [source property target _] block]
+  "Returns an annotation block. Annotation blocks get encoded as multiple
+   quads, and some of those depend on a target quad that is being annotated.
+   The trailing quad is generated using simple-block->nquad"
   (let [name (str "_:b" id)
         base (simple-block->nquad (assoc block :exp (get (block :exp) 2)))]
     [[name (rdf> "type") (owl> "Axiom") nil]
@@ -354,6 +368,10 @@
      (vec (cons name (rest base)))]))
 
 (defn nquad-relevant-blocks [block-sequence]
+  "Takes a sequence of blocks, and filters out any blocks
+   that have no nquad encoding. Specifically, blocks like PREFIX or
+   LABEL whose job is only establishing environment bindings, rather
+   than being encoded directly in the result."
   (filter
    #(not-any?
      #{:PREFIX_BLOCK :LABEL_BLOCK
@@ -363,6 +381,19 @@
    block-sequence))
 
 (defn find-target [arrows-ct target-stack]
+  "Takes a number of leading arrows, and a target-stack, and returns
+   the target quad. This gets called in the situation where several blocks
+   in a row start with />+/. There might be a situation like
+
+   foo
+   > bar
+   >> baz
+   > mumble
+
+   Semantically, `foo` is some quad, `bar` is an annotation on `foo`, `baz` is
+   an annotation on `bar` and `mumble` is a second annotation on `foo`.
+   `find-target` will return the first quad in the `target-stack` that has
+   fewer leading arrows than the given `arrow-ct`."
   (second
    (first
     (drop-while
@@ -370,6 +401,8 @@
      target-stack))))
 
 (defn handle-annotation-block! [id stack block]
+  "Takes id and stack atoms, along with a block, and handles the processing
+   involved in rendering an :ANNOTATION block."
   (swap! id inc)
   (let [arrow-level (count (second (second (block :exp))))
         target (find-target arrow-level @stack)
@@ -380,11 +413,14 @@
     res))
 
 (defn handle-simple-block! [id stack block]
+  "Takes id and stack atoms, along with a block, and handles the processing
+   involved in rendering a non-annotation block."
   (let [res (simple-block->nquad block)]
     (reset! stack (list [0 res]))
     [res]))
 
 (defn blocks->nquads [block-sequence]
+  "Takes a sequence of blocks and emits a sequence of nquads"
   (let [id (atom 0)
         stack (atom (list))]
     (mapcat
@@ -394,6 +430,8 @@
      (nquad-relevant-blocks block-sequence))))
 
 (defn nquads->file! [nquads filename]
+  "Takes a series of nquads and a filename. Writes the given nquads
+   to the given file."
   (with-open [w (clojure.java.io/writer filename)]
     (doseq [[a b c d] nquads]
       (.write w a) (.write w " ")
