@@ -224,7 +224,8 @@
                             (contents-of-vector :LANGUAGE parse-tree)
                             (name-from-node env (contents-of-vector :DATATYPE parse-tree)))})}})
     :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
-                   {:graph (name-from-node env cont)}
+                   (let [g (name-from-node env cont)]
+                     {:graph g :subject g})
                    {:graph nil})
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
@@ -356,23 +357,40 @@
      (take 1 (% :exp)))
    block-sequence))
 
+(defn find-target [arrows-ct target-stack]
+  (second
+   (first
+    (drop-while
+     #(>= (first %) arrows-ct)
+     target-stack))))
+
+(defn handle-annotation-block! [id stack block]
+  (swap! id inc)
+  (let [arrow-level (count (second (second (block :exp))))
+        target (find-target arrow-level @stack)
+        res (annotation-block->nquads
+             @id (find-target arrow-level @stack)
+             block)]
+    (swap! stack #(cons [arrow-level (last res)] %))
+    res))
+
+(defn handle-simple-block! [id stack block]
+  (let [res (simple-block->nquad block)]
+    (reset! stack (list [0 res]))
+    [res]))
+
 (defn blocks->nquads [block-sequence]
   (let [id (atom 0)
-        prev (atom [])]
+        stack (atom (list))]
     (mapcat
-     (comp
-      #(do (reset! prev (last %)) %)
-      #(if (= :ANNOTATION (first (% :exp)))
-         (do
-           (swap! id inc)
-           (annotation-block->nquads @id @prev %))
-         [(simple-block->nquad %)]))
+     #(if (= :ANNOTATION (first (% :exp)))
+        (handle-annotation-block! id stack %)
+        (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
 (defn nquads->file! [nquads filename]
   (with-open [w (clojure.java.io/writer filename)]
     (doseq [[a b c d] nquads]
-      (println "PRINTING -- " a b c d)
       (.write w a) (.write w " ")
       (.write w b) (.write w " ")
       (.write w c) (.write w " ")
