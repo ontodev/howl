@@ -304,33 +304,38 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
-(defn quoted [val]
+(defn formatted [val]
   (when val
     (cond
       (.startsWith val "http") (str "<" val ">")
       (.startsWith val "<") val
       (.startsWith val "\"") val
-      :else (str "\"" val "\""))))
+      :else (let [split (string/split-lines val)
+                  v (string/join
+                     "\\n" (cons (first split)
+                                 (map #(if (>= (count %) 2) (subs % 2) %)
+                                      (rest split))))]
+              (str "\"" v "\"")))))
 
-(defn get-quoted [block keys]
-  (quoted (get-in block keys)))
+(defn get-formatted [block keys]
+  (formatted (get-in block keys)))
 
 (defn simple-block->nquad [block]
   (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
-    [(get-quoted block [:env :subject])
-     (quoted pred)
+    [(get-formatted block [:env :subject])
+     (formatted pred)
      (case (first (block :exp))
        :LITERAL_BLOCK
-       (let [base (quoted (last (first-vector-starting-with :LITERAL (block :exp))))]
+       (let [base (formatted (last (first-vector-starting-with :LITERAL (block :exp))))]
          (if-let [type (get-in block [:env :defaults pred "TYPE"])]
-           (str base "^^" (quoted type))
+           (str base "^^" (formatted type))
            (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
              (str base "@" lang)
              base)))
        :LINK_BLOCK
-       (quoted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+       (formatted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
        [:TODO (locate block) (first (block :exp))])
-     (quoted (get-in block [:env :graph]))]))
+     (formatted (get-in block [:env :graph]))]))
 
 (defn owl> [name]
   (str "<http://www.w3.org/2002/07/owl#" name ">"))
