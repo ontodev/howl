@@ -8,11 +8,11 @@ PREFIX ex:> <http://example.com/>
 LABEL rdf:type: type
 LABEL rdfs:label: label
 LABEL rdfs:comment: comment
-LABEL rdfs:subClassOf: subClassOf
+LABEL rdfs:subClassOf: subclass of
+LABEL <http://www.w3.org/TR/owl2-manchester-syntax/>: OMN
 
 DEFAULT label LANGUAGE en
 DEFAULT comment TYPE xsd:string
-DEFAULT subClassOf TYPE <http://www.w3.org/TR/owl2-manchester-syntax/>
 
 ex:ontology
 label: Example Ontology
@@ -54,8 +54,8 @@ label: evaluant role
 ex:bar
 label: Bar
 type:> owl:Class
-#subClassOf TYPE:> 'has part' some Foo
-#subClassOf TYPE:> has_specified_output some
+#subclass of TYPE OMN:> 'has part' some Foo
+#subclass of TYPE OMN:> has_specified_output some
 #    ('information content entity'
 #     and ('is about' some
 #        ('material entity'
