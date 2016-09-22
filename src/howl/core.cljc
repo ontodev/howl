@@ -155,18 +155,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing expressions
-(defn parse-expressions [parse-tree]
+(defn parse-expressions [block]
   "Takes a parse-tree. Runs a separate parser on
    any contained :EXPRESSION_BLOCKs"
-  (if (= :EXPRESSION_BLOCK (first parse-tree))
-    (vec
-     (map (fn [elem]
-            (if (and (vector? elem)
-                     (= :EXPRESSION (first elem)))
-              (exp/string-to-parse (second elem))
-              elem))
-          parse-tree))
-    parse-tree))
+  (if (= :EXPRESSION_BLOCK (first (block :exp)))
+    (do (println "GOT EXPRESSION_BLOCK" (block :exp))
+        (assoc
+         block :exp
+         (vec
+          (map (fn [elem]
+                 (if (and (vector? elem)
+                          (= :EXPRESSION (first elem)))
+                   (exp/string-to-parse (second elem))
+                   elem))
+               (block :exp)))))
+    block))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Extracting environments
@@ -289,7 +292,7 @@
   (->> lines
        (#(lines->parse-trees % :source source))
        (map condense-chars)
-       (map parse-expressions)
+       ;; (map parse-expressions)
        (#(environments % starting-env))))
 
 (defn parse-file
