@@ -54,12 +54,12 @@ label: evaluant role
 ex:bar
 label: Bar
 type:> owl:Class
-#subclass of TYPE OMN:> 'has part' some Foo
-#subclass of TYPE OMN:> has_specified_output some
-#    ('information content entity'
-#     and ('is about' some
-#        ('material entity'
-#         and ('has role' some 'evaluant role'))))
+subclass of TYPE OMN:>> 'has part' some Foo
+subclass of TYPE OMN:>> has_specified_output some
+   ('information content entity'
+    and ('is about' some
+       ('material entity'
+        and ('has role' some 'evaluant role'))))
 
 GRAPH ex:graph
 label: Named Graph
