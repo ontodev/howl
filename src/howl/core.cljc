@@ -225,8 +225,10 @@
                             (name-from-node env (contents-of-vector :DATATYPE parse-tree)))})}})
     :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
                    (let [g (name-from-node env cont)]
+                     ;; TODO - check if we should be restoring the subject afterwards.
+                     ;;        If so, this will get a bit more elaborate.
                      {:graph g :subject g})
-                   {:graph nil})
+                   {:graph nil :subject nil})
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
     {}))
@@ -424,8 +426,8 @@
   (let [id (atom 0)
         stack (atom (list))]
     (mapcat
-     #(if (= :ANNOTATION (first (% :exp)))
-        (handle-annotation-block! id stack %)
+     #(case (first (% :exp))
+        :ANNOTATION (handle-annotation-block! id stack %)
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
