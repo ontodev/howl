@@ -10,7 +10,9 @@
                  [com.lucasbradstreet/instaparse-cljs "1.4.1.1"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]
-                 [edn-ld "0.2.2"]]
+                 [edn-ld "0.2.2"]
+
+                 [org.clojure/test.check "0.9.0"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]
             [lein-cljfmt "0.5.3"]]

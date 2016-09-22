@@ -1,46 +1,36 @@
 (ns howl.core-test
   "Test core functions."
   (:require [clojure.test :refer :all]
+            [clojure.test.check.clojure-test
+             :refer :all :include-macros true]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties
+             :as prop :include-macros true]
+
             [clojure.string :as string]
             [instaparse.core :as insta]
 
             [howl.core :refer :all]))
 
-(deftest test-name-from-node
-  (testing "get the name out of a blank node"
-    (is (= "testing"
-           (name-from-node
-            {} [:BLANK_NODE "_:" "testing"]))))
-  (testing "get the IRI out of an absolute IRI"
-    (is (= "http://example.com/"
-           (name-from-node
-            {} [:ABSOLUTE_IRI "http://example.com/"]))))
-  (testing "get the IRI out of a wrapped IRI"
-    (is (= "http://example.com/"
-           (name-from-node
-            {} [:IRIREF "<" "http://example.com/" ">"]))))
-  (testing "expand the prefix and get the resulting absolute IRI out of a prefixed name"
-    (is (= "http://example.com/subClassOf"
-           (name-from-node
-            {:prefixes {"ex" "http://example.com/"}}
-            [:PREFIXED_NAME [:PREFIX "ex"] ":" "subClassOf"] ))))
-  (testing "recur into :SUBJECT"
-    (is (= "http://example.com/"
-           (name-from-node
-            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))))
-
-(deftest test-locate
-  (testing "origin tag in meta"
-    (is (= (locate ^{:origin {:name "local" :line 3}} [:BLOCK])
-           {:name "local" :line 3})))
-  (testing "no origin tag in meta"
-    (is (= (locate [:BLOCK]) (str [:BLOCK])))))
-
 (deftest howl-smoke-test
   (testing "high-level smoke test for the howl parer"
     (is (let [parse (parse-file "test/test1.howl")]
           (and (seq? parse)
-               (every? map? parse))))))
+               (every? map? parse)))))
+
+  ;; TODO - test parse-lines and parse-file
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Parsing
+(deftest test-group-lines
+  (testing "creates singleton groups from standalone lines"
+    (is (= '(("foo") ("bar") ("baz"))
+           (group-lines ["foo" "bar" "baz"]))))
+
+  (testing "groups consecutive lines that start with two spaces"
+    (is (= '(("foo" "  bar") ("baz"))
+           (group-lines ["foo" "  bar" "baz"])))))
 
 (def bad-labels
  ["DEFAULT foo"
@@ -60,279 +50,166 @@
      (is (or (insta/failure? (block-parser bad-label))
              (not= :LABEL_BLOCK (first (block-parser bad-label))))))))
 
-(def test-merge "
-A
-  indented
+(deftest test-lines->blocks
+  (testing "returns a {:exp ParseTree} map, with source and line count in metadata"
+    (is (= (first (lines->blocks ["PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"]))
+           {:exp [:PREFIX_BLOCK "PREFIX"
+                  [:SPACES " "] [:PREFIX "rdf"] [:COLON_ARROW "" ":>" " "]
+                  [:PREFIXED
+                   [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]
+                  [:EOL ""]]}))
+    (is (= (meta (first (lines->blocks ["PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"])))
+           {:origin {:name "interactive", :line 1}}))))
 
-  (that was a blank line)
+(deftest test-parse-tree->string
+  (testing "returns a string unmodified"
+    (is (= "foo" (parse-tree->string "foo"))))
 
-B
-C
-  ")
+  (testing "for :LABEL, :PREFIX, :EOL, :SPACES and :ABSOLUTE_IRI blocks, returns the second element"
+    (is (= "foo" (parse-tree->string [:LABEL "foo"])))
+    (is (= "foo" (parse-tree->string [:PREFIX "foo"])))
+    (is (= "foo" (parse-tree->string [:EOL "foo"])))
+    (is (= "foo" (parse-tree->string [:SPACES "foo"])))
+    (is (= "foo" (parse-tree->string [:ABSOLUTE_IRI "foo"]))))
 
-;; (deftest test-merge-lines
-;;   (testing "merge line"
-;;     (is (= (merge-line {} "1")
-;;            {:block {:line ""}
-;;             :line-number 1
-;;             :merging-lines ["1"]}))
-;;     (is (= (merge-line {:merging-lines ["1"]} "2")
-;;            {:block {:line "1"}
-;;             :line-number 2
-;;             :merging-lines ["2"]}))
-;;     (is (= (merge-line
-;;             {:line-number 10
-;;              :merging-lines ["1"]}
-;;             "2")
-;;            {:block {:line "1"}
-;;             :line-number 11
-;;             :merging-lines ["2"]})))
-;;   (testing "partial merge"
-;;     (is (= (merge-line {} "    1")
-;;            {:merging-lines ["  1"]})))
-;;   (testing "merge error"
-;;     (is (= (merge-line
-;;             {:line-number 10
-;;              :merging-lines ["1"]}
-;;             nil)
-;;            {:errors ["Line 'null' is not a string"]
-;;             :line-number 10
-;;             :merging-lines ["1"]}))))
+  (testing "for other forms, joins the recursion on rest"
+    (is (= "foobar" (parse-tree->string [:BLAH [:LABEL "foo"] "bar"])))
+    (is (= "foo bar" (parse-tree->string [:BLAH [:LABEL "foo"] [:SPACES " "] [:BLEEH [:BLUH "bar"]]])))))
 
-;; (deftest test-parse
-;;   (testing "empty"
-;;     (is (= (parse-block {:empty nil})
-;;            {:empty nil})))
-;;   (testing "basics"
-;;     (is (= (parse-block {:block {:line "BASE http://foo.com"}})
-;;            {:block
-;;             {:line "BASE http://foo.com"
-;;              :parse
-;;              [:BASE_BLOCK
-;;               "BASE"
-;;               [:SPACES " "]
-;;               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
-;;               [:EOL ""]]}})))
-;;   ; TODO: Fix absolute IRIs as predicates
-;;   #_(testing "absolute IRI then colon"
-;;     (is (= (parse-block {:block {:line "http://foo.com: FOO"}})
-;;            {:block
-;;             {:line "http://foo.com: FOO"
-;;              :parse
-;;              [:LITERAL_BLOCK
-;;               [:ARROWS "" ""]
-;;               [:PREDICATE [:ABSOLUTE_IRI "http://foo.com"]]
-;;               [:COLON "" ":" " "]
-;;               [:LITERAL "FOO"]
-;;               [:EOL ""]]}}))))
+(deftest test-lines<->blocks
+  (testing "calling block->string on an element of the return value of lines->blocks returns the string we started with"
+    (is (let [ln "PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"]
+          (= ln (block->string (first (lines->blocks [ln]))))))))
 
-;; (deftest test-annotate
-;;   (testing "basics"
-;;     (is (= (annotate-block
-;;            {:block
-;;             {:line "BASE http://foo.com"
-;;              :parse
-;;              [:BASE_BLOCK
-;;                "BASE"
-;;                [:SPACES " "]
-;;                [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
-;;                [:EOL ""]]}})
-;;            {:block
-;;             {:block-type :BASE_BLOCK
-;;              :line "BASE http://foo.com"
-;;              :parse
-;;              [:BASE_BLOCK
-;;               "BASE"
-;;               [:SPACES " "]
-;;               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
-;;               [:EOL ""]]
-;;              :base [:ABSOLUTE_IRI "http://foo.com"]
-;;              :eol "\n"}}))))
+(deftest test-condense-tree
+  (testing "condenses :IRIREF blocks"
+    (is (= [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]
+           (condense-tree [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]))))
+  (testing "returns strings, keywords, NILs and numbers as-is"
+    (is (= 123 (condense-tree 123)))
+    (is (= "foo" (condense-tree "foo")))
+    (is (= :foo (condense-tree :foo)))
+    (is (= nil (condense-tree nil))))
+  (testing "returns :EOL blocks as-is"
+    (is (= [:EOL "" "" "" ""]
+           (condense-tree [:EOL "" "" "" ""]))))
+  (testing "recurs down other trees"
+    (is (= [:FOO
+            [:BAR 8237]
+            [:BAR
+             [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]]
+            [:BAZ
+             [:QUUX
+              [:MUMBLE :foo nil]
+              [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]]]]
+           (condense-tree
+            [:FOO
+             [:BAR 8237]
+             [:BAR
+              [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]
+             [:BAZ
+              [:QUUX
+               [:MUMBLE :foo nil]
+               [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]]])))))
 
-;; (deftest test-composition
-;;   (testing "one line"
-;;     (is (= (-> (merge-line {:merging-lines ["BASE http://foo.com"]} "2")
-;;                parse-block
-;;                annotate-block)
-;;            {:merging-lines ["2"]
-;;             :line-number 2
-;;             :block
-;;             {:block-type :BASE_BLOCK
-;;              :line "BASE http://foo.com"
-;;              :parse
-;;              [:BASE_BLOCK
-;;               "BASE"
-;;               [:SPACES " "]
-;;               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
-;;               [:EOL ""]]
-;;              :base [:ABSOLUTE_IRI "http://foo.com"]
-;;              :eol "\n"}})))
-;;   (testing "multiple lines"
-;;     (is (= (lines-to-blocks
-;;             (fn [state line]
-;;               (-> (merge-line state line)
-;;                   parse-block
-;;                   annotate-block))
-;;             {}
-;;             ["BASE http://foo.com" "2" "3: 4\n  5"])
-;;            [{:block-type :BLANK_BLOCK
-;;              :line ""
-;;              :parse [:BLANK_BLOCK [:EOL ""]]
-;;              :eol "\n"}
-;;             {:block-type :BASE_BLOCK
-;;              :line "BASE http://foo.com"
-;;              :parse
-;;              [:BASE_BLOCK
-;;               "BASE"
-;;               [:SPACES " "]
-;;               [:BASE [:ABSOLUTE_IRI "http://foo.com"]]
-;;               [:EOL ""]]
-;;              :base [:ABSOLUTE_IRI "http://foo.com"]
-;;              :eol "\n"}
-;;             {:block-type :SUBJECT_BLOCK
-;;              :line "2"
-;;              :parse [:SUBJECT_BLOCK [:SUBJECT [:LABEL "2"]] [:EOL ""]]
-;;              :subject [:LABEL "2"]
-;;              :eol "\n"}
-;;             {:block-type :LITERAL_BLOCK
-;;              :line "3: 4\n  5"
-;;              :parse [:LITERAL_BLOCK
-;;                      [:ARROWS "" ""]
-;;                      [:PREDICATE [:LABEL "3"]]
-;;                      [:COLON "" ":" " "]
-;;                      [:LITERAL "4\n  5"]
-;;                      [:EOL ""]]
-;;              :arrows ""
-;;              :predicate [:LABEL "3"]
-;;              :value "4\n  5"
-;;              :eol "\n"}
-;;             ])))
-;;   (testing "error"
-;;     (is (thrown-with-msg?
-;;          Exception
-;;          #"Line '1234' is not a string at line 1:"
-;;          (lines-to-blocks
-;;             (fn [state line]
-;;               (-> (merge-line state line)
-;;                   parse-block
-;;                   annotate-block))
-;;             {}
-;;             ["BASE http://foo.com" 1234])))))
+(deftest test-parse-expressions
+  ;; TODO
+  )
 
-;; (def test-state
-;;   {:base "http://example.com/"
-;;    :prefix-iri {"ex" "http://example.com/"}
-;;    :label-iri {"foo" "http://example.com/foo"}})
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Environment extraction
+(deftest test-name-from-node
+  (testing "get the name out of a blank node"
+    (is (= "testing"
+           (name-from-node
+            {} [:BLANK_NODE "_:" "testing"]))))
+  (testing "get the IRI out of an absolute IRI"
+    (is (= "http://example.com/"
+           (name-from-node
+            {} [:ABSOLUTE_IRI "http://example.com/"]))))
+  (testing "get the word out of a :WORD"
+    (is (= "foobar"
+           (name-from-node
+            {} [:WORD "foobar"]))))
+  (testing "get the IRI out of a wrapped IRI"
+    (is (= "http://example.com/"
+           (name-from-node
+            {} [:IRIREF "<" "http://example.com/" ">"]))))
+  (testing "expand the prefix and get the resulting absolute IRI out of a prefixed name"
+    (is (= "http://example.com/subClassOf"
+           (name-from-node
+            {:prefixes {"ex" "http://example.com/"}}
+            [:PREFIXED_NAME [:PREFIX "ex"] ":" "subClassOf"] ))))
+  (testing "recur into :SUBJECT"
+    (is (= "http://example.com/"
+           (name-from-node
+            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))))
 
-;; (deftest test-expand
-;;   (testing "absolute IRI"
-;;     (is (= (expand
-;;             test-state
-;;             [:ABSOLUTE_IRI "http://example.com/foo"])
-;;            "http://example.com/foo")))
-;;   (testing "wrapped absolute IRI"
-;;     (is (= (expand
-;;             test-state
-;;             [:WRAPPED_IRI "<" "http://example.com/foo" ">"])
-;;            "http://example.com/foo")))
-;;   (testing "wrapped relative IRI"
-;;     (is (= (expand
-;;             test-state
-;;             [:WRAPPED_IRI "<" "foo" ">"])
-;;            "http://example.com/foo")))
-;;   (testing "prefixed name"
-;;     (is (= (expand
-;;             test-state
-;;             [:PREFIXED_NAME "ex" ":" "foo"])
-;;            "http://example.com/foo")))
-;;   (testing "label"
-;;     (is (= (expand
-;;             test-state
-;;             [:LABEL "foo"])
-;;            "http://example.com/foo"))))
+(deftest test-locate
+  (testing "when there is an :origin property in the targets meta, return it"
+    (is (= (locate ^{:origin {:name "local" :line 3}} [:BLOCK])
+           {:name "local" :line 3})))
+  (testing "when there is no :origin in the targets meta, return the stringified target"
+    (is (= (locate [:BLOCK]) (str [:BLOCK])))))
 
-;; (deftest test-expand-names
-;;   (testing "prefix"
-;;     (is (= (expand-names
-;;             {:block
-;;              {:block-type :PREFIX_BLOCK
-;;               :prefix "rdfs"
-;;               :prefixed [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#"]}})
-;;            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
-;;             :iri-prefix {"http://www.w3.org/2000/01/rdf-schema#" "rdfs"}
-;;             :sorted-iri-prefix [["http://www.w3.org/2000/01/rdf-schema#" "rdfs"]]
-;;             :block
-;;             {:block-type :PREFIX_BLOCK
-;;              :prefix "rdfs"
-;;              :prefixed [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#"]}})))
-;;   (testing "prefixes"
-;;     (is (= (-> {}
-;;                (assoc-in [:iri-prefix "http://"] "obo")
-;;                (assoc-in [:iri-prefix "http://BFO_"] "BFO")
-;;                (assoc-in [:iri-prefix "http://OBI_"] "OBI")
-;;                (assoc-in [:iri-prefix "http://IAO_"] "IAO")
-;;                sort-iri-prefix
-;;                (get-name nil [:ABSOLUTE_IRI "http://OBI_1234"]))
-;;            [:PREFIXED_NAME "OBI" ":" "1234"])))
-;;   (testing "type"
-;;     (is (= (expand-names
-;;             {:label-iri {"2" "http://foo.com/2"}
-;;              :block
-;;              {:block-type :TYPE_BLOCK
-;;               :predicate [:LABEL "2"]
-;;               :type [:LABEL "2"]}})
-;;            {:label-iri {"2" "http://foo.com/2"}
-;;             :iri-type {"http://foo.com/2" {:type "http://foo.com/2"}}
-;;             :block
-;;             {:block-type :TYPE_BLOCK
-;;              :predicate [:ABSOLUTE_IRI "http://foo.com/2"]
-;;              :type [:ABSOLUTE_IRI "http://foo.com/2"]}})))
-;;   (testing "subject"
-;;     (is (= (expand-names
-;;             {:label-iri {"2" "http://foo.com/2"}
-;;              :block
-;;              {:block-type :SUBJECT_BLOCK
-;;               :subject [:LABEL "2"]}})
-;;            {:label-iri {"2" "http://foo.com/2"}
-;;             :current-subject "http://foo.com/2"
-;;             :block
-;;             {:block-type :SUBJECT_BLOCK
-;;              :subject [:ABSOLUTE_IRI "http://foo.com/2"]}})))
-;;   (testing "rdfs:label"
-;;     (is (= (expand-names
-;;             {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
-;;              :current-subject "http://foo.com/2"
-;;              :block
-;;              {:block-type :LITERAL_BLOCK
-;;               :predicate [:PREFIXED_NAME "rdfs" ":" "label"]
-;;               :value "2"
-;;               :type [:PREFIXED_NAME "rdfs" ":" "integer"]}})
-;;            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
-;;             :label-iri {"2" "http://foo.com/2"}
-;;             :iri-label {"http://foo.com/2" "2"}
-;;             :current-subject "http://foo.com/2"
-;;             :block
-;;             {:block-type :LITERAL_BLOCK
-;;              :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#label"]
-;;              :value "2"
-;;              :type [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#integer"]}})))
-;;   (testing "expression"
-;;     (is (= (expand-names
-;;             {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
-;;              :label-iri {"2" "http://foo.com/2"}
-;;              :block
-;;              {:block-type :EXPRESSION_BLOCK
-;;               :predicate [:PREFIXED_NAME "rdfs" ":" "subClassOf"]
-;;               :expression
-;;               [:CLASS_EXPRESSION
-;;                [:NEGATION "not" [:NAME [:LABEL "2"]]]]}})
-;;            {:prefix-iri {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"}
-;;             :label-iri {"2" "http://foo.com/2"}
-;;             :block
-;;             {:block-type :EXPRESSION_BLOCK
-;;              :predicate [:ABSOLUTE_IRI "http://www.w3.org/2000/01/rdf-schema#subClassOf"]
-;;              :expression
-;;              [:CLASS_EXPRESSION
-;;               [:NEGATION
-;;                "not"
-;;                [:NAME [:ABSOLUTE_IRI "http://foo.com/2"]]]]}}))))
+(deftest test-parse-tree->names
+  ;; TODO
+  )
+
+(deftest test-merge-environments
+  ;; TODO
+  )
+
+(deftest test-environment-of
+  ;; TODO
+  )
+
+(deftest test-environments
+  ;; TODO - 1. that it works
+  ;;        2. that it includes starting data when provided
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; name expansion
+
+(deftest test-expand-tree
+  ;; TODO - 1. does nothing for keywords, strings or numbers
+  ;;        2. expands IRIREF and PREFIXED_NAME into ABSOLUTE_URI
+  ;;        3. errors when no such name in env
+  ;;        4. recurs otherwise
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; nquad generation
+(deftest test-formatted)
+(deftest test-simple-block->nquad)
+(deftest test-annotation-block->nquads)
+(deftest test-nquad-relevant-blocks)
+(deftest test-find-target)
+(deftest test-handle-annotation-block!)
+(deftest test-handle-simple-block!)
+(deftest test-blocks->nquads)
+
+(def an-nquad
+  (gen/tuple
+   gen/string-ascii gen/string-ascii gen/string-ascii
+   (gen/one-of [gen/string-ascii (gen/return nil)])))
+
+(defspec test-nquad->string
+  (prop/for-all
+   [q an-nquad]
+   (let [[a b c d] q
+         result (nquad->string q)]
+     (and (.endsWith result ".\n")
+          (.contains result a)
+          (.contains result b)
+          (.contains result c)
+          (or (nil? d) (.contains result d))))))
+
+(defspec test-print-nquads!
+  (prop/for-all
+   [v (gen/not-empty (gen/vector an-nquad))]
+   (let [result (with-out-str (print-nquads! v))]
+     (= (count v) (count (string/split-lines result))))))
+
+(deftest test-nquads->file!)

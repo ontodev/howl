@@ -9,7 +9,7 @@
 
 ;; Parsing works like this:
 ;;
-;; 1. lines->parse-trees
+;; 1. lines->blocks
 ;;     - converts a lazy seq of lines to a lazy seq of {:exp [:PARSE_TREE ...]},
 ;;       complete with metadata designating origin name/line-number
 ;;     - groups lines into blocks before parsing each block (done in one step, 'cause
@@ -114,7 +114,7 @@
     HEX = #'[0-9A-Fa-f]+'
     "))
 
-(defn lines->parse-trees
+(defn lines->blocks
   "Takes a seq of lines. Returns a seq of {:exp [:PARSE_TREE ...]} objects."
   [lines & {:keys [source] :or {source "interactive"}}]
   ((fn rec [groups ct]
@@ -133,8 +133,11 @@
   (if (string? parse-tree)
     parse-tree
     (case (first parse-tree)
-      (:LABEL :PREFIX :EOL :SPACES :ABSOLUte_IRI) (second parse-tree)
+      (:LABEL :PREFIX :EOL :SPACES :ABSOLUTE_IRI) (second parse-tree)
       (string/join (map parse-tree->string (rest parse-tree))))))
+
+(defn block->string [block]
+  (parse-tree->string (block :exp)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Condense step
@@ -147,7 +150,6 @@
                (second parse-tree)
                (string/join (drop 2 (drop-last parse-tree)))
                (last parse-tree)]
-      :LITERAL [:LITERAL (string/join (butlast (rest parse-tree))) (last parse-tree)]
       (:EOL) parse-tree
       (vec (map condense-tree parse-tree)))))
 
@@ -160,16 +162,15 @@
   "Takes a parse-tree. Runs a separate parser on
    any contained :EXPRESSION_BLOCKs"
   (if (= :EXPRESSION_BLOCK (first (block :exp)))
-    (do (println "GOT EXPRESSION_BLOCK" (block :exp))
-        (assoc
-         block :exp
-         (vec
-          (map (fn [elem]
-                 (if (and (vector? elem)
-                          (= :EXPRESSION (first elem)))
-                   (exp/string-to-parse (second elem))
-                   elem))
-               (block :exp)))))
+    (assoc
+     block :exp
+     (vec
+      (map (fn [elem]
+             (if (and (vector? elem)
+                      (= :EXPRESSION (first elem)))
+               (exp/string-to-parse (second elem))
+               elem))
+           (block :exp))))
     block))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -291,7 +292,7 @@
   [lines & {:keys [starting-env source]
             :or {starting-env {} source "interactive"}}]
   (->> lines
-       (#(lines->parse-trees % :source source))
+       (#(lines->blocks % :source source))
        (map condense-chars)
        ;; (map parse-expressions)
        (#(environments % starting-env))))
@@ -351,6 +352,9 @@
              base)))
        :LINK_BLOCK
        (formatted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+       :EXPRESSION_BLOCK
+       ["TODO" "expression" "block" nil]
+       ;; FIXME - the default case should throw an error once we're done implementing this
        [:TODO (locate block) (first (block :exp))])
      (formatted (get-in block [:env :graph]))]))
 
@@ -441,10 +445,10 @@
   "Takes a single nquad and returns the appropriately formatted string."
   (pprint/cl-format nil quad-format a b c d))
 
-(defn print-nquads
+(defn print-nquads!
   "Prints the given nquads to the given writer. If no writer is given, prints
    to standard output."
-  ([nquads] (print-nquads nquads *out*))
+  ([nquads] (print-nquads! nquads *out*))
   ([nquads writer]
    (doseq [[a b c d] nquads]
      (pprint/cl-format writer quad-format a b c d))))
@@ -453,4 +457,4 @@
   "Takes a series of nquads and a filename. Writes the given nquads
    to the given file."
   (with-open [w (clojure.java.io/writer filename)]
-    (print-nquads nquads)))
+    (print-nquads! nquads)))

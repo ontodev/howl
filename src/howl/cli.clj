@@ -61,8 +61,7 @@
   "Given a sequence of file names, print HOWL."
   [options file-names]
   (->> (apply parse-files file-names)
-       (map :exp)
-       (map core/parse-tree->string)
+       (map core/block->string)
        (map println)
        doall))
 
@@ -72,7 +71,7 @@
   [options file-names]
   (->> (apply parse-files file-names)
        core/blocks->nquads
-       core/print-nquads))
+       core/print-nquads!))
 
 (def format-synonyms
   {"nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
