@@ -1,6 +1,7 @@
 (ns howl.core
   "Parse HOWL."
   (:require [clojure.string :as string]
+            [clojure.pprint :as pprint]
             [instaparse.core :as insta]
 
             [howl.util :as util]
@@ -434,13 +435,22 @@
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
+(def quad-format "~a ~a ~a~@[~a ~].~%")
+
+(defn nquad->string [[a b c d]]
+  "Takes a single nquad and returns the appropriately formatted string."
+  (pprint/cl-format nil quad-format a b c d))
+
+(defn print-nquads
+  "Prints the given nquads to the given writer. If no writer is given, prints
+   to standard output."
+  ([nquads] (print-nquads nquads *out*))
+  ([nquads writer]
+   (doseq [[a b c d] nquads]
+     (pprint/cl-format writer quad-format a b c d))))
+
 (defn nquads->file! [nquads filename]
   "Takes a series of nquads and a filename. Writes the given nquads
    to the given file."
   (with-open [w (clojure.java.io/writer filename)]
-    (doseq [[a b c d] nquads]
-      (.write w a) (.write w " ")
-      (.write w b) (.write w " ")
-      (.write w c) (.write w " ")
-      (when d (.write w d) (.write w " "))
-      (.write w ".\n"))))
+    (print-nquads nquads)))

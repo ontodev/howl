@@ -36,30 +36,17 @@
    return a lazy sequence of HOWL block maps."
   [file-name]
   (cond
-    (.endsWith file-name "howl")
-    (parse-howl-file file-name)
+    (.endsWith file-name "howl") (parse-howl-file file-name)
     ; TODO: more formats
-    :else
-    (parse-rdf-file file-name)))
+    :else (parse-rdf-file file-name)))
 
 (defn parse-files
   "Given a sequence of file names,
    return a lazy sequence of parse results."
   [& file-names]
+  ;; TODO - multiple files should affect each others' environments.
+  ;;        this needs to be more elaborate
   (mapcat parse-file file-names))
-
-(defn get-context
-  "Given an option map,
-   return a state map build from the --context entries."
-  [{:keys [context] :as options}]
-  (reduce
-   (fn [state block]
-     (-> state
-         (assoc :block block)
-         ;; FIXME core/expand-names
-         (dissoc :block)))
-   {}
-   (apply parse-files context)))
 
 (defn print-parses
   "Given a sequence of file names,
@@ -73,46 +60,22 @@
 (defn print-howl
   "Given a sequence of file names, print HOWL."
   [options file-names]
-  (let [state (get-context options)]
-    (->> (apply parse-files file-names)
-         (map core/parse-tree->string)
-         (map print)
-         doall)))
+  (->> (apply parse-files file-names)
+       (map :exp)
+       (map core/parse-tree->string)
+       (map println)
+       doall))
 
 (defn print-quads
   "Given a map of options and a sequence of file names
    print a sequence of N-Quads."
   [options file-names]
   (->> (apply parse-files file-names)
-       (nq/lines-to-quads
-        (fn [state block]
-          (->> (assoc state :block block)
-               ;; FIXME core/expand-names
-               nq/convert-quads))
-        (get-context options))
-       (map nq/quad-to-string)
-       (map println)
-       doall))
-
-(defn print-triples
-  "Given a map of options and a sequence of file names
-   print a sequence of N-Triples from the default graph."
-  [options file-names]
-  (->> (apply parse-files file-names)
-       (nq/lines-to-quads
-        (fn [state block]
-          (->> (assoc state :block block)
-               ;; FIXME core/expand-names
-               nq/convert-quads))
-        (get-context options))
-       (map #(assoc % 0 nil))
-       (map nq/quad-to-string)
-       (map println)
-       doall))
+       core/blocks->nquads
+       core/print-nquads))
 
 (def format-synonyms
-  {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
-   "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
+  {"nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
    "parses"   ["parse"]
    "howl"     ["howl"]})
 
@@ -124,19 +87,12 @@
             [synonym format])))
        (into {})))
 
-; TODO: replacement character, default "-"
-; TODO: replacement regex, default "\\W"
-; TODO: statement sorting
-
 (def cli-options
-  [["-o" "--output FORMAT" "Output format: N-Triples (default), N-Quads, parses (JSON)"]
-   ["-c" "--context FILE" "A HOWL file to use as context (not printed)"
-    :assoc-fn (fn [m k v] (update-in m [k] (fnil conj []) v))]
+  [["-o" "--output FORMAT" "Output format: N-Quads(default), parses (JSON)"]
    ["-V" "--version"]
    ["-h" "--help"]])
 
-(defn usage
-  [options-summary]
+(defn usage [options-summary]
   (->> ["Process HOWL files, writing to STDOUT."
         ""
         "Usage: howl [OPTIONS] INPUT-FILE+"
@@ -148,31 +104,26 @@
         "Please see https://github.com/ontodev/howl for more information."]
        (string/join \newline)))
 
-(defn version
-  []
+(defn version []
   (-> (eval 'howl.cli)
       .getPackage
       .getImplementationVersion
       (or "DEVELOPMENT")))
 
-(defn error-msg
-  [errors]
+(defn error-msg [errors]
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
 
-(defn -main
-  [& args]
+(defn -main [& args]
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
     ;; Handle help and error conditions
     (cond
       (:help options) (exit 0 (usage summary))
       (:version options) (exit 0 (version))
       (not= (count arguments) 1) (exit 1 (usage summary))
-      errors (exit 1 (error-msg errors)))
-    ;; Execute program with options
-    (case (-> options (get :output "nquads") string/lower-case format-map)
-      "parses"   (print-parses arguments)
-      "howl"     (print-howl options arguments)
-      "nquads"   (print-quads options arguments)
-      "ntriples" (print-triples options arguments)
-      (exit 1 (usage summary)))))
+      errors (exit 1 (error-msg errors))
+      :else (case (-> options (get :output "nquads") string/lower-case format-map)
+              "parses"   (print-parses arguments)
+              "howl"     (print-howl options arguments)
+              "nquads"   (print-quads options arguments)
+              (exit 1 (usage summary))))))
