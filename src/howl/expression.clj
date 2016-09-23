@@ -28,9 +28,10 @@
     LABEL = #'\\w+'
     SPACE = #'\\s+'"))
 
-(defn manchester-format [mn-tree]
+(defn manchester-format
   "Given a parsed Manchester expression tree (without leading expression type tag),
    returns the stringified version of that tree."
+  [mn-tree]
   (if (string? mn-tree)
     mn-tree
     (case (first mn-tree)

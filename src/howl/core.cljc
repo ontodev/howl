@@ -42,8 +42,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Preliminary parse
-(defn group-lines [lines]
+(defn group-lines
   "Given a sequence of lines, returns a lazy sequence of grouped lines"
+  [lines]
   (partition-by
    (let [ct (volatile! 0)]
      #(do (when (not (or (string/blank? %) (.startsWith % "  ")))
@@ -127,22 +128,25 @@
                 (rec (rest groups) (+ ct (count g))))))))
    (group-lines lines) 1))
 
-(defn parse-tree->string [parse-tree]
+(defn parse-tree->string
   "Takes a parse-tree that came from the block-parser, and
    returns the corresponding string"
+  [parse-tree]
   (if (string? parse-tree)
     parse-tree
     (case (first parse-tree)
       (:LABEL :PREFIX :EOL :SPACES :ABSOLUTE_IRI) (second parse-tree)
       (string/join (map parse-tree->string (rest parse-tree))))))
 
-(defn block->string [block]
+(defn block->string
+  [block]
   (parse-tree->string (block :exp)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Condense step
-(defn condense-tree [parse-tree]
+(defn condense-tree
   "Takes a parse-tree and condenses single-character strings into a single string."
+  [parse-tree]
   (if (or (string? parse-tree) (keyword? parse-tree) (nil? parse-tree) (number? parse-tree))
     parse-tree
     (case (first parse-tree)
@@ -158,9 +162,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing expressions
-(defn parse-expressions [block]
+(defn parse-expressions
   "Takes a parse-tree. Runs a separate parser on
    any contained :EXPRESSION_BLOCKs"
+  [block]
   (if (= :EXPRESSION_BLOCK (first (block :exp)))
     (assoc
      block :exp
@@ -175,17 +180,20 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Extracting environments
-(defn first-vector-starting-with [keyword parse-tree]
+(defn first-vector-starting-with
+  [keyword parse-tree]
   (first (filter #(and (vector? %) (= keyword (first %))) parse-tree)))
 
-(defn contents-of-vector [keyword parse-tree]
+(defn contents-of-vector
+  [keyword parse-tree]
   (second (first-vector-starting-with keyword parse-tree)))
 
-(defn name-from-node [env node]
+(defn name-from-node
   "Takes an environment and a node, and returns the absolute name
    contained in the node.
    Does not work on all nodes, just :BLANK_NODE, :ABSOLUTE_IRI,
    :IRIREF or :PREFIXED_NAME nodes"
+  [env node]
   (case (first node)
     :BLANK_NODE (get node 2)
     (:ABSOLUTE_IRI :WORD) (second node)
@@ -198,16 +206,18 @@
     :LABEL (get-in env [:labels (second node)])
     (:SUBJECT) (name-from-node env (second node))))
 
-(defn maybe-name [env keyword parse-tree dest-keyword]
+(defn maybe-name
+  [env keyword parse-tree dest-keyword]
   (if-let [cont (contents-of-vector keyword parse-tree)]
     {dest-keyword (name-from-node env cont)}
     {}))
 
-(defn parse-tree->names [env parse-tree]
+(defn parse-tree->names
   "Takes an environment and a parse tree.
    Returns the names found in the parse tree.
    This function needs an environment, because the given parse-tree
    might contain relative/prefixed names which need to be expanded."
+  [env parse-tree]
   (case (first parse-tree)
     :PREFIX_BLOCK {:prefixes
                    {(contents-of-vector :PREFIX parse-tree)
@@ -238,10 +248,11 @@
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
     {}))
 
-(defn merge-environments [a b]
+(defn merge-environments
   "Merges two environments.
    We could dispense with this if we wanted to introduce an extra
    level of map for the keys [:graph :subject :base]."
+  [a b]
   {:prefixes (merge (a :prefixes) (b :prefixes))
    :labels (merge (a :labels) (b :labels))
    :defaults (merge-with merge (a :defaults) (b :defaults))
@@ -249,11 +260,12 @@
    :subject (or (b :subject) (a :subject))
    :base (or (b :base) (a :base))})
 
-(defn environment-of [prev-env block]
+(defn environment-of
   "Takes an environment and a block, and returns the new environment.
    Most of the time, it'll be the same one, but some forms (such as DEFAULT,
    LABEL, PREFIX, GRAPH and SUBJECT) introduce new name associations
    which will either add to the env or shadow something from it."
+  [prev-env block]
   (merge-environments prev-env (parse-tree->names prev-env (block :exp))))
 
 (defn environments
@@ -281,7 +293,8 @@
       (:IRIREF :PREFIXED_NAME) [:ABSOLUTE_IRI (name-from-node env parse-tree)]
       (map #(expand-tree env %)))))
 
-(defn expand-block [block]
+(defn expand-block
+  [block]
   (assoc block :exp (expand-tree (block :env) (block :exp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -308,19 +321,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Error basics
-(defn locate [block]
+(defn locate
+  [block]
   (if-let [m (meta block)]
     (m :origin)
     (str block)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
-(defn formatted [val]
+(defn formatted
   "Takes a sting value, and returns it in an appropriate format for nquad encoding.
    - Returns angle-brace-surrounded/quoted strings as-is
    - Surrounds strings beginning with http with angle braces
    - Otherwise escapes newlines, removes two chars from subsequent lines (to account for our
      multi-line indentation convention) and quotes the input"
+  [val]
   (when val
     (cond
       (.startsWith val "http") (str "<" val ">")
@@ -333,12 +348,14 @@
                                       (rest split))))]
               (str "\"" v "\"")))))
 
-(defn get-formatted [block keys]
+(defn get-formatted
+  [block keys]
   (formatted (get-in block keys)))
 
-(defn simple-block->nquad [block]
+(defn simple-block->nquad
   "Returns an nquad from a simple block. These include any blocks
    that get translated down to one quad."
+  [block]
   (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
     [(get-formatted block [:env :subject])
      (formatted pred)
@@ -358,17 +375,21 @@
        [:TODO (locate block) (first (block :exp))])
      (formatted (get-in block [:env :graph]))]))
 
-(defn owl> [name]
+(defn owl>
+  [name]
   (str "<http://www.w3.org/2002/07/owl#" name ">"))
-(defn rdf> [name]
+(defn rdf>
+  [name]
   (str "<http://www.w3.org/1999/02/22-rdf-syntax-ns#" name ">"))
-(defn rdf-schema> [name]
+(defn rdf-schema>
+  [name]
   (str "<http://www.w3.org/2000/01/rdf-schema#" name ">"))
 
-(defn annotation-block->nquads [id [source property target _] block]
+(defn annotation-block->nquads
   "Returns an annotation block. Annotation blocks get encoded as multiple
    quads, and some of those depend on a target quad that is being annotated.
    The trailing quad is generated using simple-block->nquad"
+  [id [source property target _] block]
   (let [name (str "_:b" id)
         base (simple-block->nquad (assoc block :exp (get (block :exp) 2)))]
     [[name (rdf> "type") (owl> "Axiom") nil]
@@ -377,11 +398,12 @@
      [name (owl> "annotatedTarget") target nil]
      (vec (cons name (rest base)))]))
 
-(defn nquad-relevant-blocks [block-sequence]
+(defn nquad-relevant-blocks
   "Takes a sequence of blocks, and filters out any blocks
    that have no nquad encoding. Specifically, blocks like PREFIX or
    LABEL whose job is only establishing environment bindings, rather
    than being encoded directly in the result."
+  [block-sequence]
   (filter
    #(not-any?
      #{:PREFIX_BLOCK :LABEL_BLOCK
@@ -390,7 +412,7 @@
      (take 1 (% :exp)))
    block-sequence))
 
-(defn find-target [arrows-ct target-stack]
+(defn find-target
   "Takes a number of leading arrows, and a target-stack, and returns
    the target quad. This gets called in the situation where several blocks
    in a row start with />+/. There might be a situation like
@@ -404,15 +426,17 @@
    an annotation on `bar` and `mumble` is a second annotation on `foo`.
    `find-target` will return the first quad in the `target-stack` that has
    fewer leading arrows than the given `arrow-ct`."
+  [arrows-ct target-stack]
   (second
    (first
     (drop-while
      #(>= (first %) arrows-ct)
      target-stack))))
 
-(defn handle-annotation-block! [id stack block]
+(defn handle-annotation-block!
   "Takes id and stack atoms, along with a block, and handles the processing
    involved in rendering an :ANNOTATION block."
+  [id stack block]
   (swap! id inc)
   (let [arrow-level (count (second (second (block :exp))))
         target (find-target arrow-level @stack)
@@ -422,15 +446,17 @@
     (swap! stack #(cons [arrow-level (last res)] %))
     res))
 
-(defn handle-simple-block! [id stack block]
+(defn handle-simple-block!
   "Takes id and stack atoms, along with a block, and handles the processing
    involved in rendering a non-annotation block."
+  [id stack block]
   (let [res (simple-block->nquad block)]
     (reset! stack (list [0 res]))
     [res]))
 
-(defn blocks->nquads [block-sequence]
+(defn blocks->nquads
   "Takes a sequence of blocks and emits a sequence of nquads"
+  [block-sequence]
   (let [id (atom 0)
         stack (atom (list))]
     (mapcat
@@ -441,8 +467,9 @@
 
 (def quad-format "~a ~a ~a~@[~a ~].~%")
 
-(defn nquad->string [[a b c d]]
+(defn nquad->string
   "Takes a single nquad and returns the appropriately formatted string."
+  [[a b c d]]
   (pprint/cl-format nil quad-format a b c d))
 
 (defn print-nquads!
@@ -453,8 +480,9 @@
    (doseq [[a b c d] nquads]
      (pprint/cl-format writer quad-format a b c d))))
 
-(defn nquads->file! [nquads filename]
+(defn nquads->file!
   "Takes a series of nquads and a filename. Writes the given nquads
    to the given file."
+  [nquads filename]
   (with-open [w (clojure.java.io/writer filename)]
     (print-nquads! nquads)))
