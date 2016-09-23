@@ -252,10 +252,6 @@
              {:defaults {"foo" {"TYPE" "baz"} "bar" {"LANGUAGE" "fr"}}})
             :defaults)))))
 
-(deftest test-environment-of
-  ;; TODO
-  )
-
 (deftest test-environments
   ;; TODO - 1. that it works
   ;;        2. that it includes starting data when provided
@@ -273,7 +269,19 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; nquad generation
-(deftest test-formatted)
+(deftest test-formatted
+  (testing "quoted and angled strings are returned"
+    (is (= "<http://example.com/>" (formatted "<http://example.com/>")))
+    (is (= "\"foo\"" (formatted "\"foo\""))))
+  (testing "un-angled strings starting with http are angled"
+    (is (= "<http://example.com/>" (formatted "http://example.com/"))))
+  (testing "other strings are quoted"
+    (is (= "\"foo\"" (formatted "foo"))))
+  (testing "double spaces are removed from all but the first line of multiline strings, and newlines are escaped"
+    (is (= "\"foo\\nbar\\nbaz\"" (formatted "foo
+  bar
+  baz")))))
+
 (deftest test-simple-block->nquad)
 (deftest test-annotation-block->nquads)
 (deftest test-nquad-relevant-blocks)

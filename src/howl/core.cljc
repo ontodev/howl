@@ -339,13 +339,11 @@
   (when val
     (cond
       (.startsWith val "http") (str "<" val ">")
-      (.startsWith val "<") val
-      (.startsWith val "\"") val
+      (or (.startsWith val "<") (.startsWith val "\"")) val
       :else (let [split (string/split-lines val)
                   v (string/join
                      "\\n" (cons (first split)
-                                 (map #(if (>= (count %) 2) (subs % 2) %)
-                                      (rest split))))]
+                                 (map #(string/replace % #"^  " "") (rest split))))]
               (str "\"" v "\"")))))
 
 (defn get-formatted
