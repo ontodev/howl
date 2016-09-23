@@ -18,8 +18,9 @@
           (and (seq? parse)
                (every? map? parse)))))
 
-  ;; TODO - test parse-lines and parse-file
-  )
+  (testing "high-level smoke test for parse-lines and parse-file"
+    (is (= (parse-lines (line-seq (clojure.java.io/reader "test/test1.howl")))
+           (parse-file "test/test1.howl")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing
@@ -224,8 +225,32 @@
     (is (= {} (parse-tree->names {} [:EXPRESSION_BLOCK ""])))))
 
 (deftest test-merge-environments
-  ;; TODO
-  )
+  (testing "merges :prefixes and :labels with merge"
+    (is (let [res (merge-environments
+                   {:labels {:a "foo"} :prefixes {:b "bar"}}
+                   {:labels {:c "baz"} :prefixes {:b "foo"}})]
+          (and (= {:a "foo" :c "baz"} (res :labels))
+               (= {:b "foo"} (res :prefixes))))))
+  (testing "merges :subject and :base by taking the more recent value"
+    (is (let [res (merge-environments
+                   {:subject "foo" :base "bar"}
+                   {:subject nil :base "baz"})]
+          (and (= "foo" (res :subject))
+               (= "baz" (res :base)))))
+    (is (let [res (merge-environments {:subject "foo" :base "bar"} {:base "baz"})]
+          (and (= "foo" (res :subject))
+               (= "baz" (res :base))))))
+  (testing "merges :graph only if the new environment has a graph entry"
+    (is (= "foo"
+           ((merge-environments {:graph "foo"} {}) :graph)))
+    (is (= "bar"
+           ((merge-environments {:graph "foo"} {:graph "bar"}) :graph))))
+  (testing "merges :defaults with a recursive merge"
+    (is (= {"foo" {"LANGUAGE" "en" "TYPE" "baz"} "bar" {"LANGUAGE" "fr"}}
+           ((merge-environments
+             {:defaults {"foo" {"LANGUAGE" "en"}}}
+             {:defaults {"foo" {"TYPE" "baz"} "bar" {"LANGUAGE" "fr"}}})
+            :defaults)))))
 
 (deftest test-environment-of
   ;; TODO
