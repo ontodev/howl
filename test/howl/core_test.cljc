@@ -153,8 +153,75 @@
     (is (= (locate [:BLOCK]) (str [:BLOCK])))))
 
 (deftest test-parse-tree->names
-  ;; TODO
-  )
+  (testing "a :PREFIX_BLOCK returns new prefixes"
+    (is (= {:prefixes {"ex" "http://example.com/"}}
+           (parse-tree->names
+            {} [:PREFIX_BLOCK
+                "PREFIX" [:SPACES " "] [:PREFIX "ex"] [:COLON_ARROW "" ":>" " "]
+                [:PREFIXED [:IRIREF "<" "http://example.com/" ">"]]
+                [:EOL "\n"]]))))
+  (testing "a :LABEL_BLOCK returns new labels"
+    (is (= {:labels {"label" "foo"}}
+           (parse-tree->names
+            {} [:LABEL_BLOCK
+                "LABEL" [:SPACES " "] [:SUBJECT [:IRIREF "<" "foo" ">"]] [:COLON "" ":" " "]
+                [:LABEL "label"]
+                [:EOL ""]]))))
+  (testing "a :DEFAULT_BLOCK can return new default values for TYPE"
+    (is (= {:defaults {"foo" {"TYPE" "bar"}}}
+           (parse-tree->names
+            {} [:DEFAULT_BLOCK
+                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
+                "TYPE" [:SPACES " "] [:DATATYPE [:IRIREF "<" "bar" ">"]]
+                [:EOL "\n"]]))))
+  (testing "a :DEFAULT_BLOCK can return a new default value for LANUGAGE"
+    (is (= {:defaults {"foo" {"LANGUAGE" "en"}}}
+           (parse-tree->names
+            {} [:DEFAULT_BLOCK
+                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
+                "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"]
+                [:EOL ""]]))))
+  (testing "a :SUBJECT_BLOCK returns a new :subject"
+    (is (= {:subject "foo"}
+           (parse-tree->names
+            {} [:SUBJECT_BLOCK
+                [:SUBJECT [:IRIREF "<" "foo" ">"]]
+                [:EOL ""]]))))
+  (testing "a :BASE_BLOCK returns a new :base"
+    (is (= {:base "http://example.com/"}
+           (parse-tree->names
+            {} [:BASE_BLOCK
+                "BASE" [:SPACES " "]
+                [:BASE [:IRIREF "<" "http://example.com/" ">"]]
+                [:EOL "\n"]]))))
+  (testing "a :GRAPH_BLOCK returns a new :graph and a new :subject (both the given graph)"
+    (is (= {:graph "baz", :subject "baz"}
+           (parse-tree->names
+            {} [:GRAPH_BLOCK
+                "GRAPH" [:SPACES " "]
+                [:GRAPH [:IRIREF "<" "baz" ">"]]
+                [:EOL ""]]))))
+  (testing "when the target or label is a prefixed value, or label, it is resolved"
+    (is (= {:subject "http://example.com/foo"}
+           (parse-tree->names
+            {:prefixes {"ex" "http://example.com/"}}
+            [:SUBJECT_BLOCK
+             [:SUBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]]
+             [:EOL ""]])))
+    (is (= {:subject "http://example.com/foo"}
+           (parse-tree->names
+            {:labels {"foo" "http://example.com/foo"}}
+            [:SUBJECT_BLOCK
+             [:SUBJECT [:LABEL "foo"]]
+             [:EOL ""]]))))
+
+  (testing "other trees don't affect the environment, so return empty maps"
+    (is (= {} (parse-tree->names {} [:BLANK_BLOCK ""])))
+    (is (= {} (parse-tree->names {} [:COMMENT_BLOCK ""])))
+    (is (= {} (parse-tree->names {} [:ANNOTATION ""])))
+    (is (= {} (parse-tree->names {} [:LITERAL_BLOCK ""])))
+    (is (= {} (parse-tree->names {} [:LINK_BLOCK ""])))
+    (is (= {} (parse-tree->names {} [:EXPRESSION_BLOCK ""])))))
 
 (deftest test-merge-environments
   ;; TODO
@@ -211,5 +278,3 @@
    [v (gen/not-empty (gen/vector an-nquad))]
    (let [result (with-out-str (print-nquads! v))]
      (= (count v) (count (string/split-lines result))))))
-
-(deftest test-nquads->file!)
