@@ -31,3 +31,13 @@
   (throw
    (#?(:clj Exception. :cljs js/Error.)
     (->> messages (map str) (string/join " ")))))
+
+(defn includes? [target substring]
+  #?(:clj (.contains target substring)
+     :cljs (not= -1 (.indexOf target substring))))
+
+(defn starts-with? [target prefix]
+  (every? identity (map = target prefix)))
+
+(defn ends-with? [target prefix]
+  (every? identity (map = (reverse target) (reverse prefix))))

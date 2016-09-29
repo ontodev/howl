@@ -14,10 +14,13 @@
   (System/exit status))
 
 (defn parse-howl-file
-  "Given the name of a HOWL file,
-   return a lazy sequence of HOWL block maps."
-  [file-name]
-  (core/parse-file file-name))
+  "Takes a filename, and optionally a starting environment, and parses that
+   file under the given environment."
+  ([filename] (parse-howl-file filename {}))
+  ([filename starting-env]
+   (core/parse-lines
+    (line-seq (clojure.java.io/reader filename))
+    :starting-env starting-env :source filename)))
 
 (defn parse-rdf-file
   "Given the name of a file that Apache Jena can read,

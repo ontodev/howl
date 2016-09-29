@@ -47,72 +47,70 @@
   [lines]
   (partition-by
    (let [ct (volatile! 0)]
-     #(do (when (not (or (string/blank? %) (.startsWith % "  ")))
+     #(do (when (not (or (string/blank? %) (util/starts-with? % "  ")))
             (vswap! ct inc))
           @ct))
    lines))
 
 (def block-parser
   (insta/parser
-   "<BLOCK> = BLANK_BLOCK / COMMENT_BLOCK /
-              BASE_BLOCK / PREFIX_BLOCK /
-              DEFAULT_BLOCK / LABEL_BLOCK /
-              GRAPH_BLOCK / SUBJECT_BLOCK /
-              ANNOTATION / LITERAL_BLOCK / LINK_BLOCK / EXPRESSION_BLOCK
+   "<BLOCK> = (COMMENT_BLOCK
+               / BASE_BLOCK / PREFIX_BLOCK
+               / DEFAULT_BLOCK / LABEL_BLOCK
+               / GRAPH_BLOCK / SUBJECT_BLOCK
+               / LITERAL_BLOCK / LINK_BLOCK)?
+              TRAILING_WHITESPACE
 
-    BLANK_BLOCK      = EOL
-    COMMENT_BLOCK    = #'#+\\s*' #'.*' EOL
-    BASE_BLOCK       = 'BASE'   SPACES BASE EOL
-    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX COLON_ARROW PREFIXED EOL
-    LABEL_BLOCK      = 'LABEL'  SPACES SUBJECT COLON LABEL EOL
+    COMMENT_BLOCK    = #'#+\\s*' #'.*'
+    BASE_BLOCK       = 'BASE'   SPACES BASE
+    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX COLON_ARROW PREFIXED
+    LABEL_BLOCK      = 'LABEL'  SPACES SUBJECT COLON LABEL
     DEFAULT_BLOCK    = 'DEFAULT' SPACES PREDICATE SPACES
                        ('LANGUAGE' SPACES LANGUAGE | 'TYPE' SPACES DATATYPE | 'NONE')
-                       EOL
-    GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)? EOL
-    SUBJECT_BLOCK    = SUBJECT EOL
+    GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)?
+    SUBJECT_BLOCK    = SUBJECT
     ANNOTATION       = ARROWS (LITERAL_BLOCK | LINK_BLOCK)
     LITERAL_BLOCK    = PREDICATE
                        (SPACES 'LANGUAGE' SPACES LANGUAGE | SPACES 'TYPE' SPACES DATATYPE)?
-                       COLON LITERAL EOL
-    LINK_BLOCK       = PREDICATE COLON_ARROW OBJECT EOL
+                       COLON LITERAL
+    LINK_BLOCK       = PREDICATE SPACES? COLON_ARROW OBJECT
     EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' SPACES DATATYPE)?
-                       COLON_ARROWS EXPRESSION EOL
+                       COLON_ARROW EXPRESSION
 
-    <NAME>      = IRIREF / PREFIXED_NAME / LABEL
-    <ANYNAME>   = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
-    BASE      = IRIREF
-    PREFIXED  = IRIREF
-    GRAPH     = NAME
-    SUBJECT   = ANYNAME
-    PREDICATE = NAME
-    OBJECT    = ANYNAME
-    DATATYPE  = ANYNAME
+    <NAME>          = IRIREF / PREFIXED_NAME / LABEL
+    <NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
+    BASE            = IRIREF
+    PREFIXED        = IRIREF
+    GRAPH           = NAME
+    SUBJECT         = NAME_OR_BLANK
+    PREDICATE       = NAME
+    OBJECT          = NAME_OR_BLANK
+    DATATYPE        = NAME_OR_BLANK
 
     (* TERMINALS *)
-    PREFIX        = #'(\\w|-)+'
-    PREFIXED_NAME = PREFIX ':' #'[^\\s:/][^\\s:]*'
-    COLON         = #' *' ':'  #' +'
-    COLON_ARROW   = #' *' ':>' #' +'
-    COLON_ARROWS  = #' *' ':>>' #' +'
-    SPACES        = #' +'
-    ARROWS        = #'>+' #'\\s*'
-    LABEL   = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
-    KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
-    <WORD> = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
-    LITERAL       = #'(\n|.)*.+'
-    EXPRESSION    = #'(?:.|\r?\n)+'
-    EOL           = #'(\r|\n|\\s)*'
+    PREFIX              = #'(\\w|-)+'
+    PREFIXED_NAME       = PREFIX ':' #'[^\\s:/][^\\s:]*'
+    COLON               = #' *' ':'  #' +'
+    COLON_ARROW         = #' *' ':>' #' +'
+    SPACES              = #' +'
+    ARROWS              = #'>+' #'\\s*'
+    LABEL               = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
+    KEYWORD             = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
+    <WORD>              = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
+    LITERAL             = #'(\n|.)*.+'
+    EXPRESSION          = #'(?:.|\r?\n)+'
+    TRAILING_WHITESPACE = #'(\r|\n|\\s)*'
 
     (* Adapted from the NQuads spec *)
     (* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF ? *)
-    LANGUAGE = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'
-    IRIREF = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
+    LANGUAGE         = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'
+    IRIREF           = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
     BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
-    UCHAR = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
-    PN_CHARS_BASE = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]'
-    PN_CHARS_U = PN_CHARS_BASE | '_' | ':'
-    PN_CHARS = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
-    HEX = #'[0-9A-Fa-f]+'
+    UCHAR            = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
+    PN_CHARS_BASE    = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]'
+    PN_CHARS_U       = PN_CHARS_BASE | '_' | ':'
+    PN_CHARS         = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
+    HEX              = #'[0-9A-Fa-f]+'
     "))
 
 (defn lines->blocks
@@ -135,7 +133,7 @@
   (if (string? parse-tree)
     parse-tree
     (case (first parse-tree)
-      (:LABEL :PREFIX :EOL :SPACES :ABSOLUTE_IRI) (second parse-tree)
+      (:LABEL :PREFIX :TRAILING_WHITESPACE :SPACES :ABSOLUTE_IRI) (second parse-tree)
       (string/join (map parse-tree->string (rest parse-tree))))))
 
 (defn block->string
@@ -154,7 +152,7 @@
                (second parse-tree)
                (string/join (drop 2 (drop-last parse-tree)))
                (last parse-tree)]
-      (:EOL) parse-tree
+      (:TRAILING_WHITESPACE) parse-tree
       (vec (map condense-tree parse-tree)))))
 
 (defn condense-chars [block]
@@ -198,7 +196,7 @@
     :BLANK_NODE (get node 2)
     (:ABSOLUTE_IRI :WORD) (second node)
     :IRIREF (let [iri (get node 2)]
-              (if (.startsWith iri "http")
+              (if (util/starts-with? iri "http")
                 iri
                 (str (env :base) iri)))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
@@ -310,15 +308,6 @@
        ;; (map parse-expressions)
        (#(environments % starting-env))))
 
-(defn parse-file
-  "Takes a filename, and optionally a starting environment, and parses that
-   file under the given environment."
-  ([filename] (parse-file filename {}))
-  ([filename starting-env]
-   (parse-lines
-    (line-seq (clojure.java.io/reader filename))
-    :starting-env starting-env :source filename)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Error basics
 (defn locate
@@ -338,8 +327,8 @@
   [val]
   (when val
     (cond
-      (.startsWith val "http") (str "<" val ">")
-      (or (.startsWith val "<") (.startsWith val "\"")) val
+      (util/starts-with? val "http") (str "<" val ">")
+      (or (util/starts-with? val "<") (util/starts-with? val "\"")) val
       :else (let [split (string/split-lines val)
                   v (string/join
                      "\\n" (cons (first split)
@@ -478,9 +467,11 @@
    (doseq [[a b c d] nquads]
      (pprint/cl-format writer quad-format a b c d))))
 
-(defn nquads->file!
-  "Takes a series of nquads and a filename. Writes the given nquads
-   to the given file."
-  [nquads filename]
-  (with-open [w (clojure.java.io/writer filename)]
-    (print-nquads! nquads)))
+(defn print-triples!
+  "Prints the given nquads to the given writer, omitting any graph data.
+   If no writer is given, prints to standard output."
+  ([nquads] (print-triples! nquads *out*))
+  ([nquads writer]
+   (print-nquads!
+    (map (fn [[a b c d]] [a b c nil]) nquads)
+    writer)))

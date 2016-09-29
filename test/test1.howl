@@ -54,8 +54,8 @@ label: evaluant role
 ex:bar
 label: Bar
 type:> owl:Class
-subclass of TYPE OMN:>> 'has part' some Foo
-subclass of TYPE OMN:>> has_specified_output some
+subclass of TYPE OMN:> 'has part' some Foo
+subclass of TYPE OMN:> has_specified_output some
    ('information content entity'
     and ('is about' some
        ('material entity'

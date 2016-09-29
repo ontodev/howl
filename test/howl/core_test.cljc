@@ -10,17 +10,8 @@
             [clojure.string :as string]
             [instaparse.core :as insta]
 
+            [howl.util :as util]
             [howl.core :refer :all]))
-
-(deftest howl-smoke-test
-  (testing "high-level smoke test for the howl parer"
-    (is (let [parse (parse-file "test/test1.howl")]
-          (and (seq? parse)
-               (every? map? parse)))))
-
-  (testing "high-level smoke test for parse-lines and parse-file"
-    (is (= (parse-lines (line-seq (clojure.java.io/reader "test/test1.howl")))
-           (parse-file "test/test1.howl")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing
@@ -57,8 +48,7 @@
            {:exp [:PREFIX_BLOCK "PREFIX"
                   [:SPACES " "] [:PREFIX "rdf"] [:COLON_ARROW "" ":>" " "]
                   [:PREFIXED
-                   [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]
-                  [:EOL ""]]}))
+                   [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]]}))
     (is (= (meta (first (lines->blocks ["PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"])))
            {:origin {:name "interactive", :line 1}}))))
 
@@ -66,10 +56,10 @@
   (testing "returns a string unmodified"
     (is (= "foo" (parse-tree->string "foo"))))
 
-  (testing "for :LABEL, :PREFIX, :EOL, :SPACES and :ABSOLUTE_IRI blocks, returns the second element"
+  (testing "for :LABEL, :PREFIX, :TRAILING_WHITESPACE, :SPACES and :ABSOLUTE_IRI blocks, returns the second element"
     (is (= "foo" (parse-tree->string [:LABEL "foo"])))
     (is (= "foo" (parse-tree->string [:PREFIX "foo"])))
-    (is (= "foo" (parse-tree->string [:EOL "foo"])))
+    (is (= "foo" (parse-tree->string [:TRAILING_WHITESPACE "foo"])))
     (is (= "foo" (parse-tree->string [:SPACES "foo"])))
     (is (= "foo" (parse-tree->string [:ABSOLUTE_IRI "foo"]))))
 
@@ -91,9 +81,9 @@
     (is (= "foo" (condense-tree "foo")))
     (is (= :foo (condense-tree :foo)))
     (is (= nil (condense-tree nil))))
-  (testing "returns :EOL blocks as-is"
-    (is (= [:EOL "" "" "" ""]
-           (condense-tree [:EOL "" "" "" ""]))))
+  (testing "returns :TRAILING_WHITESPACE blocks as-is"
+    (is (= [:TRAILING_WHITESPACE "" "" "" ""]
+           (condense-tree [:TRAILING_WHITESPACE "" "" "" ""]))))
   (testing "recurs down other trees"
     (is (= [:FOO
             [:BAR 8237]
@@ -160,61 +150,61 @@
             {} [:PREFIX_BLOCK
                 "PREFIX" [:SPACES " "] [:PREFIX "ex"] [:COLON_ARROW "" ":>" " "]
                 [:PREFIXED [:IRIREF "<" "http://example.com/" ">"]]
-                [:EOL "\n"]]))))
+                [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :LABEL_BLOCK returns new labels"
     (is (= {:labels {"label" "foo"}}
            (parse-tree->names
             {} [:LABEL_BLOCK
                 "LABEL" [:SPACES " "] [:SUBJECT [:IRIREF "<" "foo" ">"]] [:COLON "" ":" " "]
                 [:LABEL "label"]
-                [:EOL ""]]))))
+                [:TRAILING_WHITESPACE ""]]))))
   (testing "a :DEFAULT_BLOCK can return new default values for TYPE"
     (is (= {:defaults {"foo" {"TYPE" "bar"}}}
            (parse-tree->names
             {} [:DEFAULT_BLOCK
                 "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
                 "TYPE" [:SPACES " "] [:DATATYPE [:IRIREF "<" "bar" ">"]]
-                [:EOL "\n"]]))))
+                [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :DEFAULT_BLOCK can return a new default value for LANUGAGE"
     (is (= {:defaults {"foo" {"LANGUAGE" "en"}}}
            (parse-tree->names
             {} [:DEFAULT_BLOCK
                 "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
                 "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"]
-                [:EOL ""]]))))
+                [:TRAILING_WHITESPACE ""]]))))
   (testing "a :SUBJECT_BLOCK returns a new :subject"
     (is (= {:subject "foo"}
            (parse-tree->names
             {} [:SUBJECT_BLOCK
                 [:SUBJECT [:IRIREF "<" "foo" ">"]]
-                [:EOL ""]]))))
+                [:TRAILING_WHITESPACE ""]]))))
   (testing "a :BASE_BLOCK returns a new :base"
     (is (= {:base "http://example.com/"}
            (parse-tree->names
             {} [:BASE_BLOCK
                 "BASE" [:SPACES " "]
                 [:BASE [:IRIREF "<" "http://example.com/" ">"]]
-                [:EOL "\n"]]))))
+                [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :GRAPH_BLOCK returns a new :graph and a new :subject (both the given graph)"
     (is (= {:graph "baz", :subject "baz"}
            (parse-tree->names
             {} [:GRAPH_BLOCK
                 "GRAPH" [:SPACES " "]
                 [:GRAPH [:IRIREF "<" "baz" ">"]]
-                [:EOL ""]]))))
+                [:TRAILING_WHITESPACE ""]]))))
   (testing "when the target or label is a prefixed value, or label, it is resolved"
     (is (= {:subject "http://example.com/foo"}
            (parse-tree->names
             {:prefixes {"ex" "http://example.com/"}}
             [:SUBJECT_BLOCK
              [:SUBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]]
-             [:EOL ""]])))
+             [:TRAILING_WHITESPACE ""]])))
     (is (= {:subject "http://example.com/foo"}
            (parse-tree->names
             {:labels {"foo" "http://example.com/foo"}}
             [:SUBJECT_BLOCK
              [:SUBJECT [:LABEL "foo"]]
-             [:EOL ""]]))))
+             [:TRAILING_WHITESPACE ""]]))))
 
   (testing "other trees don't affect the environment, so return empty maps"
     (is (= {} (parse-tree->names {} [:BLANK_BLOCK ""])))
@@ -300,11 +290,11 @@
    [q an-nquad]
    (let [[a b c d] q
          result (nquad->string q)]
-     (and (.endsWith result ".\n")
-          (.contains result a)
-          (.contains result b)
-          (.contains result c)
-          (or (nil? d) (.contains result d))))))
+     (and (util/ends-with? result ".\n")
+          (util/includes? result a)
+          (util/includes? result b)
+          (util/includes? result c)
+          (or (nil? d) (util/includes? result d))))))
 
 (defspec test-print-nquads!
   (prop/for-all
