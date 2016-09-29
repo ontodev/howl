@@ -24,6 +24,43 @@
     (is (= '(("foo" "  bar") ("baz"))
            (group-lines ["foo" "  bar" "baz"])))))
 
+(deftest test-top-level-productions
+  (testing "COMMENT_BLOCK"
+    (is (= (block-parser "# just a comment")
+           [[:COMMENT_BLOCK "# " "just a comment"]
+            [:TRAILING_WHITESPACE ""]]))
+    (is (= (block-parser "### another comment")
+           [[:COMMENT_BLOCK "### " "another comment"]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "BASE_BLOCK"
+    (is (= (block-parser "BASE <http://example.com/>")
+           [[:BASE_BLOCK
+             "BASE" [:SPACES " "]
+             [:BASE [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "e" "x" "a" "m" "p" "l" "e" "." "c" "o" "m" "/" ">"]]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "PREFIX_BLOCK"
+    (is (= (block-parser "PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>")
+           [[:PREFIX_BLOCK "PREFIX"
+             [:SPACES " "]
+             [:PREFIX "rdf"] [:COLON_ARROW "" ":>" " "]
+             [:PREFIXED [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "LABEL_BLOCK"
+    (is (= (block-parser "LABEL rdf:type: type")
+           [[:LABEL_BLOCK "LABEL" [:SPACES " "]
+             [:SUBJECT
+              [:PREFIXED_NAME
+               [:PREFIX "rdf"] ":" "type"]] [:COLON "" ":" " "]
+             [:LABEL "type"]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "DEFAULT_BLOCK")
+  (testing "GRAPH_BLOCK")
+  (testing "SUBJECT_BLOCK")
+  (testing "ANNOTATION")
+  (testing "LITERAL_BLOCK")
+  (testing "LINK_BLOCK")
+  (testing "EXPRESSION_BLOCK"))
+
 (def bad-labels
  ["DEFAULT foo"
   "GRAPH"
