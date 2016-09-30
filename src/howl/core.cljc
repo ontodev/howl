@@ -285,6 +285,10 @@
 (defn <> [s]
   (str "<" s ">"))
 
+;; TODO - :ABSOLUTE_IRI should behave a little differently. Return [:ABSOLUTE_IRI "<" name ">"] instead
+;;        of calling <> here. The nquad-generation chunk can then do the right thing.
+;;        Also, update name-from-node to handle them appropriately.
+
 (defn expand-tree
   "Takes an environment and a parse tree.
    Returns a parse tree with IRIREFs and PREFIXED_NAMEs
