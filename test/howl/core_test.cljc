@@ -53,13 +53,66 @@
                [:PREFIX "rdf"] ":" "type"]] [:COLON "" ":" " "]
              [:LABEL "type"]]
             [:TRAILING_WHITESPACE ""]])))
-  (testing "DEFAULT_BLOCK")
-  (testing "GRAPH_BLOCK")
-  (testing "SUBJECT_BLOCK")
-  (testing "ANNOTATION")
-  (testing "LITERAL_BLOCK")
-  (testing "LINK_BLOCK")
-  (testing "EXPRESSION_BLOCK"))
+  (testing "DEFAULT_BLOCK"
+    (is (= (block-parser "DEFAULT label LANGUAGE en")
+           [[:DEFAULT_BLOCK
+             "DEFAULT" [:SPACES " "] [:PREDICATE [:LABEL "label"]] [:SPACES " "]
+             "LANGUAGE" [:SPACES " "]
+             [:LANGUAGE "en"]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "GRAPH_BLOCK"
+    (is (= (block-parser "GRAPH ex:graph")
+           [[:GRAPH_BLOCK
+             "GRAPH" [:SPACES " "]
+             [:GRAPH [:PREFIXED_NAME [:PREFIX "ex"] ":" "graph"]]]
+            [:TRAILING_WHITESPACE ""]]))
+    (is (= (block-parser "GRAPH")
+           [[:GRAPH_BLOCK "GRAPH"]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "SUBJECT_BLOCK"
+    (is (= (block-parser "ex:ontology")
+           [[:SUBJECT_BLOCK
+             [:SUBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "ontology"]]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "ANNOTATION"
+    (is (= (block-parser "> comment TYPE xsd:string: An annotation on a comment.")
+           [[:ANNOTATION
+             [:ARROWS ">" " "]
+             [:LITERAL_BLOCK
+              [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+              "TYPE" [:SPACES " "] [:DATATYPE [:PREFIXED_NAME [:PREFIX "xsd"] ":" "string"]]
+              [:COLON "" ":" " "] [:LITERAL "An annotation on a comment."]]]
+            [:TRAILING_WHITESPACE ""]]))
+    (is (= (block-parser ">>> comment LANGUAGE en: An annotation on a comment.")
+           [[:ANNOTATION
+             [:ARROWS ">>>" " "]
+             [:LITERAL_BLOCK
+              [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+              "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"]
+              [:COLON "" ":" " "] [:LITERAL "An annotation on a comment."]]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "LITERAL_BLOCK"
+    (is (= (block-parser "comment LANGUAGE en: A comment on 'Foo'.")
+           [[:LITERAL_BLOCK
+             [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+             "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"] [:COLON "" ":" " "]
+             [:LITERAL "A comment on 'Foo'."]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "LINK_BLOCK"
+    (is (= (block-parser "rdfs:seeAlso:> ex:bat")
+           [[:LINK_BLOCK
+             [:PREDICATE [:PREFIXED_NAME [:PREFIX "rdfs"] ":" "seeAlso"]]
+             [:COLON_ARROW "" ":>" " "]
+             [:OBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "bat"]]]
+            [:TRAILING_WHITESPACE ""]])))
+  (testing "EXPRESSION_BLOCK"
+    (is (= (block-parser "subclass of TYPE OMN:> 'has part' some Foo")
+           [[:EXPRESSION_BLOCK
+             [:PREDICATE [:LABEL "subclass" [:SPACES " "] "of"]] [:SPACES " "]
+             "TYPE" [:SPACES " "] [:DATATYPE [:LABEL "OMN"]]
+             [:COLON_ARROW "" ":>" " "]
+             [:EXPRESSION "'has part' some Foo"]]
+            [:TRAILING_WHITESPACE ""]]))))
 
 (def bad-labels
  ["DEFAULT foo"

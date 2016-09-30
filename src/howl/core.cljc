@@ -58,7 +58,8 @@
                / BASE_BLOCK / PREFIX_BLOCK
                / DEFAULT_BLOCK / LABEL_BLOCK
                / GRAPH_BLOCK / SUBJECT_BLOCK
-               / LITERAL_BLOCK / LINK_BLOCK)?
+               / LITERAL_BLOCK / LINK_BLOCK
+               / ANNOTATION / EXPRESSION_BLOCK)?
               TRAILING_WHITESPACE
 
     COMMENT_BLOCK    = #'#+\\s*' #'.*'
