@@ -378,10 +378,10 @@
    (let [[a b c d] q
          result (nquad->string q)]
      (and (util/ends-with? result ".\n")
-          (util/includes? result a)
-          (util/includes? result b)
-          (util/includes? result c)
-          (or (nil? d) (util/includes? result d))))))
+          (util/substring? result a)
+          (util/substring? result b)
+          (util/substring? result c)
+          (or (nil? d) (util/substring? result d))))))
 
 (defspec test-print-nquads!
   (prop/for-all

@@ -16,14 +16,6 @@
      [fmt & args]
      (apply goog.string/format fmt args)))
 
-(defn substring?
-  "True if needle is a substring of haystack."
-  [haystack needle]
-  #?(:clj
-     (.contains haystack needle)
-     :cljs
-     (> (.indexOf haystack needle) -1)))
-
 (defn throw-exception
   "Given a sequence of arguments,
    throw a cross-platform exception."
@@ -32,9 +24,13 @@
    (#?(:clj Exception. :cljs js/Error.)
     (->> messages (map str) (string/join " ")))))
 
-(defn includes? [target substring]
-  #?(:clj (.contains target substring)
-     :cljs (not= -1 (.indexOf target substring))))
+(defn substring?
+  "True if needle is a substring of haystack."
+  [haystack needle]
+  #?(:clj
+     (.contains haystack needle)
+     :cljs
+     (> (.indexOf haystack needle) -1)))
 
 (defn starts-with? [target prefix]
   (every? identity (map = target prefix)))
