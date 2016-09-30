@@ -3,6 +3,7 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pprint]
             [instaparse.core :as insta]
+            [cemerick.url :as url]
 
             [howl.util :as util]
             [howl.expression :as exp]))
@@ -197,9 +198,9 @@
     :BLANK_NODE (get node 2)
     (:ABSOLUTE_IRI :WORD) (second node)
     :IRIREF (let [iri (get node 2)]
-              (if (util/starts-with? iri "http")
+              (if (util/absolute-uri-string? iri)
                 iri
-                (str (env :base) iri)))
+                (url/url (env :base) iri)))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
     :LABEL (get-in env [:labels (second node)])
@@ -281,6 +282,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Name expansion
+(defn <> [s]
+  (str "<" s ">"))
+
 (defn expand-tree
   "Takes an environment and a parse tree.
    Returns a parse tree with IRIREFs and PREFIXED_NAMEs
@@ -289,7 +293,7 @@
   (if (or (keyword? parse-tree) (string? parse-tree) (number? parse-tree))
     parse-tree
     (case (first parse-tree)
-      (:IRIREF :PREFIXED_NAME) [:ABSOLUTE_IRI (name-from-node env parse-tree)]
+      (:IRIREF :PREFIXED_NAME :LABEL) [:ABSOLUTE_IRI (<> (name-from-node env parse-tree))]
       (map #(expand-tree env %)))))
 
 (defn expand-block
@@ -320,48 +324,39 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Converting to nquads
 (defn formatted
-  "Takes a sting value, and returns it in an appropriate format for nquad encoding.
-   - Returns angle-brace-surrounded/quoted strings as-is
-   - Surrounds strings beginning with http with angle braces
-   - Otherwise escapes newlines, removes two chars from subsequent lines (to account for our
-     multi-line indentation convention) and quotes the input"
+  "Takes a string value, chomps two spaces off every line other than the first
+   (to account for the Howl indentation block grouping), wraps it in quotes and
+   escapes any newlines."
   [val]
-  (when val
-    (cond
-      (util/starts-with? val "http") (str "<" val ">")
-      (or (util/starts-with? val "<") (util/starts-with? val "\"")) val
-      :else (let [split (string/split-lines val)
-                  v (string/join
-                     "\\n" (cons (first split)
-                                 (map #(string/replace % #"^  " "") (rest split))))]
-              (str "\"" v "\"")))))
-
-(defn get-formatted
-  [block keys]
-  (formatted (get-in block keys)))
+  (let [split (string/split-lines val)
+        v (string/join
+           "\\n" (cons (first split)
+                       (map #(string/replace % #"^  " "") (rest split))))]
+    (str "\"" v "\"")))
 
 (defn simple-block->nquad
   "Returns an nquad from a simple block. These include any blocks
    that get translated down to one quad."
   [block]
   (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
-    [(get-formatted block [:env :subject])
-     (formatted pred)
+    [(<> (get-in block [:env :subject]))
+     (<> pred)
      (case (first (block :exp))
        :LITERAL_BLOCK
        (let [base (formatted (last (first-vector-starting-with :LITERAL (block :exp))))]
          (if-let [type (get-in block [:env :defaults pred "TYPE"])]
-           (str base "^^" (formatted type))
+           (str base "^^" (<> type))
            (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
              (str base "@" lang)
              base)))
        :LINK_BLOCK
-       (formatted (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+       (<> (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
        :EXPRESSION_BLOCK
-       ["TODO" "expression" "block" nil]
+       [:TODO "expression" "block" nil]
        ;; FIXME - the default case should throw an error once we're done implementing this
        [:TODO (locate block) (first (block :exp))])
-     (formatted (get-in block [:env :graph]))]))
+     (if-let [graph (get-in block [:env :graph])]
+       (<> graph))]))
 
 (defn owl>
   [name]
@@ -453,7 +448,7 @@
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
-(def quad-format "~a ~a ~a~@[~a ~].~%")
+(def quad-format "~a ~a ~a~@[ ~a~] .~%")
 
 (defn nquad->string
   "Takes a single nquad and returns the appropriately formatted string."

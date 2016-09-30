@@ -12,6 +12,7 @@
                  [org.clojure/data.json "0.2.6"]
                  [edn-ld "0.2.2"]
 
+                 [com.cemerick/url "0.1.1"]
                  [org.clojure/test.check "0.9.0"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]

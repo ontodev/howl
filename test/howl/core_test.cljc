@@ -242,31 +242,31 @@
                 [:PREFIXED [:IRIREF "<" "http://example.com/" ">"]]
                 [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :LABEL_BLOCK returns new labels"
-    (is (= {:labels {"label" "foo"}}
+    (is (= {:labels {"label" "http://example.com/"}}
            (parse-tree->names
             {} [:LABEL_BLOCK
-                "LABEL" [:SPACES " "] [:SUBJECT [:IRIREF "<" "foo" ">"]] [:COLON "" ":" " "]
+                "LABEL" [:SPACES " "] [:SUBJECT [:IRIREF "<" "http://example.com/" ">"]] [:COLON "" ":" " "]
                 [:LABEL "label"]
                 [:TRAILING_WHITESPACE ""]]))))
   (testing "a :DEFAULT_BLOCK can return new default values for TYPE"
-    (is (= {:defaults {"foo" {"TYPE" "bar"}}}
+    (is (= {:defaults {"http://example.com/foo" {"TYPE" "http://example.com/bar"}}}
            (parse-tree->names
             {} [:DEFAULT_BLOCK
-                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
-                "TYPE" [:SPACES " "] [:DATATYPE [:IRIREF "<" "bar" ">"]]
+                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "http://example.com/foo" ">"]] [:SPACES " "]
+                "TYPE" [:SPACES " "] [:DATATYPE [:IRIREF "<" "http://example.com/bar" ">"]]
                 [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :DEFAULT_BLOCK can return a new default value for LANUGAGE"
-    (is (= {:defaults {"foo" {"LANGUAGE" "en"}}}
+    (is (= {:defaults {"http://example.com/foo" {"LANGUAGE" "en"}}}
            (parse-tree->names
             {} [:DEFAULT_BLOCK
-                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "foo" ">"]] [:SPACES " "]
+                "DEFAULT" [:SPACES " "] [:PREDICATE [:IRIREF "<" "http://example.com/foo" ">"]] [:SPACES " "]
                 "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"]
                 [:TRAILING_WHITESPACE ""]]))))
   (testing "a :SUBJECT_BLOCK returns a new :subject"
-    (is (= {:subject "foo"}
+    (is (= {:subject "http://example.com/"}
            (parse-tree->names
             {} [:SUBJECT_BLOCK
-                [:SUBJECT [:IRIREF "<" "foo" ">"]]
+                [:SUBJECT [:IRIREF "<" "http://example.com/" ">"]]
                 [:TRAILING_WHITESPACE ""]]))))
   (testing "a :BASE_BLOCK returns a new :base"
     (is (= {:base "http://example.com/"}
@@ -276,11 +276,11 @@
                 [:BASE [:IRIREF "<" "http://example.com/" ">"]]
                 [:TRAILING_WHITESPACE "\n"]]))))
   (testing "a :GRAPH_BLOCK returns a new :graph and a new :subject (both the given graph)"
-    (is (= {:graph "baz", :subject "baz"}
+    (is (= {:graph "http://example.com/graph", :subject "http://example.com/graph"}
            (parse-tree->names
             {} [:GRAPH_BLOCK
                 "GRAPH" [:SPACES " "]
-                [:GRAPH [:IRIREF "<" "baz" ">"]]
+                [:GRAPH [:IRIREF "<" "http://example.com/graph" ">"]]
                 [:TRAILING_WHITESPACE ""]]))))
   (testing "when the target or label is a prefixed value, or label, it is resolved"
     (is (= {:subject "http://example.com/foo"}
@@ -339,10 +339,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; name expansion
+(defspec test-<>
+  (prop/for-all
+   [v gen/string]
+   (= (str "<" v ">") (<> v))))
 
 (deftest test-expand-tree
   ;; TODO - 1. does nothing for keywords, strings or numbers
-  ;;        2. expands IRIREF and PREFIXED_NAME into ABSOLUTE_URI
+  ;;        2. expands IRIREFs, PREFIXED_NAMEs, LABELs and PREDICATEs into ABSOLUTE_URI
   ;;        3. errors when no such name in env
   ;;        4. recurs otherwise
   )
@@ -350,13 +354,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; nquad generation
 (deftest test-formatted
-  (testing "quoted and angled strings are returned"
-    (is (= "<http://example.com/>" (formatted "<http://example.com/>")))
-    (is (= "\"foo\"" (formatted "\"foo\""))))
-  (testing "un-angled strings starting with http are angled"
-    (is (= "<http://example.com/>" (formatted "http://example.com/"))))
-  (testing "other strings are quoted"
-    (is (= "\"foo\"" (formatted "foo"))))
   (testing "double spaces are removed from all but the first line of multiline strings, and newlines are escaped"
     (is (= "\"foo\\nbar\\nbaz\"" (formatted "foo
   bar

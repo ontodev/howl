@@ -41,3 +41,6 @@
 
 (defn ends-with? [target prefix]
   (every? identity (map = (reverse target) (reverse prefix))))
+
+(defn absolute-uri-string? [s]
+  (not (not (re-find #"(?i)^(?:[a-z]+:)?//" s))))
