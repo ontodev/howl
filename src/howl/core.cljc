@@ -282,8 +282,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Name expansion
-(defn <> [s]
-  (str "<" s ">"))
+(defn <>
+  [s] (str "<" s ">"))
 
 ;; TODO - :ABSOLUTE_IRI should behave a little differently. Return [:ABSOLUTE_IRI "<" name ">"] instead
 ;;        of calling <> here. The nquad-generation chunk can then do the right thing.

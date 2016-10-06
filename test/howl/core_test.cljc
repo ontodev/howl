@@ -193,10 +193,6 @@
                [:MUMBLE :foo nil]
                [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]]]])))))
 
-(deftest test-parse-expressions
-  ;; TODO
-  )
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Environment extraction
 (deftest test-name-from-node
