@@ -61,21 +61,17 @@
   [facts]
   (reduce (fn [coll fact] (assoc-in coll fact nil)) nil facts))
 
-;; (defn quads-to-howl
-;;   "Given a sequence of quads,
-;;    return a sequence of HOWL block maps."
-;;   [quads]
-;;   (concat
-;;    (render-labels quads)
-;;    (render-graphs (graphify quads))))
+(defn quads-to-howl
+  "Given a sequence of quads,
+   return a sequence of HOWL block maps."
+  [quads]
+  (render-graphs (collapse quads)))
 
-;; (defn triples-to-howl
-;;   "Given a sequence of triples,
-;;    return a sequence of HOWL block maps."
-;;   [quads]
-;;   (concat
-;;    (render-labels quads)
-;;    (render-subjects (triplify quads))))
+(defn triples-to-howl
+  "Given a sequence of triples,
+   return a sequence of HOWL block maps."
+  [trips]
+  (render-subjects (collapse trips)))
 
 
 ;; collapse
