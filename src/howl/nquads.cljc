@@ -14,7 +14,7 @@
 (defn facts->urls [facts]
   (filter
    #(and (string? %)
-         (not (util/starts-with? % "_:"))
+         (not (blank-name? %))
          (not= % default-graph))
    (apply concat facts)))
 
@@ -82,10 +82,46 @@
      (into (list) (dissoc (frequencies (facts->urls facts)) default-graph))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Pull out annotations
+(def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+(defn owl> [s] (str "http://www.w3.org/2002/07/owl#" s))
+(defn rdf-schema> [s] (str "http://www.w3.org/2000/01/rdf-schema#" s))
+
+(defn blank-name?
+  "Given a string, returns true if it represents a blank name in RDF syntax."
+  [str]
+  (util/starts-with? str "_:"))
+
+(defn annotation?
+  "Given a subject and predicate map, returns true if the inputs
+represent a Howl annotation block. Returns false otherwise."
+  [subject predicate-map]
+  (and (blank-name? subject)
+       (every? #(contains? predicate-map %)
+               [rdf-type
+                (owl> "annotatedSource")
+                (owl> "annotatedProperty")
+                (owl> "annotatedTarget")
+                (rdf-schema> "comment")])
+       (contains? (get predicate-map rdf-type) (owl> "Axiom"))))
+
+(defn separate-annotations
+  "Given a subject-map, returns
+[<subject-map-with-no-annotations> <subject-map-of-only-annotations>]"
+  [subject-map]
+  (reduce
+   (fn [[no-annotations annotations] [subject predicate-map]]
+     (if (annotation? subject predicate-map)
+       [no-annotations (assoc annotations subject predicate-map)]
+       [(assoc no-annotations subject predicate-map) annotations]))
+   [{} {}]
+   subject-map))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Output howl AST
 
 (defn iriref-or-blank [str]
-  (if (util/starts-with? str "_:")
+  (if (blank-name? str)
     [:BLANK_NODE_LABEL str]
     [:IRIREF "<" str ">"]))
 
