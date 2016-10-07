@@ -8,6 +8,82 @@
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Human-readable compression
+
+(defn facts->urls [facts]
+  (filter
+   #(and (string? %)
+         (not (util/starts-with? % "_:"))
+         (not= % default-graph))
+   (apply concat facts)))
+
+(defn partition-url [url]
+  (map
+   #(apply str %)
+   (partition-by
+    (let [v (volatile! 0)
+          prev (volatile! nil)]
+      (fn [elem]
+        (when (or (contains? #{\/ \#} elem)
+                  (contains? #{\/ \#} @prev))
+          (vswap! v inc))
+        (vreset! prev elem)
+        @v))
+    url)))
+
+(defn url->prefixes [url]
+  (let [s (partition-url url)
+        len (count s)]
+    ((fn rec [at]
+       (when (> len at)
+         (lazy-seq
+          (cons (string/join (take at s))
+                (rec (inc (inc at)))))))
+     5)))
+
+(defn url->prefix-name [url]
+  (let [elem (last (string/split url #"[/#]"))
+        comps (string/split elem #"\.")]
+    (case (count comps)
+      1 elem
+      2 (first comps)
+      (second comps))))
+
+(defn facts->prefixes
+  [facts]
+  ;; TODO - filter for accepted prefixes
+  ;;      - ensure prefix names are unique
+  ;;      - filter out the annotation URLs
+  (reduce
+   (fn [memo url]
+     (assoc memo (url->prefix-name url) url))
+   {}
+   (reverse
+    (sort-by
+     count
+     (filter
+      #(not (re-find #"\d+[/#]$" %))
+      (set (mapcat url->prefixes (facts->urls facts))))))))
+
+(defn facts->labels
+  ;; TODO - use prefixes to establish labels
+  ;;      - do some kind of decision on whether a given label is worth it given the length of its prefixed form
+  ;;      - filter out the annotation URLs (since they'll be removed anyhow)
+  [facts]
+  (reduce
+   (fn [memo url]
+     (assoc memo (url->prefix-name url) url))
+   {}
+   (map
+    first
+    (filter
+     #(>= (second %) 3)
+     (into (list) (dissoc (frequencies (facts->urls facts)) default-graph))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Output howl AST
+
 (defn iriref-or-blank [str]
   (if (util/starts-with? str "_:")
     [:BLANK_NODE_LABEL str]
