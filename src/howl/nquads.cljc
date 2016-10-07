@@ -8,6 +8,11 @@
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
 
+(defn blank-name?
+  "Given a string, returns true if it represents a blank name in RDF syntax."
+  [str]
+  (util/starts-with? str "_:"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Human-readable compression
 
@@ -52,8 +57,7 @@
 
 (defn facts->prefixes
   [facts]
-  ;; TODO - filter for accepted prefixes
-  ;;      - ensure prefix names are unique
+  ;; TODO - ensure prefix names are unique
   ;;      - filter out the annotation URLs
   (reduce
    (fn [memo url]
@@ -85,12 +89,6 @@
 ;;;;; Pull out annotations
 (def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 (defn owl> [s] (str "http://www.w3.org/2002/07/owl#" s))
-(defn rdf-schema> [s] (str "http://www.w3.org/2000/01/rdf-schema#" s))
-
-(defn blank-name?
-  "Given a string, returns true if it represents a blank name in RDF syntax."
-  [str]
-  (util/starts-with? str "_:"))
 
 (defn annotation?
   "Given a subject and predicate map, returns true if the inputs
@@ -101,32 +99,41 @@ represent a Howl annotation block. Returns false otherwise."
                [rdf-type
                 (owl> "annotatedSource")
                 (owl> "annotatedProperty")
-                (owl> "annotatedTarget")
-                (rdf-schema> "comment")])
+                (owl> "annotatedTarget")])
        (contains? (get predicate-map rdf-type) (owl> "Axiom"))))
 
 (defn separate-annotations
   "Given a subject-map, returns
-[<subject-map-with-no-annotations> <subject-map-of-only-annotations>]"
+[<subject-map-with-no-annotations> <subject-map-of-only-annotations>]
+The <subject-map-of-only-annotations> includes [s p o] indices to annotation
+subjects for later ease of indexing."
   [subject-map]
-  (reduce
-   (fn [[no-annotations annotations] [subject predicate-map]]
-     (if (annotation? subject predicate-map)
-       [no-annotations (assoc annotations subject predicate-map)]
-       [(assoc no-annotations subject predicate-map) annotations]))
-   [{} {}]
-   subject-map))
+  (let [get-ann (fn [pred-map prop] (first (keys (get pred-map (owl> prop)))))]
+    (reduce
+     (fn [[no-annotations annotations] [subject predicate-map]]
+       (if (annotation? subject predicate-map)
+         [no-annotations
+          (merge
+           annotations
+           {subject predicate-map
+            (vec (map #(get-ann predicate-map %) ["annotatedSource" "annotatedProperty" "annotatedTarget"])) subject})]
+         [(assoc no-annotations subject predicate-map) annotations]))
+     [{} {}]
+     subject-map)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Output howl AST
-
 (defn iriref-or-blank [str]
   (if (blank-name? str)
     [:BLANK_NODE_LABEL str]
     [:IRIREF "<" str ">"]))
 
+(defn render-annotations-tree [annotation-subject annotations-map]
+  {:exp [:ANNOTATION [:ARROWS ">"] [:LITERAL_BLOCK "THIS IS AN ANNOTATION. THERE ARE MANY LIKE IT BUT THIS ONE IS MINE"]]})
+
 (defn render-predicates
-  [predicate-map]
+  [predicate-map subject annotations-map]
   (mapcat
    (fn [[predicate objects]]
      (let [pred [:PREDICATE [:IRIREF "<" predicate ">"]]]
@@ -147,14 +154,15 @@ represent a Howl annotation block. Returns false otherwise."
 
 (defn render-subjects
   [subject-map]
-  (mapcat
-   (fn [[subject predicates]]
-     (concat
-      [{:exp [:SUBJECT_BLOCK
-              [:SUBJECT
-               (iriref-or-blank subject)]]}]
-      (render-predicates predicates)))
-   subject-map))
+  (let [[blocks annotations] (separate-annotations subject-map)]
+    (mapcat
+     (fn [[subject predicates]]
+       (concat
+        [{:exp [:SUBJECT_BLOCK
+                [:SUBJECT
+                 (iriref-or-blank subject)]]}]
+        (render-predicates predicates subject annotations)))
+     blocks)))
 
 (defn render-graphs
   [collapsed]
