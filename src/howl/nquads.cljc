@@ -116,14 +116,21 @@ subjects for later ease of indexing."
      (fn [[no-annotations annotations] [subject predicate-map]]
        (if (annotation? subject predicate-map)
          [no-annotations
+          (assoc annotations subject predicate-map)
           (merge
-           annotations
-           {subject predicate-map
-            (vec (map #(get-ann predicate-map %) ["annotatedSource" "annotatedProperty" "annotatedTarget"])) subject})]
+           annotations)]
          [(assoc no-annotations subject predicate-map) annotations]))
      [{} {}]
      subject-map)))
 
+(defn annotations-for [[s p o] annotations-map]
+  (filter
+   (fn [[k predicates-map]]
+     (every?
+      identity
+      (map #(= %1 (first (keys (get predicates-map (owl> %2)))))
+           [s p o] ["annotatedSource" "annotatedProperty" "annotatedTarget"])))
+   annotations-map))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Output howl AST
@@ -134,27 +141,16 @@ subjects for later ease of indexing."
 
 (declare render-predicates)
 
-(defn render-annotation-tree [annotation-subject annotations-map]
-  (println "RENDER-ANNOTATION-TREE" annotation-subject)
+(defn render-annotation-tree [[annotation-subject predicate-map] annotations-map arrows]
   (let [pred-map (reduce
-               (fn [memo k] (dissoc memo k))
-               (get annotations-map annotation-subject)
-               annotation-predicates)
-        k (first (keys pred-map))]
-    (println "   " [annotation-subject k (get pred-map k)])
-    (println "   " annotations-map)
-    (cons
-     [:ANNOTATION [:ARROWS ">"]
-      (first
-       (render-predicates
-        pred-map
-        annotation-subject
-        annotations-map))]
-     (if-let [ann (get annotations-map [annotation-subject k (get pred-map k)])]
-       (render-annotation-tree ann annotations-map)))))
+                  (fn [memo k] (dissoc memo k))
+                  (get annotations-map annotation-subject)
+                  annotation-predicates)
+        blocks (render-predicates pred-map annotation-subject annotations-map (str ">" arrows))]
+    (cons [:ANNOTATION [:ARROWS arrows] (first blocks)] (rest blocks))))
 
 (defn render-predicates
-  [predicate-map subject annotations-map]
+  [predicate-map subject annotations-map arrows]
   (mapcat
    (fn [[predicate objects]]
      (let [pred [:PREDICATE [:IRIREF "<" predicate ">"]]]
@@ -170,8 +166,9 @@ subjects for later ease of indexing."
                      ;; TODO - language and type annotations go here
                      [:COLON "" ":" " "]
                      [:LITERAL (object :value)]])
-                  (if-let [ann (get annotations-map [subject predicate object])]
-                    (render-annotation-tree ann annotations-map))))
+                  (mapcat
+                   #(render-annotation-tree % annotations-map arrows)
+                   (annotations-for [subject predicate object] annotations-map))))
                objects)))
    predicate-map))
 
@@ -182,7 +179,7 @@ subjects for later ease of indexing."
      (fn [[subject predicates]]
        (concat
         [{:exp [:SUBJECT_BLOCK [:SUBJECT (iriref-or-blank subject)]]}]
-        (map (fn [block] {:exp block}) (render-predicates predicates subject annotations))))
+        (map (fn [block] {:exp block}) (render-predicates predicates subject annotations "> "))))
      blocks)))
 
 (defn render-graphs
