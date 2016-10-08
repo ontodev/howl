@@ -89,17 +89,20 @@
 ;;;;; Pull out annotations
 (def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 (defn owl> [s] (str "http://www.w3.org/2002/07/owl#" s))
+(defn rdf-schema> [s] (str "http://www.w3.org/2000/01/rdf-schema#" s))
+
+(def annotation-predicates
+  [rdf-type
+   (owl> "annotatedSource")
+   (owl> "annotatedProperty")
+   (owl> "annotatedTarget")])
 
 (defn annotation?
   "Given a subject and predicate map, returns true if the inputs
 represent a Howl annotation block. Returns false otherwise."
   [subject predicate-map]
   (and (blank-name? subject)
-       (every? #(contains? predicate-map %)
-               [rdf-type
-                (owl> "annotatedSource")
-                (owl> "annotatedProperty")
-                (owl> "annotatedTarget")])
+       (every? #(contains? predicate-map %) annotation-predicates)
        (contains? (get predicate-map rdf-type) (owl> "Axiom"))))
 
 (defn separate-annotations
@@ -129,27 +132,47 @@ subjects for later ease of indexing."
     [:BLANK_NODE_LABEL str]
     [:IRIREF "<" str ">"]))
 
-(defn render-annotations-tree [annotation-subject annotations-map]
-  {:exp [:ANNOTATION [:ARROWS ">"] [:LITERAL_BLOCK "THIS IS AN ANNOTATION. THERE ARE MANY LIKE IT BUT THIS ONE IS MINE"]]})
+(declare render-predicates)
+
+(defn render-annotation-tree [annotation-subject annotations-map]
+  (println "RENDER-ANNOTATION-TREE" annotation-subject)
+  (let [pred-map (reduce
+               (fn [memo k] (dissoc memo k))
+               (get annotations-map annotation-subject)
+               annotation-predicates)
+        k (first (keys pred-map))]
+    (println "   " [annotation-subject k (get pred-map k)])
+    (println "   " annotations-map)
+    (cons
+     [:ANNOTATION [:ARROWS ">"]
+      (first
+       (render-predicates
+        pred-map
+        annotation-subject
+        annotations-map))]
+     (if-let [ann (get annotations-map [annotation-subject k (get pred-map k)])]
+       (render-annotation-tree ann annotations-map)))))
 
 (defn render-predicates
   [predicate-map subject annotations-map]
   (mapcat
    (fn [[predicate objects]]
      (let [pred [:PREDICATE [:IRIREF "<" predicate ">"]]]
-       (map (fn [[object _]]
-              {:exp
-               (if (string? object)
-                 [:LINK_BLOCK
-                  pred
-                  [:COLON_ARROW "" ":>" " "]
-                  [:OBJECT (iriref-or-blank object)]]
-                 [:LITERAL_BLOCK
-                  pred
-                  ;; TODO - language and type annotations go here
-                  [:COLON "" ":" " "]
-                  [:LITERAL (object :value)]])})
-            objects)))
+       (mapcat (fn [[object _]]
+                 (cons
+                  (if (string? object)
+                    [:LINK_BLOCK
+                     pred
+                     [:COLON_ARROW "" ":>" " "]
+                     [:OBJECT (iriref-or-blank object)]]
+                    [:LITERAL_BLOCK
+                     pred
+                     ;; TODO - language and type annotations go here
+                     [:COLON "" ":" " "]
+                     [:LITERAL (object :value)]])
+                  (if-let [ann (get annotations-map [subject predicate object])]
+                    (render-annotation-tree ann annotations-map))))
+               objects)))
    predicate-map))
 
 (defn render-subjects
@@ -158,10 +181,8 @@ subjects for later ease of indexing."
     (mapcat
      (fn [[subject predicates]]
        (concat
-        [{:exp [:SUBJECT_BLOCK
-                [:SUBJECT
-                 (iriref-or-blank subject)]]}]
-        (render-predicates predicates subject annotations)))
+        [{:exp [:SUBJECT_BLOCK [:SUBJECT (iriref-or-blank subject)]]}]
+        (map (fn [block] {:exp block}) (render-predicates predicates subject annotations))))
      blocks)))
 
 (defn render-graphs
