@@ -16,12 +16,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Human-readable compression
 
-(defn facts->urls [facts]
+(defn statements->urls [statements]
   (filter
    #(and (string? %)
          (not (blank-name? %))
          (not= % default-graph))
-   (apply concat facts)))
+   (apply concat statements)))
 
 (defn partition-url [url]
   (map
@@ -55,8 +55,8 @@
       2 (first comps)
       (second comps))))
 
-(defn facts->prefixes
-  [facts]
+(defn statements->prefixes
+  [statements]
   ;; TODO - ensure prefix names are unique
   ;;      - filter out the annotation URLs
   (reduce
@@ -68,13 +68,13 @@
      count
      (filter
       #(not (re-find #"\d+[/#]$" %))
-      (set (mapcat url->prefixes (facts->urls facts))))))))
+      (set (mapcat url->prefixes (statements->urls statements))))))))
 
-(defn facts->labels
+(defn statements->labels
   ;; TODO - use prefixes to establish labels
   ;;      - do some kind of decision on whether a given label is worth it given the length of its prefixed form
   ;;      - filter out the annotation URLs (since they'll be removed anyhow)
-  [facts]
+  [statements]
   (reduce
    (fn [memo url]
      (assoc memo (url->prefix-name url) url))
@@ -83,7 +83,7 @@
     first
     (filter
      #(>= (second %) 3)
-     (into (list) (dissoc (frequencies (facts->urls facts)) default-graph))))))
+     (into (list) (dissoc (frequencies (statements->urls statements)) default-graph))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Pull out annotations
@@ -196,8 +196,8 @@ subjects for later ease of indexing."
 
 (defn collapse
   "Given a sequence of Quads or Triples, return a level-wise map"
-  [facts]
-  (reduce (fn [coll fact] (assoc-in coll fact nil)) nil facts))
+  [statements]
+  (reduce (fn [coll statement] (assoc-in coll statement nil)) nil statements))
 
 (defn quads-to-howl
   "Given a sequence of quads,
