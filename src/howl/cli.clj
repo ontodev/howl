@@ -76,8 +76,18 @@
        core/blocks->nquads
        core/print-nquads!))
 
+(defn print-triples
+  "Given a map of options and a sequence of file names,
+   print a sequence of N-Triples"
+  [options file-names]
+  (->> (apply parse-files file-names)
+       core/blocks->nquads
+       (map (fn [[a b c d]] [a b c]))
+       core/print-nquads!))
+
 (def format-synonyms
-  {"nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
+  {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
+   "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
    "parses"   ["parse"]
    "howl"     ["howl"]})
 
@@ -90,7 +100,7 @@
        (into {})))
 
 (def cli-options
-  [["-o" "--output FORMAT" "Output format: N-Quads(default), parses (JSON)"]
+  [["-o" "--output FORMAT" "Output format: N-Triples(default), N-Quads, parses (JSON)"]
    ["-V" "--version"]
    ["-h" "--help"]])
 
@@ -124,8 +134,9 @@
       (:version options) (exit 0 (version))
       (not= (count arguments) 1) (exit 1 (usage summary))
       errors (exit 1 (error-msg errors))
-      :else (case (-> options (get :output "nquads") string/lower-case format-map)
+      :else (case (-> options (get :output "ntriples") string/lower-case format-map)
               "parses"   (print-parses arguments)
               "howl"     (print-howl options arguments)
+              "ntriples" (print-triples options arguments)
               "nquads"   (print-quads options arguments)
               (exit 1 (usage summary))))))

@@ -2,7 +2,6 @@
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
             [clojure.set]
-            [edn-ld.core :as edn-ld]
             [howl.util :as util]
             [howl.core :as core]))
 
