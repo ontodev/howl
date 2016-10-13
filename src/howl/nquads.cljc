@@ -54,13 +54,27 @@
       2 (first comps)
       (second comps))))
 
+(defn unique-assoc
+  "Interns names in String -> a maps while avoiding name collisions.
+Used only in the two statements->* functions following."
+  [map name value]
+  (cond
+    (not (contains? map name)) (assoc map name value)
+    (and (contains? map name) (= (get map name) value))
+    map
+    :else (loop [i 2
+                 i-name (str name "-" i)]
+            (cond
+              (not (contains? map i-name)) (assoc map i-name value)
+              (and (contains? map i-name) (= (get map i-name) value)) map
+              :else (recur (inc i) (str name "-" (inc i)))))))
+
 (defn statements->prefixes
+  "Given a series of statements, returns a prefix map appropriate for compressing them."
   [statements]
-  ;; TODO - ensure prefix names are unique
-  ;;      - filter out the annotation URLs
   (reduce
    (fn [memo url]
-     (assoc memo (url->prefix-name url) url))
+     (unique-assoc memo (url->prefix-name url) url))
    {}
    (reverse
     (sort-by
@@ -70,9 +84,8 @@
       (set (mapcat url->prefixes (statements->urls statements))))))))
 
 (defn statements->labels
-  ;; TODO - use prefixes to establish labels
-  ;;      - do some kind of decision on whether a given label is worth it given the length of its prefixed form
-  ;;      - filter out the annotation URLs (since they'll be removed anyhow)
+  "Given a series of statements, and optionally a map of labels,
+   returns a labels map appropriate for compressing the given statements."
   [statements]
   (reduce
    (fn [memo url]
@@ -83,6 +96,11 @@
     (filter
      #(>= (second %) 3)
      (into (list) (dissoc (frequencies (statements->urls statements)) default-graph))))))
+
+(defn statements->env
+  [statements]
+  {:prefixes (statements->prefixes statements)
+   :labels (statements->labels statements)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Pull out annotations
@@ -133,65 +151,89 @@ subjects for later ease of indexing."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Output howl AST
-(defn iriref-or-blank [str]
+(defn invert-env [env]
+  (merge
+   env
+   {:labels (clojure.set/map-invert (get env :labels))
+    :prefixes (clojure.set/map-invert (get env :prefixes))}))
+
+(defn compressible-uri? [inverted-env uri]
+  (contains? (inverted-env :labels) uri))
+
+(defn longest-prefix [target candidates]
+  (first
+   (filter
+    #(util/starts-with? target %)
+    (reverse (sort-by count candidates)))))
+
+(defn compress-uri [inverted-env uri]
+  (if (contains? (inverted-env :labels) uri)
+    [:LABEL (get-in inverted-env [:labels uri])]
+    (if-let [pref (longest-prefix inverted-env (keys (inverted-env :prefixes)))]
+      [:PREFIXED_NAME [:PREFIX (get-in inverted-env [:prefixes pref])] ":" (subs uri (count pref))]
+      [:IRIREF "<" uri ">"])))
+
+(defn iriref-or-blank [env str]
   (if (blank-name? str)
     [:BLANK_NODE_LABEL str]
-    [:IRIREF "<" str ">"]))
+    (compress-uri (invert-env env) str)))
 
 (declare render-predicates)
 
-(defn render-annotation-tree [[annotation-subject predicate-map] annotations-map arrows]
+(defn render-annotation-tree [env [annotation-subject predicate-map] annotations-map arrows]
   (let [pred-map (reduce
                   (fn [memo k] (dissoc memo k))
                   (get annotations-map annotation-subject)
                   annotation-predicates)
-        blocks (render-predicates pred-map annotation-subject annotations-map (str ">" arrows))]
+        blocks (render-predicates env pred-map annotation-subject annotations-map (str ">" arrows))]
     (cons [:ANNOTATION [:ARROWS arrows] (first blocks)] (rest blocks))))
 
 (defn render-predicates
-  [predicate-map subject annotations-map arrows]
+  [env predicate-map subject annotations-map arrows]
   (mapcat
    (fn [[predicate objects]]
-     (let [pred [:PREDICATE [:IRIREF "<" predicate ">"]]]
+     (let [pred [:PREDICATE (compress-uri (invert-env env) predicate)]]
        (mapcat (fn [[object _]]
                  (cons
                   (if (string? object)
                     [:LINK_BLOCK
                      pred
                      [:COLON_ARROW "" ":>" " "]
-                     [:OBJECT (iriref-or-blank object)]]
+                     [:OBJECT (iriref-or-blank env object)]]
                     [:LITERAL_BLOCK
                      pred
                      ;; TODO - language and type annotations go here
                      [:COLON "" ":" " "]
                      [:LITERAL (object :value)]])
                   (mapcat
-                   #(render-annotation-tree % annotations-map arrows)
+                   #(render-annotation-tree env % annotations-map arrows)
                    (annotations-for [subject predicate object] annotations-map))))
                objects)))
    predicate-map))
 
 (defn render-subjects
-  [subject-map]
-  (let [[blocks annotations] (separate-annotations subject-map)]
-    (mapcat
-     (fn [[subject predicates]]
-       (concat
-        [{:exp [:SUBJECT_BLOCK [:SUBJECT (iriref-or-blank subject)]]}]
-        (map (fn [block] {:exp block}) (render-predicates predicates subject annotations "> "))))
-     blocks)))
+  ([subject-map] (render-subjects subject-map {}))
+  ([subject-map env]
+   (let [[blocks annotations] (separate-annotations subject-map)]
+     (mapcat
+      (fn [[subject predicates]]
+        (concat
+         [{:exp [:SUBJECT_BLOCK [:SUBJECT (iriref-or-blank env subject)]]}]
+         (map (fn [block] {:exp block}) (render-predicates env predicates subject annotations "> "))))
+      blocks))))
 
 (defn render-graphs
-  [collapsed]
-  (concat
-   (render-subjects (get collapsed default-graph))
-   (mapcat
-    (fn [[graph subjects]]
-      (concat
-       [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH [:IRIREF "<" graph ">"]]]}]
-       (render-subjects subjects)
-       [{:exp [:GRAPH_BLOCK "GRAPH"]}]))
-    (dissoc collapsed default-graph))))
+  ([collapsed] (render-graphs collapsed {}))
+  ([collapsed env]
+   (concat
+    (render-subjects (get collapsed default-graph) env)
+    (mapcat
+     (fn [[graph subjects]]
+       (concat
+        [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (compress-uri (invert-env env) graph)]]}]
+        (render-subjects subjects env)
+        [{:exp [:GRAPH_BLOCK "GRAPH"]}]))
+     (dissoc collapsed default-graph)))))
 
 (defn collapse
   "Given a sequence of Quads or Triples, return a level-wise map"
@@ -201,14 +243,14 @@ subjects for later ease of indexing."
 (defn quads-to-howl
   "Given a sequence of quads,
    return a sequence of HOWL block maps."
-  [quads]
-  (render-graphs (collapse quads)))
+  ([quads] (quads-to-howl quads (statements->env quads)))
+  ([quads env] (render-graphs (collapse quads) env)))
 
 (defn triples-to-howl
   "Given a sequence of triples,
    return a sequence of HOWL block maps."
-  [trips]
-  (render-subjects (collapse trips)))
+  ([trips] (triples-to-howl trips (statements->env trips)))
+  ([trips env] (render-subjects (collapse trips) env)))
 
 
 ;; collapse
