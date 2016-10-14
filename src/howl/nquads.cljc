@@ -157,26 +157,20 @@ subjects for later ease of indexing."
    {:labels (clojure.set/map-invert (get env :labels))
     :prefixes (clojure.set/map-invert (get env :prefixes))}))
 
-(defn compressible-uri? [inverted-env uri]
-  (contains? (inverted-env :labels) uri))
-
 (defn longest-prefix [target candidates]
   (first
    (filter
     #(util/starts-with? target %)
     (reverse (sort-by count candidates)))))
 
-(defn compress-uri [inverted-env uri]
-  (if (contains? (inverted-env :labels) uri)
-    [:LABEL (get-in inverted-env [:labels uri])]
-    (if-let [pref (longest-prefix inverted-env (keys (inverted-env :prefixes)))]
-      [:PREFIXED_NAME [:PREFIX (get-in inverted-env [:prefixes pref])] ":" (subs uri (count pref))]
-      [:IRIREF "<" uri ">"])))
-
-(defn iriref-or-blank [env str]
-  (if (blank-name? str)
-    [:BLANK_NODE_LABEL str]
-    (compress-uri (invert-env env) str)))
+(defn leaf-node [env thing]
+  (let [inv (invert-env env)]
+    (cond
+      (blank-name? thing)             [:BLANK_NODE_LABEL thing]
+      (contains? (inv :labels) thing) [:LABEL (get-in inv [:labels thing])]
+      :else (if-let [pref (longest-prefix inv (keys (inv :prefixes)))]
+              [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
+              [:IRIREF "<" thing ">"]))))
 
 (declare render-predicates)
 
@@ -192,14 +186,14 @@ subjects for later ease of indexing."
   [env predicate-map subject annotations-map arrows]
   (mapcat
    (fn [[predicate objects]]
-     (let [pred [:PREDICATE (compress-uri (invert-env env) predicate)]]
+     (let [pred [:PREDICATE (leaf-node env predicate)]]
        (mapcat (fn [[object _]]
                  (cons
                   (if (string? object)
                     [:LINK_BLOCK
                      pred
                      [:COLON_ARROW "" ":>" " "]
-                     [:OBJECT (iriref-or-blank env object)]]
+                     [:OBJECT (leaf-node env object)]]
                     [:LITERAL_BLOCK
                      pred
                      ;; TODO - language and type annotations go here
@@ -218,7 +212,7 @@ subjects for later ease of indexing."
      (mapcat
       (fn [[subject predicates]]
         (concat
-         [{:exp [:SUBJECT_BLOCK [:SUBJECT (iriref-or-blank env subject)]]}]
+         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]]}]
          (map (fn [block] {:exp block}) (render-predicates env predicates subject annotations "> "))))
       blocks))))
 
@@ -230,7 +224,7 @@ subjects for later ease of indexing."
     (mapcat
      (fn [[graph subjects]]
        (concat
-        [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (compress-uri (invert-env env) graph)]]}]
+        [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (leaf-node env graph)]]}]
         (render-subjects subjects env)
         [{:exp [:GRAPH_BLOCK "GRAPH"]}]))
      (dissoc collapsed default-graph)))))
