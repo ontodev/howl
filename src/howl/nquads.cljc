@@ -182,27 +182,32 @@ subjects for later ease of indexing."
         blocks (render-predicates env pred-map annotation-subject annotations-map (str ">" arrows))]
     (cons [:ANNOTATION [:ARROWS arrows] (first blocks)] (rest blocks))))
 
+(defn render-literal [literal]
+  (let [lns (string/split-lines literal)]
+    (string/join \newline (cons (first lns) (map #(str "  " %) (rest lns))))))
+
 (defn render-predicates
   [env predicate-map subject annotations-map arrows]
   (mapcat
    (fn [[predicate objects]]
      (let [pred [:PREDICATE (leaf-node env predicate)]]
-       (mapcat (fn [[object _]]
-                 (cons
-                  (if (string? object)
-                    [:LINK_BLOCK
-                     pred
-                     [:COLON_ARROW "" ":>" " "]
-                     [:OBJECT (leaf-node env object)]]
-                    [:LITERAL_BLOCK
-                     pred
-                     ;; TODO - language and type annotations go here
-                     [:COLON "" ":" " "]
-                     [:LITERAL (object :value)]])
-                  (mapcat
-                   #(render-annotation-tree env % annotations-map arrows)
-                   (annotations-for [subject predicate object] annotations-map))))
-               objects)))
+       (mapcat
+        (fn [[object _]]
+          (cons
+           (if (string? object)
+             [:LINK_BLOCK
+              pred
+              [:COLON_ARROW "" ":>" " "]
+              [:OBJECT (leaf-node env object)]]
+             [:LITERAL_BLOCK
+              pred
+              ;; TODO - language and type annotations go here
+              [:COLON "" ":" " "]
+              [:LITERAL (render-literal (object :value))]])
+           (mapcat
+            #(render-annotation-tree env % annotations-map arrows)
+            (annotations-for [subject predicate object] annotations-map))))
+        objects)))
    predicate-map))
 
 (defn render-subjects
@@ -246,6 +251,14 @@ subjects for later ease of indexing."
    return a sequence of HOWL block maps."
   ([trips] (triples-to-howl trips (statements->env trips)))
   ([trips env] (render-subjects (collapse trips) env)))
+
+(defn rendered->string
+  [rendered-blocks]
+  (map
+   #(if (= :SUBJECT_BLOCK (first (% :exp)))
+      (str \newline (core/block->string %))
+      (core/block->string %))
+   rendered-blocks))
 
 
 ;; collapse
