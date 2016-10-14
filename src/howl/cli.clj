@@ -17,39 +17,48 @@
   "Takes a filename, and optionally a starting environment, and parses that
    file under the given environment."
   ([filename] (parse-howl-file filename {}))
-  ([filename starting-env]
+  ([filename env]
    (core/parse-lines
     (line-seq (clojure.java.io/reader filename))
-    :starting-env starting-env :source filename)))
+    :starting-env env :source filename)))
 
 (defn parse-rdf-file
   "Given the name of a file that Apache Jena can read,
    and return a sequence of HOWL block maps."
-  [file-name]
-  (let [[prefixes quads] (edn-ld.jena/read-quads file-name)]
-    (if (seq quads)
-      (nq/quads-to-howl quads)
-      (let [[prefixes triples] (edn-ld.jena/read-triples file-name)]
-        (if (seq triples)
-          (nq/triples-to-howl triples)
-          (exit 1 (str "Could not find quads or triples in file: " file-name)))))))
+  ([filename] (parse-rdf-file filename {}))
+  ([filename env]
+   (let [[prefixes quads] (edn-ld.jena/read-quads filename)]
+     (if (seq quads)
+       (nq/quads-to-howl quads env)
+       (let [[prefixes triples] (edn-ld.jena/read-triples filename)]
+         (if (seq triples)
+           (nq/triples-to-howl triples env)
+           (exit 1 (str "Could not find quads or triples in file: " filename))))))))
 
 (defn parse-file
   "Given a file name,
    return a lazy sequence of HOWL block maps."
-  [file-name]
-  (cond
-    (.endsWith file-name "howl") (parse-howl-file file-name)
-    ; TODO: more formats
-    :else (parse-rdf-file file-name)))
+  ([filename] (parse-file filename {}))
+  ([file-name env]
+   (cond
+     (.endsWith file-name "howl") (parse-howl-file file-name env)
+                                        ; TODO: more formats
+     :else (parse-rdf-file file-name env))))
 
 (defn parse-files
   "Given a sequence of file names,
    return a lazy sequence of parse results."
-  [& file-names]
-  ;; TODO - multiple files should affect each others' environments.
-  ;;        this needs to be more elaborate
-  (mapcat parse-file file-names))
+  [& filenames]
+  ((fn rec [filenames env]
+     (when (not (empty? filenames))
+       (let [f (parse-file (first filenames) env)]
+         (concat
+          f
+          (lazy-seq
+           (rec
+            (rest filenames)
+            (or ((last f) :env) env))))) ))
+   filenames {}))
 
 (defn print-parses
   "Given a sequence of file names,
