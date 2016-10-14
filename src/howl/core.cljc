@@ -200,7 +200,7 @@
     :IRIREF (let [iri (get node 2)]
               (if (util/absolute-uri-string? iri)
                 iri
-                (url/url (env :base) iri)))
+                (str (url/url (env :base) iri))))
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
     :LABEL (get-in env [:labels (second node)])
@@ -378,7 +378,7 @@
    The trailing quad is generated using simple-block->nquad"
   [id [source property target _] block]
   (let [name (str "_:b" id)
-        base (simple-block->nquad (assoc block :exp (get (block :exp) 2)))]
+        base (simple-block->nquad (assoc block :exp (get-in block [:exp 2])))]
     [[name (rdf> "type") (owl> "Axiom") nil]
      [name (owl> "annotatedSource") source nil]
      [name (owl> "annotatedProperty") property nil]
@@ -392,11 +392,11 @@
    than being encoded directly in the result."
   [block-sequence]
   (filter
-   #(not-any?
-     #{:PREFIX_BLOCK :LABEL_BLOCK
-       :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
-       :COMMENT_BLOCK}
-     (take 1 (% :exp)))
+   #(and % (not-any?
+            #{:PREFIX_BLOCK :LABEL_BLOCK
+              :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
+              :COMMENT_BLOCK}
+            (take 1 (get % :exp))))
    block-sequence))
 
 (defn find-target
@@ -447,7 +447,7 @@
   (let [id (atom 0)
         stack (atom (list))]
     (mapcat
-     #(case (first (% :exp))
+     #(case (first (get % :exp))
         :ANNOTATION (handle-annotation-block! id stack %)
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
@@ -473,5 +473,5 @@
   ([nquads] (print-triples! nquads *out*))
   ([nquads writer]
    (print-nquads!
-    (map (fn [[a b c d]] [a b c nil]) nquads)
+    (map (fn [q] (concat (take 3 q) [nil])) nquads)
     writer)))

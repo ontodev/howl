@@ -217,8 +217,9 @@ subjects for later ease of indexing."
      (mapcat
       (fn [[subject predicates]]
         (concat
-         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]]}]
-         (map (fn [block] {:exp block}) (render-predicates env predicates subject annotations "> "))))
+         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]]
+           :env env}]
+         (map (fn [block] {:exp block :env env}) (render-predicates env predicates subject annotations "> "))))
       blocks))))
 
 (defn render-graphs
@@ -228,10 +229,12 @@ subjects for later ease of indexing."
     (render-subjects (get collapsed default-graph) env)
     (mapcat
      (fn [[graph subjects]]
-       (concat
-        [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (leaf-node env graph)]]}]
-        (render-subjects subjects env)
-        [{:exp [:GRAPH_BLOCK "GRAPH"]}]))
+       (map
+        #(when (empty? (% :env)) (assoc % :env env))
+        (concat
+         [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (leaf-node env graph)]]}]
+         (render-subjects subjects env)
+         [{:exp [:GRAPH_BLOCK "GRAPH"]}])))
      (dissoc collapsed default-graph)))))
 
 (defn collapse

@@ -141,7 +141,6 @@
     (cond
       (:help options) (exit 0 (usage summary))
       (:version options) (exit 0 (version))
-      (not= (count arguments) 1) (exit 1 (usage summary))
       errors (exit 1 (error-msg errors))
       :else (case (-> options (get :output "ntriples") string/lower-case format-map)
               "parses"   (print-parses arguments)
