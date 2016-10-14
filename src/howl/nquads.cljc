@@ -154,7 +154,7 @@ subjects for later ease of indexing."
 (defn invert-env [env]
   (merge
    env
-   {:labels (clojure.set/map-invert (get env :labels))
+   {:labels   (clojure.set/map-invert (get env :labels))
     :prefixes (clojure.set/map-invert (get env :prefixes))}))
 
 (defn longest-prefix [target candidates]
@@ -168,7 +168,7 @@ subjects for later ease of indexing."
     (cond
       (blank-name? thing)             [:BLANK_NODE_LABEL thing]
       (contains? (inv :labels) thing) [:LABEL (get-in inv [:labels thing])]
-      :else (if-let [pref (longest-prefix inv (keys (inv :prefixes)))]
+      :else (if-let [pref (longest-prefix thing (keys (inv :prefixes)))]
               [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
               [:IRIREF "<" thing ">"]))))
 
@@ -238,7 +238,9 @@ subjects for later ease of indexing."
   "Given a sequence of quads,
    return a sequence of HOWL block maps."
   ([quads] (quads-to-howl quads (statements->env quads)))
-  ([quads env] (render-graphs (collapse quads) env)))
+  ([quads env]
+   (println "AUTO-GEN ENV:" (str env))
+   (render-graphs (collapse quads) env)))
 
 (defn triples-to-howl
   "Given a sequence of triples,
