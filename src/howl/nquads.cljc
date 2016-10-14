@@ -239,7 +239,6 @@ subjects for later ease of indexing."
    return a sequence of HOWL block maps."
   ([quads] (quads-to-howl quads (statements->env quads)))
   ([quads env]
-   (println "AUTO-GEN ENV:" (str env))
    (render-graphs (collapse quads) env)))
 
 (defn triples-to-howl
