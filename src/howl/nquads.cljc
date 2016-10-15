@@ -199,11 +199,14 @@ subjects for later ease of indexing."
               pred
               [:COLON_ARROW "" ":>" " "]
               [:OBJECT (leaf-node env object)]]
-             [:LITERAL_BLOCK
-              pred
-              ;; TODO - language and type annotations go here
-              [:COLON "" ":" " "]
-              [:LITERAL (render-literal (object :value))]])
+             (filter
+              #(not (nil? %))
+              [:LITERAL_BLOCK
+               pred
+               (when (contains? object :lang) [:LANGUAGE [:SPACES " "] (object :lang)])
+               (when (contains? object :type) [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF (object :type)]]])
+               [:COLON "" ":" " "]
+               [:LITERAL (render-literal (object :value))]]))
            (mapcat
             #(render-annotation-tree env % annotations-map arrows)
             (annotations-for [subject predicate object] annotations-map))))
