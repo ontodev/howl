@@ -10,7 +10,7 @@
             [clojure.string :as string]
             [instaparse.core :as insta]
 
-            [howl.util :as util]
+            [howl.util :as util :refer [<>]]
             [howl.core :refer :all]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -2,7 +2,7 @@
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
             [clojure.set]
-            [howl.util :as util]
+            [howl.util :as util :refer [owl> rdf-schema>]]
             [howl.core :as core]))
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
@@ -105,8 +105,6 @@ Used only in the two statements->* functions following."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Pull out annotations
 (def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-(defn owl> [s] (str "http://www.w3.org/2002/07/owl#" s))
-(defn rdf-schema> [s] (str "http://www.w3.org/2000/01/rdf-schema#" s))
 
 (def annotation-predicates
   [rdf-type
@@ -265,7 +263,6 @@ subjects for later ease of indexing."
       (str \newline (core/block->string %))
       (core/block->string %))
    rendered-blocks))
-
 
 ;; collapse
 ;; render-graphs (or subjects, depending on triples/quads)

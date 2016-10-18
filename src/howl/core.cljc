@@ -5,7 +5,7 @@
             [instaparse.core :as insta]
             [cemerick.url :as url]
 
-            [howl.util :as util]
+            [howl.util :as util :refer [<> owl> rdf>]]
             [howl.expression :as exp]))
 
 ;; Parsing works like this:
@@ -282,9 +282,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Name expansion
-(defn <>
-  [s] (str "<" s ">"))
-
 ;; TODO - :ABSOLUTE_IRI should behave a little differently. Return [:ABSOLUTE_IRI "<" name ">"] instead
 ;;        of calling <> here. The nquad-generation chunk can then do the right thing.
 ;;        Also, update name-from-node to handle them appropriately.
@@ -355,22 +352,10 @@
              base)))
        :LINK_BLOCK
        (<> (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
-       :EXPRESSION_BLOCK
-       [:TODO "expression" "block" nil]
        ;; FIXME - the default case should throw an error once we're done implementing this
        [:TODO (locate block) (first (block :exp))])
      (if-let [graph (get-in block [:env :graph])]
        (<> graph))]))
-
-(defn owl>
-  [name]
-  (str "<http://www.w3.org/2002/07/owl#" name ">"))
-(defn rdf>
-  [name]
-  (str "<http://www.w3.org/1999/02/22-rdf-syntax-ns#" name ">"))
-(defn rdf-schema>
-  [name]
-  (str "<http://www.w3.org/2000/01/rdf-schema#" name ">"))
 
 (defn annotation-block->nquads
   "Returns an annotation block. Annotation blocks get encoded as multiple
@@ -379,10 +364,10 @@
   [id [source property target _] block]
   (let [name (str "_:b" id)
         base (simple-block->nquad (assoc block :exp (get-in block [:exp 2])))]
-    [[name (rdf> "type") (owl> "Axiom") nil]
-     [name (owl> "annotatedSource") source nil]
-     [name (owl> "annotatedProperty") property nil]
-     [name (owl> "annotatedTarget") target nil]
+    [[name (<> (rdf> "type")) (<> (owl> "Axiom")) nil]
+     [name (<> (owl> "annotatedSource")) source nil]
+     [name (<> (owl> "annotatedProperty")) property nil]
+     [name (<> (owl> "annotatedTarget")) target nil]
      (vec (cons name (rest base)))]))
 
 (defn nquad-relevant-blocks
@@ -449,6 +434,7 @@
     (mapcat
      #(case (first (get % :exp))
         :ANNOTATION (handle-annotation-block! id stack %)
+        :EXPRESSION_BLOCK [[:TODO "expression" "block" nil]]
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 

@@ -42,3 +42,11 @@
   "Cribbed from http://stackoverflow.com/a/19709846/190887. Takes a string
    and returns true if it represents an absolute uri (false otherwise)"
   (not (not (re-find #"(?i)^(?:[a-z]+:)?//" s))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; General formatting shortcuts
+
+(defn <> [s] (str "<" s ">"))
+(defn owl> [name] (str "http://www.w3.org/2002/07/owl#" name))
+(defn rdf> [name] (str "http://www.w3.org/1999/02/22-rdf-syntax-ns#" name))
+(defn rdf-schema> [name] (str "http://www.w3.org/2000/01/rdf-schema#" name))
