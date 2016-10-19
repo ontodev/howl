@@ -67,3 +67,20 @@
    before defaulting to Manchester syntax."
   [[_ exp]]
   (string-to-parse exp))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; to nquads
+
+(defn nquad-relevant-elems [exp]
+  (filter #(and (vector? %) (not= :SPACE (first %))) exp))
+
+(defn expression->nquads [id env exp]
+  (case (first exp)
+    (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (expression->nquads id env (second exp))
+    :LABEL [(second exp)]
+    :QUOTED_LABEL [(get exp 2)]
+    :CLASS_EXPRESSION (mapcat #(expression->nquads id env %) (nquad-relevant-elems exp))
+    :SOME (let [g (env :graph)
+                b (str "_:b" @id)]
+            [[:WORKING_ON ["SOME expression" g b] (nquad-relevant-elems exp) nil]])
+    [[:TODO (first exp) exp]]))

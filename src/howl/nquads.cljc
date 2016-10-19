@@ -2,7 +2,7 @@
   "Render parsed HOWL to N-Quads."
   (:require [clojure.string :as string]
             [clojure.set]
-            [howl.util :as util :refer [owl> rdf-schema>]]
+            [howl.util :as util :refer [owl> rdf> rdf-schema>]]
             [howl.core :as core]))
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
@@ -104,10 +104,8 @@ Used only in the two statements->* functions following."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Pull out annotations
-(def rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-
 (def annotation-predicates
-  [rdf-type
+  [(rdf> "type")
    (owl> "annotatedSource")
    (owl> "annotatedProperty")
    (owl> "annotatedTarget")])
@@ -118,7 +116,7 @@ represent a Howl annotation block. Returns false otherwise."
   [subject predicate-map]
   (and (blank-name? subject)
        (every? #(contains? predicate-map %) annotation-predicates)
-       (contains? (get predicate-map rdf-type) (owl> "Axiom"))))
+       (contains? (get predicate-map (rdf> "type")) (owl> "Axiom"))))
 
 (defn separate-annotations
   "Given a subject-map, returns

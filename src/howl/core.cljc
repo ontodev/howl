@@ -311,7 +311,7 @@
   (->> lines
        (#(lines->blocks % :source source))
        (map condense-chars)
-       ;; (map parse-expressions)
+       (map parse-expressions)
        (#(environments % starting-env))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -418,6 +418,11 @@
     (swap! stack #(cons [arrow-level (last res)] %))
     res))
 
+(defn handle-expression-block! [id block]
+  (swap! id inc)
+  ;; TODO - handle leading PREDICATE/TYPE/COLON_ARROW
+  (exp/expression->nquads id (block :env) (last (block :exp)) ))
+
 (defn handle-simple-block!
   "Takes id and stack atoms, along with a block, and handles the processing
    involved in rendering a non-annotation block."
@@ -434,7 +439,7 @@
     (mapcat
      #(case (first (get % :exp))
         :ANNOTATION (handle-annotation-block! id stack %)
-        :EXPRESSION_BLOCK [[:TODO "expression" "block" nil]]
+        :EXPRESSION_BLOCK (handle-expression-block! id %)
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
