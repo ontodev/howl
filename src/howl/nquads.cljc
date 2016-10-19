@@ -7,18 +7,13 @@
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
 
-(defn blank-name?
-  "Given a string, returns true if it represents a blank name in RDF syntax."
-  [str]
-  (util/starts-with? str "_:"))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Human-readable compression
 
 (defn statements->urls [statements]
   (filter
    #(and (string? %)
-         (not (blank-name? %))
+         (not (util/blank-name? %))
          (not= % default-graph))
    (apply concat statements)))
 
@@ -114,7 +109,7 @@ Used only in the two statements->* functions following."
   "Given a subject and predicate map, returns true if the inputs
 represent a Howl annotation block. Returns false otherwise."
   [subject predicate-map]
-  (and (blank-name? subject)
+  (and (util/blank-name? subject)
        (every? #(contains? predicate-map %) annotation-predicates)
        (contains? (get predicate-map (rdf> "type")) (owl> "Axiom"))))
 
@@ -162,11 +157,15 @@ subjects for later ease of indexing."
 (defn leaf-node [env thing]
   (let [inv (invert-env env)]
     (cond
-      (blank-name? thing)             [:BLANK_NODE_LABEL thing]
+      (util/blank-name? thing)             [:BLANK_NODE_LABEL thing]
       (contains? (inv :labels) thing) [:LABEL (get-in inv [:labels thing])]
       :else (if-let [pref (longest-prefix thing (keys (inv :prefixes)))]
               [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
               [:IRIREF "<" thing ">"]))))
+
+(defn render-literal [literal]
+  (let [lns (string/split-lines literal)]
+    (string/join \newline (cons (first lns) (map #(str "  " %) (rest lns))))))
 
 (declare render-predicates)
 
@@ -177,10 +176,6 @@ subjects for later ease of indexing."
                   annotation-predicates)
         blocks (render-predicates env pred-map annotation-subject annotations-map (str ">" arrows))]
     (cons [:ANNOTATION [:ARROWS arrows] (first blocks)] (rest blocks))))
-
-(defn render-literal [literal]
-  (let [lns (string/split-lines literal)]
-    (string/join \newline (cons (first lns) (map #(str "  " %) (rest lns))))))
 
 (defn render-predicates
   [env predicate-map subject annotations-map arrows]

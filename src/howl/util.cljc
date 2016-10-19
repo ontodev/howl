@@ -43,6 +43,15 @@
    and returns true if it represents an absolute uri (false otherwise)"
   (not (not (re-find #"(?i)^(?:[a-z]+:)?//" s))))
 
+(defn fresh-blank! [atom]
+  (swap! atom inc)
+  (str "_:b" @atom))
+
+(defn blank-name?
+  "Given a string, returns true if it represents a blank name in RDF syntax."
+  [str]
+  (starts-with? str "_:"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; General formatting shortcuts
 

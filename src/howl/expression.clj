@@ -2,7 +2,7 @@
   "Parse and process HOWL expression blocks"
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [howl.util :as util]))
+            [howl.util :as util :refer [owl> rdf>]]))
 
 (def manchester-parser
   (insta/parser
@@ -77,10 +77,34 @@
 (defn expression->nquads [id env exp]
   (case (first exp)
     (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (expression->nquads id env (second exp))
-    :LABEL [(second exp)]
-    :QUOTED_LABEL [(get exp 2)]
+    :LABEL [[(util/fresh-blank! id) "a-label" (second exp) (env :graph)]]
+    :QUOTED_LABEL [[(util/fresh-blank! id) "a-quoted-label" (get exp 2) (env :graph)]]
     :CLASS_EXPRESSION (mapcat #(expression->nquads id env %) (nquad-relevant-elems exp))
     :SOME (let [g (env :graph)
-                b (str "_:b" @id)]
-            [[:WORKING_ON ["SOME expression" g b] (nquad-relevant-elems exp) nil]])
+                b (util/fresh-blank! id)
+                subs (nquad-relevant-elems exp)
+                left (expression->nquads id env (first subs))
+                right (expression->nquads id env (second subs))]
+            (concat
+             [[b (rdf> "type") (owl> "Restriction") g]
+              [b (owl> "onProperty") (first (first left)) g]
+              [b (owl> "someValuesFrom") (first (first right)) g]]
+             left
+             right))
+    :CONJUNCTION (let [g (env :graph)
+                       b1 (util/fresh-blank! id)
+                       b2 (util/fresh-blank! id)
+                       b3 (util/fresh-blank! id)
+                       subs (nquad-relevant-elems exp)
+                       left (expression->nquads id env (first subs))
+                       right (expression->nquads id env (second subs))]
+                   (concat
+                    [[b1 (rdf> "type") (owl> "Class") g]
+                     [b1 (rdf> "intersectionOf") b2 g]
+                     [b2 (rdf> "first") (first (first left)) g]
+                     [b2 (rdf> "rest") b3 g]
+                     [b3 (rdf> "first") (first (first right))]
+                     [b3 (rdf> "rest") (rdf> "nil")]]
+                    left
+                    right))
     [[:TODO (first exp) exp]]))
