@@ -2,7 +2,7 @@
   "Parse and process HOWL expression blocks"
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [owl> rdf>]]))
+            [howl.util :as util :refer [<> owl> rdf>]]))
 
 (def manchester-parser
   (insta/parser
@@ -86,9 +86,9 @@
                 left (expression->nquads id env (first subs))
                 right (expression->nquads id env (second subs))]
             (concat
-             [[b (rdf> "type") (owl> "Restriction") g]
-              [b (owl> "onProperty") (first (first left)) g]
-              [b (owl> "someValuesFrom") (first (first right)) g]]
+             [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
+              [b (<> (owl> "onProperty")) (first (first left)) g]
+              [b (<> (owl> "someValuesFrom")) (first (first right)) g]]
              left
              right))
     :CONJUNCTION (let [g (env :graph)
@@ -99,12 +99,12 @@
                        left (expression->nquads id env (first subs))
                        right (expression->nquads id env (second subs))]
                    (concat
-                    [[b1 (rdf> "type") (owl> "Class") g]
-                     [b1 (rdf> "intersectionOf") b2 g]
-                     [b2 (rdf> "first") (first (first left)) g]
-                     [b2 (rdf> "rest") b3 g]
-                     [b3 (rdf> "first") (first (first right))]
-                     [b3 (rdf> "rest") (rdf> "nil")]]
+                    [[b1 (<> (rdf> "type")) (<> (owl> "Class")) g]
+                     [b1 (<> (rdf> "intersectionOf")) b2 g]
+                     [b2 (<> (rdf> "first")) (first (first left)) g]
+                     [b2 (<> (rdf> "rest")) b3 g]
+                     [b3 (<> (rdf> "first")) (first (first right))]
+                     [b3 (<> (rdf> "rest")) (<> (rdf> "nil"))]]
                     left
                     right))
     [[:TODO (first exp) exp]]))
