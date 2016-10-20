@@ -87,52 +87,65 @@
     (vector? subtree) subtree
     :else (println "WTF-EXP?" subtree)))
 
+(declare expression->nquads)
+
+(defn restriction->nquads [id env exp pred]
+  (let [g (env :graph)
+        b (util/fresh-blank! id)
+        subs (nquad-relevant-elems exp)
+        left (expression->nquads id env (first subs))
+        right (expression->nquads id env (second subs))]
+    (println (->obj left) "LEFT" left)
+    (concat
+     [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
+      [b (<> (owl> "onProperty")) (->obj left) g]
+      [b (<> pred) (->obj right) g]]
+     (->exp left)
+     (->exp right))))
+
+(defn combination->nquads [id env exp pred]
+  (let [g (env :graph)
+        b1 (util/fresh-blank! id)
+        b2 (util/fresh-blank! id)
+        b3 (util/fresh-blank! id)
+        subs (nquad-relevant-elems exp)
+        left (expression->nquads id env (first subs))
+        right (expression->nquads id env (second subs))]
+    (concat
+     [[b1 (<> (rdf> "type")) (<> (owl> "Class")) g]
+      [b1 (<> pred) b2 g]
+      [b2 (<> (rdf> "first")) (->obj left) g]
+      [b2 (<> (rdf> "rest")) b3 g]
+      [b3 (<> (rdf> "first")) (->obj right)]
+      [b3 (<> (rdf> "rest")) (<> (rdf> "nil"))]]
+     (->exp left)
+     (->exp right))))
+
+(defn negation->nquads [id env exp]
+  (let [g (env :graph)
+        b (util/fresh-blank! id)
+        target (expression->nquads id env (first (nquad-relevant-elems exp)))]
+    (concat
+     [[b (rdf> "type") (owl> "Class") g]
+      [b (owl> "complementOf") (->obj target) g]]
+     (->exp target))))
+
+(defn subexp->name [env name]
+  (<> (or (get-in env [:labels name])
+          (util/throw-exception
+           "NO SUCH NAME IN ENV."
+           "Name:" name
+           "Env:" (str env)))))
+
 (defn expression->nquads [id env exp]
   (case (first exp)
     (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (expression->nquads id env (second exp))
-    :LABEL (let [name (second exp)]
-             (<>
-              (or
-               (get-in env [:labels name])
-               (util/throw-exception
-                "NO SUCH NAME IN ENV."
-                "Name:" name
-                "Env:" (str env)))))
-    :QUOTED_LABEL (let [name (get exp 2)]
-                    (<>
-                     (or
-                      (get-in env [:labels name])
-                      (util/throw-exception
-                       "NO SUCH NAME IN ENV."
-                       "Name:" name
-                       "Env:" (str env)))))
+    :LABEL (subexp->name env (second exp))
+    :QUOTED_LABEL (subexp->name env (get exp 2))
     :CLASS_EXPRESSION (mapcat #(->exp (expression->nquads id env %)) (nquad-relevant-elems exp))
-    :SOME (let [g (env :graph)
-                b (util/fresh-blank! id)
-                subs (nquad-relevant-elems exp)
-                left (expression->nquads id env (first subs))
-                right (expression->nquads id env (second subs))]
-            (println (->obj left) "LEFT" left)
-            (concat
-             [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
-              [b (<> (owl> "onProperty")) (->obj left) g]
-              [b (<> (owl> "someValuesFrom")) (->obj right) g]]
-             (->exp left)
-             (->exp right)))
-    :CONJUNCTION (let [g (env :graph)
-                       b1 (util/fresh-blank! id)
-                       b2 (util/fresh-blank! id)
-                       b3 (util/fresh-blank! id)
-                       subs (nquad-relevant-elems exp)
-                       left (expression->nquads id env (first subs))
-                       right (expression->nquads id env (second subs))]
-                   (concat
-                    [[b1 (<> (rdf> "type")) (<> (owl> "Class")) g]
-                     [b1 (<> (rdf> "intersectionOf")) b2 g]
-                     [b2 (<> (rdf> "first")) (->obj left) g]
-                     [b2 (<> (rdf> "rest")) b3 g]
-                     [b3 (<> (rdf> "first")) (->obj right)]
-                     [b3 (<> (rdf> "rest")) (<> (rdf> "nil"))]]
-                    (->exp left)
-                    (->exp right)))
-    [[:TODO (first exp) exp]]))
+    :SOME (restriction->nquads id env exp (owl> "someValuesFrom"))
+    :ONLY (restriction->nquads id env exp (owl> "allValuesFrom"))
+    :CONJUNCTION (combination->nquads id env exp (rdf> "intersectionOf"))
+    :DISJUNCTION (combination->nquads id env exp (rdf> "unionOf"))
+    :NEGATION (negation->nquads id env exp)
+    (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp)))
