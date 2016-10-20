@@ -256,20 +256,3 @@ subjects for later ease of indexing."
       (str \newline (core/block->string %))
       (core/block->string %))
    rendered-blocks))
-
-;; collapse
-;; render-graphs (or subjects, depending on triples/quads)
-;;;; render the default graph first
-;;;; render each other graph inside of a graph block
-;;;=> render-graph
-;;;;; for-each subject
-;;;;;;; if there is one predicate
-;;;;;;;;; render the predicate
-;;;;;;; else
-;;;;;;;;; render an annotation
-;;;=> render-predicate
-;;;;; for-each object
-;;;;;;; if url?
-;;;;;;;;; render-link-block
-;;;;;;; else
-;;;;;;;;; render-literal-block

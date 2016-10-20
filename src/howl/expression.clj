@@ -74,23 +74,51 @@
 (defn nquad-relevant-elems [exp]
   (filter #(and (vector? %) (not= :SPACE (first %))) exp))
 
+(defn ->obj [subtree]
+  (cond
+    (or (seq? subtree) (vector? subtree)) (first (first subtree))
+    (string? subtree) subtree
+    :else (util/throw-exception "WTF?" subtree)))
+
+(defn ->exp [subtree]
+  (cond
+    (string? subtree) []
+    (seq? subtree) subtree
+    (vector? subtree) subtree
+    :else (println "WTF-EXP?" subtree)))
+
 (defn expression->nquads [id env exp]
   (case (first exp)
     (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (expression->nquads id env (second exp))
-    :LABEL [[(util/fresh-blank! id) "a-label" (second exp) (env :graph)]]
-    :QUOTED_LABEL [[(util/fresh-blank! id) "a-quoted-label" (get exp 2) (env :graph)]]
-    :CLASS_EXPRESSION (mapcat #(expression->nquads id env %) (nquad-relevant-elems exp))
+    :LABEL (let [name (second exp)]
+             (<>
+              (or
+               (get-in env [:labels name])
+               (util/throw-exception
+                "NO SUCH NAME IN ENV."
+                "Name:" name
+                "Env:" (str env)))))
+    :QUOTED_LABEL (let [name (get exp 2)]
+                    (<>
+                     (or
+                      (get-in env [:labels name])
+                      (util/throw-exception
+                       "NO SUCH NAME IN ENV."
+                       "Name:" name
+                       "Env:" (str env)))))
+    :CLASS_EXPRESSION (mapcat #(->exp (expression->nquads id env %)) (nquad-relevant-elems exp))
     :SOME (let [g (env :graph)
                 b (util/fresh-blank! id)
                 subs (nquad-relevant-elems exp)
                 left (expression->nquads id env (first subs))
                 right (expression->nquads id env (second subs))]
+            (println (->obj left) "LEFT" left)
             (concat
              [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
-              [b (<> (owl> "onProperty")) (first (first left)) g]
-              [b (<> (owl> "someValuesFrom")) (first (first right)) g]]
-             left
-             right))
+              [b (<> (owl> "onProperty")) (->obj left) g]
+              [b (<> (owl> "someValuesFrom")) (->obj right) g]]
+             (->exp left)
+             (->exp right)))
     :CONJUNCTION (let [g (env :graph)
                        b1 (util/fresh-blank! id)
                        b2 (util/fresh-blank! id)
@@ -101,10 +129,10 @@
                    (concat
                     [[b1 (<> (rdf> "type")) (<> (owl> "Class")) g]
                      [b1 (<> (rdf> "intersectionOf")) b2 g]
-                     [b2 (<> (rdf> "first")) (first (first left)) g]
+                     [b2 (<> (rdf> "first")) (->obj left) g]
                      [b2 (<> (rdf> "rest")) b3 g]
-                     [b3 (<> (rdf> "first")) (first (first right))]
+                     [b3 (<> (rdf> "first")) (->obj right)]
                      [b3 (<> (rdf> "rest")) (<> (rdf> "nil"))]]
-                    left
-                    right))
+                    (->exp left)
+                    (->exp right)))
     [[:TODO (first exp) exp]]))
