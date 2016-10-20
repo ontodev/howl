@@ -3,6 +3,29 @@
   (:require [clojure.test :refer :all]
             [howl.nquads :refer :all]))
 
+(deftest test-partition-url
+  (testing "Splits given URLS, maintaining delimiters"
+    (is (= ["http:" "/" "/" "example.com" "/" "foo"]
+           (partition-url "http://example.com/foo")))
+    (is (= ["http:" "/" "/" "example.com" "/" "foo" "#" "bar"]
+           (partition-url "http://example.com/foo#bar")))))
+
+(deftest test-url->prefixes
+  (testing "Returns all relevant prefixes of the given URL, not including the input"
+    (is (nil? (url->prefixes "http://example.com")))
+    (is (= ["http://example.com/"]
+           (url->prefixes "http://example.com/foo")))
+    (is (= ["http://example.com/" "http://example.com/foo/"]
+           (url->prefixes "http://example.com/foo/bar")))
+    (is (= ["http://example.com/" "http://example.com/foo/" "http://example.com/foo/bar#"]
+           (url->prefixes "http://example.com/foo/bar#baz")))))
+
+(deftest test-url->prefix-name
+  (testing "Given a URL with no #-component, return the last path element"
+    (is (= "foo" (url->prefix-name "http://example.com/foo"))))
+  (testing "Given a URL with a #-component, return it"
+    (is (= "bar" (url->prefix-name "http://example.com/foo#bar")))))
+
 ;; (deftest test-convert
 ;;   (testing "literal"
 ;;     (is (= (convert-quads

@@ -10,14 +10,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Human-readable compression
 
-(defn statements->urls [statements]
+(defn statements->urls
+  [statements]
   (filter
    #(and (string? %)
          (not (util/blank-name? %))
          (not= % default-graph))
    (apply concat statements)))
 
-(defn partition-url [url]
+(defn partition-url
+  "Split the given URL at /s and #s.
+   Because of the way we're using this function, we want
+   to keep the delimiters as elements in the result (which is
+   why we can't just use string/split)."
+  [url]
   (map
    #(apply str %)
    (partition-by
@@ -31,7 +37,9 @@
         @v))
     url)))
 
-(defn url->prefixes [url]
+(defn url->prefixes
+  "Takes a url and returns all of its compound prefixes."
+  [url]
   (let [s (partition-url url)
         len (count s)]
     ((fn rec [at]
@@ -41,7 +49,10 @@
                 (rec (inc (inc at)))))))
      5)))
 
-(defn url->prefix-name [url]
+(defn url->prefix-name
+  "Takes a URL and returns either the last path element or the
+   #-component if present."
+  [url]
   (let [elem (last (string/split url #"[/#]"))
         comps (string/split elem #"\.")]
     (case (count comps)

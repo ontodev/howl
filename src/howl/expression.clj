@@ -55,10 +55,11 @@
   [[exp-type parse-tree]]
   (manchester-format parse-tree))
 
-(defn string-to-parse [string]
+(defn string-to-parse
   "Given a string representing an unparsed expression, returns the parsed
    expression tree. Currently always returns Manchester expression trees,
    but will eventually try multiple syntaxes, only defaulting to Manchester."
+  [string]
   [:MANCHESTER_EXPRESSION (manchester-parser string)])
 
 (defn parse-expression-block
@@ -71,16 +72,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; to nquads
 
-(defn nquad-relevant-elems [exp]
+(defn nquad-relevant-elems
+  "Takes an expression tree and returns a sequence of sub-expressions relevant to
+   nqud-generation. In particular, this means skipping :SPACE sub-trees and some
+   inline literals."
+  [exp]
   (filter #(and (vector? %) (not= :SPACE (first %))) exp))
 
-(defn ->obj [subtree]
+(defn ->obj
+  "Takes a subtree, and returns an object expression suitable for referencing
+   it in a separate nquad statement. This may either be identity (in the case of
+   an IRI literal), or a previously created blank block (in the case of a compound
+   term such as a :SOME sub-clause)"
+  [subtree]
   (cond
     (or (seq? subtree) (vector? subtree)) (first (first subtree))
     (string? subtree) subtree
     :else (util/throw-exception "WTF?" subtree)))
 
-(defn ->exp [subtree]
+(defn ->exp
+  "Takes a subtree, and returns an expression suitable for stitching into an nquads result.
+   This may be identity (in the case of a sequence of nquads), or it might be the empty list
+   (in the case of an IRI literal)."
+  [subtree]
   (cond
     (string? subtree) []
     (seq? subtree) subtree
@@ -89,7 +103,11 @@
 
 (declare expression->nquads)
 
-(defn restriction->nquads [id env exp pred]
+(defn restriction->nquads
+  "Takes an id, an environment a restriction expression and a predicate.
+   Returns an nquad sequence that represents the input. That nquad sequence
+   uses the given predicate to reference the restriction."
+  [id env exp pred]
   (let [g (env :graph)
         b (util/fresh-blank! id)
         subs (nquad-relevant-elems exp)
@@ -103,7 +121,11 @@
      (->exp left)
      (->exp right))))
 
-(defn combination->nquads [id env exp pred]
+(defn combination->nquads
+  "Takes an id, an environment a combination expression and a predicate.
+   Returns an nquad sequence that represents the input. That nquad sequence
+   uses the given predicate to reference the combination."
+  [id env exp pred]
   (let [g (env :graph)
         b1 (util/fresh-blank! id)
         b2 (util/fresh-blank! id)
@@ -121,7 +143,12 @@
      (->exp left)
      (->exp right))))
 
-(defn negation->nquads [id env exp]
+(defn negation->nquads
+  "Takes an id, an environment and a negation expression. Returns an nquad
+   sequence that represents the input. Unlike combination and restriction
+   expressions, there is only one possible negation expression predicate, so
+   there is no need for the additional argument."
+  [id env exp]
   (let [g (env :graph)
         b (util/fresh-blank! id)
         target (expression->nquads id env (first (nquad-relevant-elems exp)))]
@@ -130,14 +157,22 @@
       [b (owl> "complementOf") (->obj target) g]]
      (->exp target))))
 
-(defn subexp->name [env name]
+(defn subexp->name
+  "Takes an environment and a name.
+   Either returns the value associated with that name in that environment, or
+   throws an error."
+  [env name]
   (<> (or (get-in env [:labels name])
           (util/throw-exception
            "NO SUCH NAME IN ENV."
            "Name:" name
            "Env:" (str env)))))
 
-(defn expression->nquads [id env exp]
+(defn expression->nquads
+  "Takes an id atom, an environment and an expression parse tree.
+   Returns a sequence of nquads representing that expression in that environment
+   with blank nodes generated from that atom."
+  [id env exp]
   (case (first exp)
     (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (expression->nquads id env (second exp))
     :LABEL (subexp->name env (second exp))
