@@ -5,6 +5,8 @@ PREFIX owl:> <http://www.w3.org/2002/07/owl#>
 PREFIX obo:> <http://purl.obolibrary.org/obo/>
 PREFIX ex:> <http://example.com/>
 
+LABEL ex:foo: Foo
+LABEL ex:has_part: has part
 LABEL rdf:type: type
 LABEL rdfs:label: label
 LABEL rdfs:comment: comment

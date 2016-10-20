@@ -17,8 +17,10 @@
 ;;       it's otherwise difficult to factor in the error reporting hooks we need)
 ;;
 ;; 2. (map condense-chars)
-;;     - some parse blocks emit characters. As in, things like [:TAG "f" "o" "o" "b" "a" "r"].
+;;     - some parse blocks emit one-char strings. As in, things like [:TAG "f" "o" "o" "b" "a" "r"].
 ;;       This step condenses such blocks down to [:TAG "foobar"]
+;;     - some parse blocks emit partial strings. For instance [:LABEL "FOO" [:SPACES "   "] "BAR"] is a
+;;       possible output for the block parser. This step condenses those down to [:LABEL "FOO   BAR"]
 ;;
 ;; 3. (map parse-expressions)
 ;;     - some blocks contain sub-expressions expressed in a different syntax.
@@ -154,6 +156,7 @@
                (second parse-tree)
                (string/join (drop 2 (drop-last parse-tree)))
                (last parse-tree)]
+      :LABEL [:LABEL (string/join (map #(if (string? %) % (second %)) (rest parse-tree)))]
       (:TRAILING_WHITESPACE) parse-tree
       (vec (map condense-tree parse-tree)))))
 
