@@ -18,8 +18,6 @@ ex:ontology
 label: Example Ontology
 type:> owl:Ontology
 
-LABEL ex:foo: Foo
-
 ex:foo
 label: Foo
 type:> owl:Class
@@ -32,33 +30,26 @@ comment: Values can span multiple lines,
 
   as long as each non-blank line is indented two spaces.
 
-LABEL obo:BFO_0000051: has part
 obo:BFO_0000051
 label: has part
 
 obo:OBI_0000299
 label: has_specified_output
-LABEL obo:OBI_0000299: has_specified_output
 
 obo:IAO_0000030
 label: information content entity
-LABEL obo:IAO_0000030: information content entity
 
 obo:IAO_0000136
 label: is about
-LABEL obo:IAO_0000136: is about
 
 obo:BFO_0000040
 label: material entity
-LABEL obo:BFO_0000040: material entity
 
 obo:RO_0000087
 label:  has role
-LABEL obo:RO_0000087: has role
 
 obo:OBI_0000067
 label: evaluant role
-LABEL obo:OBI_0000067: evaluant role
 
 ex:bar
 label: Bar

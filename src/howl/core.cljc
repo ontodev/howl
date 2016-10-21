@@ -5,7 +5,7 @@
             [instaparse.core :as insta]
             [cemerick.url :as url]
 
-            [howl.util :as util :refer [<> owl> rdf>]]
+            [howl.util :as util :refer [<> owl> rdf> rdf-schema>]]
             [howl.expression :as exp]))
 
 ;; Parsing works like this:
@@ -249,6 +249,14 @@
                    {:graph nil :subject nil})
     :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
     :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
+    ;; If a user declares an rdfs#label as part of their data corpus, automatically promote
+    ;; it to a Howl LABEL equivalent.
+    :LITERAL_BLOCK (if (and (env :subject)
+                            (= (rdf-schema> "label")
+                               (name-from-node
+                                env (contents-of-vector :PREDICATE parse-tree))))
+                     {:labels {(contents-of-vector :LITERAL parse-tree) (env :subject)}}
+                     {})
     {}))
 
 (defn merge-environments
