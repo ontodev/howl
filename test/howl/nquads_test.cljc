@@ -3,6 +3,23 @@
   (:require [clojure.test :refer :all]
             [howl.nquads :refer :all]))
 
+(deftest test-statements->urls
+  (testing "Takes a list of statements and returns a lazy list containing only the URLs in those statements"
+    (is (= ["http://example.com"]
+           (statements->urls
+            [["_:foo" "_:bar" "http://example.com"]
+             ["_:baz"]]))))
+  (testing "Ignores the default-graph node"
+    (is (= ["http://example.com"]
+           (statements->urls
+            [["_:foo" "_:bar" "http://example.com"]
+             ["_:baz" default-graph]]))))
+  (testing "Returns multiple instances of the same URL if found"
+    (is (= ["http://example.com" "http://example.com"]
+           (statements->urls
+            [["_:foo" "_:bar" "http://example.com"]
+             ["_:baz" default-graph "http://example.com"]])))))
+
 (deftest test-partition-url
   (testing "Splits given URLS, maintaining delimiters"
     (is (= ["http:" "/" "/" "example.com" "/" "foo"]
@@ -25,6 +42,40 @@
     (is (= "foo" (url->prefix-name "http://example.com/foo"))))
   (testing "Given a URL with a #-component, return it"
     (is (= "bar" (url->prefix-name "http://example.com/foo#bar")))))
+
+(deftest test-unique-assoc
+  (testing "Given a map and key/value not already in it, default to assoc"
+    (is (= {"a" 1} (unique-assoc {} "a" 1)))
+    (is (= {"a" 1 "b" 2} (unique-assoc {"a" 1} "b" 2))))
+  (testing "Given a map and key/value already in it, append a numeric suffix to the key"
+    (is (= {"a" 1 "a-2" 2} (unique-assoc {"a" 1} "a" 2))))
+  (testing "Handle chain collisions by incrementing the numeric suffix until a non-colliding key is found"
+    (is (= {"a" 1 "a-2" 2 "a-3" 3} (unique-assoc {"a" 1 "a-2" 2} "a" 3)))
+    (is (= {"a" 1 "a-2" 2 "a-3" 3 "a-4" 4 "a-5" 5}
+           (unique-assoc {"a" 1 "a-2" 2 "a-3" 3 "a-4" 4} "a" 5)))))
+
+(deftest test-statements->prefixes
+  (testing "Does not include urls only domains"
+    (is (= {} (statements->prefixes [["_:foo" "_:bar" "http://example.com/"]]))))
+  (testing "Includes URLs with at least one path element"
+    (is (= {"example" "http://example.com/"}
+           (statements->prefixes [["_:foo" "_:bar" "http://example.com/foo"]]))))
+  (testing "For URLs with multiple path elements, use the last included one as a label"
+    (is (= {"foo" "http://example.com/foo/" "example" "http://example.com/"}
+           (statements->prefixes [["_:foo" "_:bar" "http://example.com/foo/bar"]])))
+    (is (= {"foo" "http://example.com/foo#" "example" "http://example.com/"}
+           (statements->prefixes [["_:foo" "_:bar" "http://example.com/foo#bar"]])))))
+
+(deftest test-statements->labels
+  (testing "Does not suggest labels that occur fewer than three times"
+    (is (= {"example" "http://example.com/"}
+           (nquads/statements->labels
+            [["_:foo" "_:bar" "http://example.com/foo/bar"]
+             ["_:foo" "_:bar" "http://example.com/foo/bar"]
+             ["_:foo" "_:bar" "http://example.com/foo/bar/baz"]
+             ["_:foo" "_:bar" "http://example.com/"]
+             ["_:foo" "_:bar" "http://example.com/"]
+             ["_:foo" "_:bar" "http://example.com/"]])))))
 
 ;; (deftest test-convert
 ;;   (testing "literal"
