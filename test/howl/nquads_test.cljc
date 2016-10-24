@@ -69,7 +69,7 @@
 (deftest test-statements->labels
   (testing "Does not suggest labels that occur fewer than three times"
     (is (= {"example" "http://example.com/"}
-           (nquads/statements->labels
+           (statements->labels
             [["_:foo" "_:bar" "http://example.com/foo/bar"]
              ["_:foo" "_:bar" "http://example.com/foo/bar"]
              ["_:foo" "_:bar" "http://example.com/foo/bar/baz"]
