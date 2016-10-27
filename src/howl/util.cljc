@@ -54,8 +54,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; General formatting shortcuts
-
 (defn <> [s] (str "<" s ">"))
-(defn owl> [name] (str "http://www.w3.org/2002/07/owl#" name))
+
+(def owl "http://www.w3.org/2002/07/owl#")
+(defn owl? [iri] (starts-with? owl iri))
+(defn owl> [name] (str owl name))
+
 (defn rdf> [name] (str "http://www.w3.org/1999/02/22-rdf-syntax-ns#" name))
 (defn rdf-schema> [name] (str "http://www.w3.org/2000/01/rdf-schema#" name))

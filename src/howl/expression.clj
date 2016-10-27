@@ -113,7 +113,6 @@
         subs (nquad-relevant-elems exp)
         left (expression->nquads id env (first subs))
         right (expression->nquads id env (second subs))]
-    (println (->obj left) "LEFT" left)
     (concat
      [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
       [b (<> (owl> "onProperty")) (->obj left) g]
