@@ -306,7 +306,7 @@
     parse-tree
     (case (first parse-tree)
       (:IRIREF :PREFIXED_NAME :LABEL) [:ABSOLUTE_IRI (<> (name-from-node env parse-tree))]
-      (map #(expand-tree env %)))))
+      (map #(expand-tree env %) parse-tree))))
 
 (defn expand-block
   [block]

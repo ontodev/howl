@@ -33,10 +33,12 @@
      (> (.indexOf haystack needle) -1)))
 
 (defn starts-with? [target prefix]
-  (every? identity (map = target prefix)))
+  (and (>= (count target) (count prefix))
+       (every? identity (map = target prefix))))
 
 (defn ends-with? [target prefix]
-  (every? identity (map = (reverse target) (reverse prefix))))
+  (and (>= (count target) (count prefix))
+       (every? identity (map = (reverse target) (reverse prefix)))))
 
 (defn absolute-uri-string? [s]
   "Cribbed from http://stackoverflow.com/a/19709846/190887. Takes a string

@@ -1,7 +1,9 @@
 (ns howl.nquads-test
   "Test N-Quads rendering and supporting functions."
   (:require [clojure.test :refer :all]
-            [howl.nquads :refer :all]))
+
+            [howl.nquads :refer :all]
+            [howl.util :refer [rdf> owl>]]))
 
 (deftest test-statements->urls
   (testing "Takes a list of statements and returns a lazy list containing only the URLs in those statements"
@@ -76,6 +78,110 @@
              ["_:foo" "_:bar" "http://example.com/"]
              ["_:foo" "_:bar" "http://example.com/"]
              ["_:foo" "_:bar" "http://example.com/"]])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Pull out annotations
+(deftest test-annotation?
+  (testing "annotation? returns true for annotation subject/predicate maps"
+    (is (annotation?
+         "_:b1" {(rdf> "type") {(owl> "Axiom") true}
+                 (owl> "annotatedSource") {"foo" true}
+                 (owl> "annotatedProperty") {"bar" true}
+                 (owl> "annotatedTarget") {"baz" true}})))
+  (testing "annotation? returns false for things that don't have blank node names"
+    (is (not
+         (annotation?
+          "foobar" {(rdf> "type") {(owl> "Axiom") true}
+                    (owl> "annotatedSource") {"foo" true}
+                    (owl> "annotatedProperty") {"bar" true}
+                    (owl> "annotatedTarget") {"baz" true}}))))
+  (testing "annotation? returns false for things that aren't owl Axioms, or
+that are missing any of the annotated* statements"
+    (is (not
+         (annotation?
+          "_:b1" {(rdf> "type") {"foobar" true}
+                  (owl> "annotatedSource") {"foo" true}
+                  (owl> "annotatedProperty") {"bar" true}
+                  (owl> "annotatedTarget") {"baz" true}})))
+    (is (not
+         (annotation?
+          "_:b1" {(rdf> "type") {"foobar" true}
+                  (owl> "annotatedProperty") {"bar" true}
+                  (owl> "annotatedTarget") {"baz" true}})))
+    (is (not
+         (annotation?
+          "_:b1" {(rdf> "type") {"foobar" true}
+                  (owl> "annotatedSource") {"foo" true}
+                  (owl> "annotatedTarget") {"baz" true}})))
+    (is (not
+         (annotation?
+          "_:b1" {(rdf> "type") {"foobar" true}
+                  (owl> "annotatedSource") {"foo" true}
+                  (owl> "annotatedProperty") {"bar" true}})))))
+
+(deftest test-separate-annotations
+  (testing "takes a subject map and separates out annotations.
+Returns a pair of maps
+  - the input map with all annotations removed
+  - a map containing only the annotations from the input map"
+    (is (= [{"foo" {"bar" {"baz" true}}}
+            {"_:b1" {(rdf> "type") {(owl> "Axiom") true}
+                     (owl> "annotatedSource") {"foo" true}
+                     (owl> "annotatedProperty") {"bar" true}
+                     (owl> "annotatedTarget") {"baz" true}}}]
+           (separate-annotations
+            {"_:b1"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"foo" true}
+              (owl> "annotatedProperty") {"bar" true}
+              (owl> "annotatedTarget") {"baz" true}}
+             "foo" {"bar" {"baz" true}}})))))
+
+(deftest test-annotations-for
+  (testing "takes a subject/predicate/object tuple and returns a list of subject/predicate-maps
+represeting annotations targeting it from the given annotations map"
+    (is (= [["_:b1"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"foo" true}
+              (owl> "annotatedProperty") {"bar" true}
+              (owl> "annotatedTarget") {"baz" true}}]
+            ["_:b2"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"foo" true}
+              (owl> "annotatedProperty") {"bar" true}
+              (owl> "annotatedTarget") {"baz" true}}]]
+           (annotations-for
+            ["foo" "bar" "baz"]
+            {"_:b1"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"foo" true}
+              (owl> "annotatedProperty") {"bar" true}
+              (owl> "annotatedTarget") {"baz" true}}
+             "_:b2"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"foo" true}
+              (owl> "annotatedProperty") {"bar" true}
+              (owl> "annotatedTarget") {"baz" true}}
+             "_:b3"
+             {(rdf> "type") {(owl> "Axiom") true}
+              (owl> "annotatedSource") {"flarp" true}
+              (owl> "annotatedProperty") {"blarg" true}
+              (owl> "annotatedTarget") {"bleep" true}}})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Output howl AST
+(deftest test-invert-env
+  (testing "Inverting an environment means inverting its :labels and :prefixes values"
+    (is (= {:labels {"bar" "foo"} :prefixes {"mumble" "baz"}}
+           (invert-env {:labels {"foo" "bar"} :prefixes {"baz" "mumble"}})))))
+
+(deftest test-longest-prefix
+  (testing "if the target string is present among candidates, return it"
+    (is (= "batman" (longest-prefix "batman" ["b" "bat" "batm" "batma" "batman"]))))
+  (testing "return the longest prefix otherwise"
+    (is (= "batma" (longest-prefix "batman" ["b" "bat" "batm" "batma"]))))
+  (testing "do not return words that are not prefixes"
+    (is (= "batma" (longest-prefix "batman" ["b" "bat" "foo" "batm" "batma" "bar" "foobarbazmumble"])))))
 
 ;; (deftest test-convert
 ;;   (testing "literal"

@@ -121,8 +121,8 @@ Used only in the two statements->* functions following."
 represent a Howl annotation block. Returns false otherwise."
   [subject predicate-map]
   (and (util/blank-name? subject)
-       (every? #(contains? predicate-map %) annotation-predicates)
-       (contains? (get predicate-map (rdf> "type")) (owl> "Axiom"))))
+       (contains? (get predicate-map (rdf> "type")) (owl> "Axiom"))
+       (every? #(contains? predicate-map %) annotation-predicates)))
 
 (defn separate-annotations
   "Given a subject-map, returns

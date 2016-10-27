@@ -341,11 +341,28 @@
    (= (str "<" v ">") (<> v))))
 
 (deftest test-expand-tree
-  ;; TODO - 1. does nothing for keywords, strings or numbers
-  ;;        2. expands IRIREFs, PREFIXED_NAMEs, LABELs and PREDICATEs into ABSOLUTE_URI
-  ;;        3. errors when no such name in env
-  ;;        4. recurs otherwise
-  )
+  (testing "returns strings, keywords and numbers as-is"
+    (is (= :test (expand-tree {} :test)))
+    (is (= "test" (expand-tree {} "test")))
+    (is (= 123 (expand-tree {} 123))))
+  (testing "returns the expanded, absolute pointied names for IRIREFs, PREFIXED_NAMEs and LABELs"
+    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+           (expand-tree
+            {:labels {"foo" "http://example.com/foo"}}
+            [:LABEL "foo"])))
+    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+           (expand-tree
+            {:prefixes {"ex" "http://example.com/"}}
+            [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"])))
+    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+           (expand-tree {:base "http://example.com/"} [:IRIREF "<" "foo" ">"])))
+    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+           (expand-tree {} [:IRIREF "<" "http://example.com/foo" ">"]))))
+  (testing "otherwise, recurs into the given syntax tree"
+    (is (= [:PREDICATE [:ABSOLUTE_IRI "<http://example.com/foo>"]]
+           (expand-tree
+            {:prefixes {"ex" "http://example.com/"}}
+            [:PREDICATE [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; nquad generation
