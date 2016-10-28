@@ -431,7 +431,6 @@
 
 (defn handle-expression-block! [id block]
   (swap! id inc)
-  ;; TODO - handle leading PREDICATE/TYPE/COLON_ARROW
   (exp/expression->nquads id (block :env) (last (block :exp)) ))
 
 (defn handle-simple-block!

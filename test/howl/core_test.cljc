@@ -372,10 +372,90 @@
   bar
   baz")))))
 
-(deftest test-simple-block->nquad)
-(deftest test-annotation-block->nquads)
-(deftest test-nquad-relevant-blocks)
-(deftest test-find-target)
+(deftest test-simple-block->nquad
+  (testing "works as expected on LITERAL_BLOCKs"
+    (is (= ["<http://example.com/subject-3>" "<http://example.com/label>" "\"Relative IRI\"" nil]
+           (simple-block->nquad
+            {:exp [:LITERAL_BLOCK
+                   [:PREDICATE [:IRIREF "<" "label" ">"]]
+                   [:COLON "" ":" " "] [:LITERAL "Relative IRI"]],
+             :env {:labels {"label" "http://www.w3.org/2000/01/rdf-schema#label"}
+                   :subject "http://example.com/subject-3"
+                   :base "http://example.com/"}}))))
+  (testing "works as expected on LINK_BLOCKs"
+    (is (= ["<http://example.com/bar>"
+            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+            "<http://www.w3.org/2002/07/owl#Class>" nil]
+           (simple-block->nquad
+            {:exp [:LINK_BLOCK
+                   [:PREDICATE [:LABEL "type"]]
+                   [:COLON_ARROW "" ":>" " "]
+                   [:OBJECT [:PREFIXED_NAME [:PREFIX "owl"] ":" "Class"]]],
+             :env {:prefixes {"owl" "http://www.w3.org/2002/07/owl#"}
+                   :labels {"type" "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}
+                   :subject "http://example.com/bar"}})))))
+
+(deftest test-annotation-block->nquads
+  (testing "basic annotation generation"
+    (is (= [["_:b0" "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" "<http://www.w3.org/2002/07/owl#Axiom>" nil]
+            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedSource>" "foo" nil]
+            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedProperty>" "bar" nil]
+            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedTarget>" "baz" nil]
+            ["_:b0" "<http://www.w3.org/2000/01/rdf-schema#seeAlso>" "<http://example.com/bat>" nil]]
+           (annotation-block->nquads
+            0 ["foo" "bar" "baz" nil]
+            {:exp [:ANNOTATION
+                   [:ARROWS ">" " "]
+                   [:LINK_BLOCK
+                    [:PREDICATE
+                     [:PREFIXED_NAME
+                      [:PREFIX "rdfs"] ":" "seeAlso"]]
+                    [:COLON_ARROW "" ":>" " "]
+                    [:OBJECT
+                     [:PREFIXED_NAME
+                      [:PREFIX "ex"] ":" "bat"]]]],
+             :env {:prefixes {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"
+                              "ex" "http://example.com/"}}})))))
+
+(deftest test-nquad-relevant-blocks
+  (testing "drops any block types that don't affect the NQuads representation of a document"
+    (is (= (map
+            (fn [exp] {:exp exp})
+            [[:LITERAL_BLOCK] [:LINK_BLOCK] [:ANNOTATION]])
+           (nquad-relevant-blocks
+            (map
+             (fn [exp] {:exp exp})
+             [[:PREFIX_BLOCK]
+              [:LABEL_BLOCK]
+              [:BASE_BLOCK]
+              [:LITERAL_BLOCK]
+              [:DEFAULT_BLOCK]
+              [:SUBJECT_BLOCK]
+              [:LINK_BLOCK]
+              [:GRAPH_BLOCK]
+              [:ANNOTATION]
+              [:COMMENT_BLOCK]]))))))
+
+(deftest test-find-target
+
+  ;; NOTE - At the moment, blocks like
+  ;;
+  ;;   foo
+  ;;   > bar
+  ;;   >> baz
+  ;;   > mumble
+  ;;   >>> blarf
+  ;;
+  ;; are interpreted to mean that blarf is an annotation on mumble.
+  ;; Is that the thing of least surprise, or should find-target actually
+  ;; be looking for the first previous annotation with either 0 or (pred self)
+  ;; arrow level?
+
+  (testing "find the first entry in the annotation stack with a lower arrow count"
+    (is (= :foo (find-target 1 [[1 :mumble] [2 :baz] [1 :bar] [0 :foo]])))
+    (is (= :mumble (find-target 2 [[1 :mumble] [2 :baz] [1 :bar] [0 :foo]])))
+    (is (= :baz (find-target 3 [[2 :baz] [1 :bar] [0 :foo]])))))
+
 (deftest test-handle-annotation-block!)
 (deftest test-handle-simple-block!)
 (deftest test-blocks->nquads)
