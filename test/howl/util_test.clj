@@ -9,6 +9,31 @@
 
             [howl.util :as util]))
 
+(defspec starts-with?-detects-prefixes
+  (prop/for-all
+   [s gen/string]
+   (util/starts-with? (str s "foo") s)))
+
+(deftest test-starts-with?
+  (testing "everything starts with the empty string"
+    (is (util/starts-with? "foobar" "")))
+  (testing "does not hit a false positive when arguments are reversed"
+    (is (util/starts-with? "foobar" "foo"))
+    (is (not (util/starts-with? "foo" "foobar")))))
+
+(defspec ends-with?-detects-suffixes
+  (prop/for-all
+   [s gen/string
+    suffix gen/string]
+   (util/ends-with? (str s suffix) suffix)))
+
+(deftest test-ends-with?
+  (testing "everything ends with the empty string"
+    (is (util/ends-with? "foobar" "")))
+  (testing "does not hit a false positive when arguments are reversed"
+    (is (util/ends-with? "foobar" "bar"))
+    (is (not (util/ends-with? "bar" "foobar")))))
+
 (deftest test-absolute-uri-string?
   (testing "returns true for http/https/ftp-prefixed urls"
     (is (util/absolute-uri-string? "http://example.com"))
@@ -27,4 +52,5 @@
   (testing "returns false for relative paths"
     (is (not (util/absolute-uri-string? "/foo/bar/baz")))
     (is (not (util/absolute-uri-string? "/foo/bar")))
-    (is (not (util/absolute-uri-string? "baz")))))
+    (is (not (util/absolute-uri-string? "baz")))
+    (is (not (util/absolute-uri-string? "../blarg")))))
