@@ -8,13 +8,9 @@
   #?(:clj
      (:refer-clojure :exclude [format])))
 
-#?(:clj
-   (def format #'clojure.core/format)
-   :cljs
-   (defn format
-     "Formats a string using goog.string.format."
-     [fmt & args]
-     (apply goog.string/format fmt args)))
+(def format
+  #?(:clj #'clojure.core/format
+     :cljs #'goog.string/format))
 
 (defn throw-exception
   "Given a sequence of arguments,
