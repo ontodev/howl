@@ -328,10 +328,138 @@
              {:defaults {"foo" {"TYPE" "baz"} "bar" {"LANGUAGE" "fr"}}})
             :defaults)))))
 
+(def +test-blocks+
+  "Generated with
+
+   (take 32
+     (->> (line-seq (clojure.java.io/reader \"test/test1.howl\"))
+          (#(core/lines->blocks %))
+          (map core/condense-chars)
+          (map core/parse-expressions)))
+
+  That's not inlined, because it doesn't work in JS (which is a goal as of this writing)"
+  [{:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "rdf"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]]]}
+   {:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "rdfs"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://www.w3.org/2000/01/rdf-schema#" ">"]]]}
+   {:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "xsd"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://www.w4.org/2001/XMLSchema#" ">"]]]}
+   {:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "owl"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://www.w3.org/2002/07/owl#" ">"]]]}
+   {:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "obo"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://purl.obolibrary.org/obo/" ">"]]]}
+   {:exp [:PREFIX_BLOCK
+          "PREFIX" [:SPACES " "]
+          [:PREFIX "ex"] [:COLON_ARROW "" ":>" " "]
+          [:PREFIXED [:IRIREF "<" "http://example.com/" ">"]]]}
+   {:exp [:LABEL_BLOCK
+          "LABEL" [:SPACES " "]
+          [:SUBJECT [:PREFIXED_NAME [:PREFIX "rdf"] ":" "type"]] [:COLON "" ":" " "]
+          [:LABEL "type"]]}
+   {:exp [:LABEL_BLOCK
+          "LABEL" [:SPACES " "]
+          [:SUBJECT [:PREFIXED_NAME [:PREFIX "rdfs"] ":" "label"]] [:COLON "" ":" " "]
+          [:LABEL "label"]]}
+   {:exp [:LABEL_BLOCK
+          "LABEL" [:SPACES " "]
+          [:SUBJECT [:PREFIXED_NAME [:PREFIX "rdfs"] ":" "comment"]] [:COLON "" ":" " "]
+          [:LABEL "comment"]]}
+   {:exp [:LABEL_BLOCK
+          "LABEL" [:SPACES " "]
+          [:SUBJECT [:PREFIXED_NAME [:PREFIX "rdfs"] ":" "subClassOf"]] [:COLON "" ":" " "]
+          [:LABEL "subclass of"]]}
+   {:exp [:LABEL_BLOCK
+          "LABEL" [:SPACES " "]
+          [:SUBJECT [:IRIREF "<" "http://www.w3.org/TR/owl2-manchester-syntax/" ">"]] [:COLON "" ":" " "]
+          [:LABEL "OMN"]]}
+   {:exp [:DEFAULT_BLOCK
+          "DEFAULT" [:SPACES " "]
+          [:PREDICATE [:LABEL "label"]] [:SPACES " "]
+          "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"]]}
+   {:exp [:DEFAULT_BLOCK
+          "DEFAULT" [:SPACES " "]
+          [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+          "TYPE" [:SPACES " "] [:DATATYPE [:PREFIXED_NAME [:PREFIX "xsd"] ":" "string"]]]}
+   {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "ontology"]]]}
+   {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "Example Ontology"]]}
+   {:exp [:LINK_BLOCK
+          [:PREDICATE [:LABEL "type"]] [:COLON_ARROW "" ":>" " "]
+          [:OBJECT [:PREFIXED_NAME [:PREFIX "owl"] ":" "Ontology"]]]}
+   {:exp [:SUBJECT_BLOCK
+          [:SUBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]]]}
+   {:exp [:LITERAL_BLOCK
+          [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "Foo"]]}
+   {:exp [:LINK_BLOCK
+          [:PREDICATE [:LABEL "type"]] [:COLON_ARROW "" ":>" " "]
+          [:OBJECT [:PREFIXED_NAME [:PREFIX "owl"] ":" "Class"]]]}
+   {:exp [:LITERAL_BLOCK
+          [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+          "LANGUAGE" [:SPACES " "] [:LANGUAGE "en"] [:COLON "" ":" " "]
+          [:LITERAL "A comment on 'Foo'."]]}
+   {:exp [:ANNOTATION
+          [:ARROWS ">" " "]
+          [:LITERAL_BLOCK
+           [:PREDICATE [:LABEL "comment"]] [:SPACES " "]
+           "TYPE" [:SPACES " "] [:DATATYPE [:PREFIXED_NAME [:PREFIX "xsd"] ":" "string"]] [:COLON "" ":" " "]
+           [:LITERAL "An annotation on a comment."]]]}
+   {:exp [:ANNOTATION
+          [:ARROWS ">>" " "]
+          [:LITERAL_BLOCK
+           [:PREDICATE [:LABEL "comment"]]
+           [:SPACES " "] "TYPE" [:SPACES " "]
+           [:DATATYPE [:PREFIXED_NAME [:PREFIX "xsd"] ":" "string"]][:COLON "" ":" " "]
+           [:LITERAL "An annotation on an annotation."]]]}
+   {:exp [:ANNOTATION
+          [:ARROWS ">" " "]
+          [:LINK_BLOCK
+           [:PREDICATE [:PREFIXED_NAME [:PREFIX "rdfs"] ":" "seeAlso"]] [:COLON_ARROW "" ":>" " "]
+           [:OBJECT [:PREFIXED_NAME [:PREFIX "ex"] ":" "bat"]]]]}
+   {:exp [:LITERAL_BLOCK
+          [:PREDICATE [:LABEL "comment"]] [:COLON "" ":" " "]
+          [:LITERAL "Values can span multiple lines,\n  and include blank lines...\n\n  as long as each non-blank line is indented two spaces."]]}
+   {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "obo"] ":" "BFO_0000051"]]]}
+   {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "has part"]]}
+   {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "obo"] ":" "OBI_0000299"]]]}
+   {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "has_specified_output"]]}
+   {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "obo"] ":" "IAO_0000030"]]]}
+   {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "information content entity"]]}
+   {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "obo"] ":" "IAO_0000136"]]]}
+   {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "is about"]]}])
+
 (deftest test-environments
-  ;; TODO - 1. that it works
-  ;;        2. that it includes starting data when provided
-  )
+  (testing "the empty sequence of blocks return nil"
+    (is (nil? (environments []))))
+  (testing "a sequence of blocks gets decorated with an environment"
+    (is (every?
+         #(contains? % :env)
+         (environments +test-blocks+))))
+  (testing "if a starting environment is passed, that environment is added to each following element"
+    (is (let [starting-env {:labels {:test-label "foo"}
+                            :prefixes {:test-prefix "pref"}
+                            :defaults {:test-default {"TYPE" "bar"}}
+                            :graph "baz"
+                            :subject "mumble"
+                            :base "foobar"}
+              result (environments +test-blocks+ starting-env)
+              matches-start? (fn [res key] (= (get-in res (cons :env key)) (get-in starting-env key)))]
+          (and (matches-start? (first result) [:subject])
+               (matches-start? (first result) [:base])
+               (every?
+                #(and
+                  (matches-start? % [:defaults :test-default])
+                  (matches-start? % [:prefixes :test-label])
+                  (matches-start? % [:prefixes :test-prefix]))
+                result))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; name expansion
@@ -456,9 +584,15 @@
     (is (= :mumble (find-target 2 [[1 :mumble] [2 :baz] [1 :bar] [0 :foo]])))
     (is (= :baz (find-target 3 [[2 :baz] [1 :bar] [0 :foo]])))))
 
-(deftest test-handle-annotation-block!)
-(deftest test-handle-simple-block!)
-(deftest test-blocks->nquads)
+(deftest test-handle-annotation-block!
+  ;; TODO
+  )
+(deftest test-handle-simple-block!
+  ;; TODO
+  )
+(deftest test-blocks->nquads
+  ;; TODO
+  )
 
 (def an-nquad
   (gen/tuple
