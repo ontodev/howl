@@ -57,7 +57,7 @@
           (lazy-seq
            (rec
             (rest filenames)
-            (or ((last f) :env) env))))) ))
+            (or ((last f) :env) env)))))))
    filenames {}))
 
 (defn print-parses
