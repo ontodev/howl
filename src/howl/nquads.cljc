@@ -201,14 +201,15 @@ subjects for later ease of indexing."
               pred
               [:COLON_ARROW "" ":>" " "]
               [:OBJECT (leaf-node env object)]]
-             (filter
-              #(not (nil? %))
-              [:LITERAL_BLOCK
-               pred
-               (when (contains? object :lang) [:LANGUAGE [:SPACES " "] (object :lang)])
-               (when (contains? object :type) [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF (object :type)]]])
-               [:COLON "" ":" " "]
-               [:LITERAL (render-literal (object :value))]]))
+             (vec
+              (filter
+               #(not (nil? %))
+               [:LITERAL_BLOCK
+                pred
+                (when (contains? object :lang) [:LANGUAGE [:SPACES " "] (object :lang)])
+                (when (contains? object :type) [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF (object :type)]]])
+                [:COLON "" ":" " "]
+                [:LITERAL (render-literal (object :value))]])))
            (mapcat
             #(render-annotation-tree env % annotations-map arrows)
             (annotations-for [subject predicate object] annotations-map))))

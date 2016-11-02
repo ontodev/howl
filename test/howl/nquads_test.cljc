@@ -164,121 +164,66 @@ return a PREFIXED_NAME instead"
               "foo" "http://example.com/foo/"}}
             "http://example.com/foo/bar")))))
 
-;; (deftest test-convert
-;;   (testing "literal"
-;;     (is (= (convert-quads
-;;             {:current-subject "http://foo.com/foo"
-;;              :block
-;;              {:block-type :LITERAL_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdfs "label")]
-;;               :value "foo"
-;;               :lang "en"}})
-;;            {:current-subject "http://foo.com/foo"
-;;             :block
-;;             {:block-type :LITERAL_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdfs "label")]
-;;              :value "foo"
-;;              :lang "en"}
-;;             :statements
-;;             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]
-;;             :quads
-;;             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]})))
-;;   (testing "literal default type"
-;;     (is (= (convert-quads
-;;             {:iri-type {(str rdfs "label") {:lang "en"}}
-;;              :current-subject "http://foo.com/foo"
-;;              :block
-;;              {:block-type :LITERAL_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdfs "label")]
-;;               :value "foo"}})
-;;            {:iri-type {(str rdfs "label") {:lang "en"}}
-;;             :current-subject "http://foo.com/foo"
-;;             :block
-;;             {:block-type :LITERAL_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdfs "label")]
-;;              :value "foo"}
-;;             :statements
-;;             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]
-;;             :quads
-;;             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]]})))
-;;   (testing "link"
-;;     (is (= (convert-quads
-;;             {:current-subject "http://foo.com/foo"
-;;              :block
-;;              {:block-type :LINK_BLOCK
-;;               :predicate [:ABSOLUTE_IRI (str rdf "type")]
-;;               :object [:ABSOLUTE_IRI (str owl "Class")]}})
-;;            {:current-subject "http://foo.com/foo"
-;;             :block
-;;             {:block-type :LINK_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdf "type")]
-;;              :object [:ABSOLUTE_IRI (str owl "Class")]}
-;;             :statements
-;;             [[nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]]
-;;             :quads
-;;             [[nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]]})))
-;;   (testing "nested link annotation"
-;;     (is (= (convert-quads
-;;             {:block
-;;              {:block-type :LINK_BLOCK
-;;               :arrows ">>"
-;;               :predicate [:ABSOLUTE_IRI (str rdfs "seeAlso")]
-;;               :object [:ABSOLUTE_IRI (str owl "Class")]}
-;;              :statements
-;;              ["A"
-;;               [nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]
-;;               "C"
-;;               "D"
-;;               "E"]})
-;;            {:block
-;;             {:block-type :LINK_BLOCK
-;;              :arrows ">>"
-;;              :predicate [:ABSOLUTE_IRI (str rdfs "seeAlso")]
-;;              :object [:ABSOLUTE_IRI (str owl "Class")]}
-;;             :blank-node-count 1
-;;             :statements
-;;             ["A"
-;;              [nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]
-;;              [nil "_:b0" (str rdfs "seeAlso") (str owl "Class")]]
-;;             :quads
-;;             [[nil "_:b0" (str rdf "type") (str owl "Axiom")]
-;;              [nil "_:b0" (str owl "annotatedSource")   "http://foo.com/foo"]
-;;              [nil "_:b0" (str owl "annotatedProperty") (str rdf "type")]
-;;              [nil "_:b0" (str owl "annotatedTarget")   (str owl "Class")]
-;;              [nil "_:b0" (str rdfs "seeAlso") (str owl "Class")]]})))
-;;   (testing "expression label"
-;;     (is (= (convert-quads
-;;             {:current-subject "http://foo.com/foo"
-;;              :block
-;;              {:block-type :EXPRESSION_BLOCK
-;;               :predicate [:ABSOLUTE_IRI (str rdf "type")]
-;;               :expression [:NAME [:ABSOLUTE_IRI (str owl "Class")]]}})
-;;            {:current-subject "http://foo.com/foo"
-;;             :block
-;;             {:block-type :EXPRESSION_BLOCK
-;;              :predicate [:ABSOLUTE_IRI (str rdf "type")]
-;;              :expression [:NAME [:ABSOLUTE_IRI (str owl "Class")]]}
-;;             :statements
-;;             [[nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]]
-;;             :quads
-;;             [[nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]]}))))
+(deftest test-render-literal
+  (testing "makes no changes to one-line literals"
+    (is (= "foobarbaz" (render-literal "foobarbaz"))))
+  (testing "for multi-line literals, prepend all lines but the first with '  '"
+    (is (= "foo\n  bar\n  baz" (render-literal "foo\nbar\nbaz")))))
 
+(deftest test-collapse
+  (testing "collapses triples appropriately"
+    (is (= {:foo {:bar {:baz nil
+                        :mumble nil
+                        2 nil}
+                  1 {2 nil}}
+            :bleargh {:flarp {:floop nil}}}
+           (collapse
+            [[:foo :bar :baz]
+             [:foo :bar :mumble]
+             [:foo :bar 2]
+             [:foo 1 2]
+             [:bleargh :flarp :floop]]))))
+  (testing "collapses quads appropriately"
+    (is (= {:foo {:bar {:baz {:mumble nil
+                              :foobar nil}
+                        :flarp {:foobar nil}}
+                  :mumble {:baz {:foobar nil}}}
+            :bar {:baz {:mumble {:foo nil}}}}
+           (collapse
+            [[:foo :bar :baz :mumble]
+             [:foo :bar :baz :foobar]
+             [:foo :bar :flarp :foobar]
+             [:foo :mumble :baz :foobar]
+             [:bar :baz :mumble :foo]])))))
 
-;; (deftest test-quad-to-string
-;;   (testing "basics"
-;;     (is (= (map
-;;             quad-to-string
-;;             [[nil "http://foo.com/foo" (str rdfs "label") {:value "foo" :lang "en"}]
-;;              [nil "http://foo.com/foo" (str rdf "type") (str owl "Class")]
-;;              [nil "_:b0" (str rdf "type") (str owl "Axiom")]
-;;              [nil "_:b0" (str owl "annotatedSource")   "http://foo.com/foo"]
-;;              [nil "_:b0" (str owl "annotatedProperty") (str rdf "type")]
-;;              [nil "_:b0" (str owl "annotatedTarget")   (str owl "Class")]
-;;              [nil "_:b0" (str rdfs "seeAlso") (str owl "Class")]])
-;;            ["<http://foo.com/foo> <http://www.w3.org/2000/01/rdf-schema#label> \"foo\"@en ."
-;;             "<http://foo.com/foo> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> ."
-;;             "_:b0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> ."
-;;             "_:b0 <http://www.w3.org/2002/07/owl#annotatedSource> <http://foo.com/foo> ."
-;;             "_:b0 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ."
-;;             "_:b0 <http://www.w3.org/2002/07/owl#annotatedTarget> <http://www.w3.org/2002/07/owl#Class> ."
-;;             "_:b0 <http://www.w3.org/2000/01/rdf-schema#seeAlso> <http://www.w3.org/2002/07/owl#Class> ."]))))
+;; TODO
+;;(deftest test-render-annotation-tree)
+
+(deftest test-render-predicates
+  (testing "given a string object, return a LITERAL_BLOCK"
+    (is (= [[:LINK_BLOCK
+             [:PREDICATE [:IRIREF "<" "bar" ">"]]
+             [:COLON_ARROW "" ":>" " "]
+             [:OBJECT [:IRIREF "<" "http://example.com" ">"]]]]
+           (render-predicates {} {"bar" {"http://example.com" nil}} "foo" {} ""))))
+  (testing "given a map object (which is how jena encodes literal values), return a LITERAL_BLOCK"
+    (is (= [[:LITERAL_BLOCK
+             [:PREDICATE [:IRIREF "<" "bar" ">"]]
+             [:COLON "" ":" " "]
+             [:LITERAL "baz"]]]
+           (render-predicates {} {"bar" {{:value "baz"} nil}} "foo" {} ""))))
+  (testing "given a map object with :lang and :type properties, generate appropriate sub-trees
+for Howl LANGUAGE and TYPE annotations"
+    (is (= [[:LITERAL_BLOCK
+             [:PREDICATE [:IRIREF "<" "bar" ">"]]
+             [:LANGUAGE [:SPACES " "] "en"]
+             [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF "string"]]]
+             [:COLON "" ":" " "]
+             [:LITERAL "baz"]]]
+           (render-predicates {} {"bar" {{:value "baz" :lang "en" :type "string"} nil}} "foo" {} ""))))
+  ;; TODO - test that it generates annotations when passed a non-empty annotations map
+  )
+
+;; TODO
+;; (deftest test-render-subjects)
+;; (deftest test-render-graphs)
