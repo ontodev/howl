@@ -81,87 +81,42 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Pull out annotations
+(def subject-map
+  {(rdf> "type") {(owl> "Axiom") true}
+   (owl> "annotatedSource") {"foo" true}
+   (owl> "annotatedProperty") {"bar" true}
+   (owl> "annotatedTarget") {"baz" true}})
+
 (deftest test-annotation?
   (testing "annotation? returns true for annotation subject/predicate maps"
-    (is (annotation?
-         "_:b1" {(rdf> "type") {(owl> "Axiom") true}
-                 (owl> "annotatedSource") {"foo" true}
-                 (owl> "annotatedProperty") {"bar" true}
-                 (owl> "annotatedTarget") {"baz" true}})))
+    (is (annotation? "_:b1" subject-map)))
   (testing "annotation? returns false for things that don't have blank node names"
-    (is (not
-         (annotation?
-          "foobar" {(rdf> "type") {(owl> "Axiom") true}
-                    (owl> "annotatedSource") {"foo" true}
-                    (owl> "annotatedProperty") {"bar" true}
-                    (owl> "annotatedTarget") {"baz" true}}))))
+    (is (not (annotation? "foobar" subject-map))))
   (testing "annotation? returns false for things that aren't owl Axioms, or
 that are missing any of the annotated* statements"
-    (is (not
-         (annotation?
-          "_:b1" {(rdf> "type") {"foobar" true}
-                  (owl> "annotatedSource") {"foo" true}
-                  (owl> "annotatedProperty") {"bar" true}
-                  (owl> "annotatedTarget") {"baz" true}})))
-    (is (not
-         (annotation?
-          "_:b1" {(rdf> "type") {"foobar" true}
-                  (owl> "annotatedProperty") {"bar" true}
-                  (owl> "annotatedTarget") {"baz" true}})))
-    (is (not
-         (annotation?
-          "_:b1" {(rdf> "type") {"foobar" true}
-                  (owl> "annotatedSource") {"foo" true}
-                  (owl> "annotatedTarget") {"baz" true}})))
-    (is (not
-         (annotation?
-          "_:b1" {(rdf> "type") {"foobar" true}
-                  (owl> "annotatedSource") {"foo" true}
-                  (owl> "annotatedProperty") {"bar" true}})))))
+    (is (not (annotation? "_:b1" (assoc subject-map (rdf> "type") {"foobar" true}))))
+    (is (not (annotation? "_:b1" (dissoc subject-map (owl> "annotatedSource")))))
+    (is (not (annotation? "_:b1" (dissoc subject-map (owl> "annotatedProperty")))))
+    (is (not (annotation? "_:b1" (dissoc subject-map (owl> "annotatedTarget")))))))
 
 (deftest test-separate-annotations
   (testing "takes a subject map and separates out annotations.
 Returns a pair of maps
   - the input map with all annotations removed
   - a map containing only the annotations from the input map"
-    (is (= [{"foo" {"bar" {"baz" true}}}
-            {"_:b1" {(rdf> "type") {(owl> "Axiom") true}
-                     (owl> "annotatedSource") {"foo" true}
-                     (owl> "annotatedProperty") {"bar" true}
-                     (owl> "annotatedTarget") {"baz" true}}}]
+    (is (= [{"foo" {"bar" {"baz" true}}} {"_:b1" subject-map}]
            (separate-annotations
-            {"_:b1"
-             {(rdf> "type") {(owl> "Axiom") true}
-              (owl> "annotatedSource") {"foo" true}
-              (owl> "annotatedProperty") {"bar" true}
-              (owl> "annotatedTarget") {"baz" true}}
-             "foo" {"bar" {"baz" true}}})))))
+            {"_:b1" subject-map "foo" {"bar" {"baz" true}}})))))
 
 (deftest test-annotations-for
   (testing "takes a subject/predicate/object tuple and returns a list of subject/predicate-maps
 represeting annotations targeting it from the given annotations map"
-    (is (= [["_:b1"
-             {(rdf> "type") {(owl> "Axiom") true}
-              (owl> "annotatedSource") {"foo" true}
-              (owl> "annotatedProperty") {"bar" true}
-              (owl> "annotatedTarget") {"baz" true}}]
-            ["_:b2"
-             {(rdf> "type") {(owl> "Axiom") true}
-              (owl> "annotatedSource") {"foo" true}
-              (owl> "annotatedProperty") {"bar" true}
-              (owl> "annotatedTarget") {"baz" true}}]]
+    (is (= [["_:b1" subject-map]
+            ["_:b2" subject-map]]
            (annotations-for
             ["foo" "bar" "baz"]
-            {"_:b1"
-             {(rdf> "type") {(owl> "Axiom") true}
-              (owl> "annotatedSource") {"foo" true}
-              (owl> "annotatedProperty") {"bar" true}
-              (owl> "annotatedTarget") {"baz" true}}
-             "_:b2"
-             {(rdf> "type") {(owl> "Axiom") true}
-              (owl> "annotatedSource") {"foo" true}
-              (owl> "annotatedProperty") {"bar" true}
-              (owl> "annotatedTarget") {"baz" true}}
+            {"_:b1" subject-map
+             "_:b2" subject-map
              "_:b3"
              {(rdf> "type") {(owl> "Axiom") true}
               (owl> "annotatedSource") {"flarp" true}
