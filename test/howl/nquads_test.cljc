@@ -138,6 +138,32 @@ represeting annotations targeting it from the given annotations map"
   (testing "do not return words that are not prefixes"
     (is (= "batma" (longest-prefix "batman" ["b" "bat" "foo" "batm" "batma" "bar" "foobarbazmumble"])))))
 
+(deftest test-leaf-node
+  (testing "given blank name, return a BLANK_NODE_LABEL"
+    (is (= [:BLANK_NODE_LABEL "_:foo"] (leaf-node {} "_:foo"))))
+  (testing "given an IRI that has no label or prefix component, return an IRIREF"
+    (is (= [:IRIREF "<" "http://example.com/foo" ">"]
+           (leaf-node {} "http://example.com/foo"))))
+  (testing "if the given IRI is specified as the value of a label in the given env
+return a LABEL instead"
+    (is (= [:LABEL "foo"]
+           (leaf-node
+            {:labels {"foo" "http://example.com/foo"}}
+            "http://example.com/foo"))))
+  (testing "if the given env contains a prefix fo the given IRI,
+return a PREFIXED_NAME instead"
+    (is (= [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]
+           (leaf-node
+            {:prefixes {"ex" "http://example.com/"}}
+            "http://example.com/foo"))))
+  (testing "if more than one prefix matches the given IRI, use the longest"
+    (is (= [:PREFIXED_NAME [:PREFIX "foo"] ":" "bar"]
+           (leaf-node
+            {:prefixes
+             {"ex" "http://example.com/"
+              "foo" "http://example.com/foo/"}}
+            "http://example.com/foo/bar")))))
+
 ;; (deftest test-convert
 ;;   (testing "literal"
 ;;     (is (= (convert-quads

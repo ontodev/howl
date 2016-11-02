@@ -168,7 +168,7 @@ subjects for later ease of indexing."
 (defn leaf-node [env thing]
   (let [inv (invert-env env)]
     (cond
-      (util/blank-name? thing)             [:BLANK_NODE_LABEL thing]
+      (util/blank-name? thing) [:BLANK_NODE_LABEL thing]
       (contains? (inv :labels) thing) [:LABEL (get-in inv [:labels thing])]
       :else (if-let [pref (longest-prefix thing (keys (inv :prefixes)))]
               [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
