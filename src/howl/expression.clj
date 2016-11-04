@@ -86,17 +86,19 @@
    term such as a :SOME sub-clause)"
   [subtree]
   (cond
-    (or (seq? subtree) (vector? subtree)) (first (first subtree))
     (string? subtree) subtree
+    (or (seq? subtree) (vector? subtree)) (first (first subtree))
     :else (util/throw-exception "WTF?" subtree)))
 
 (defn ->exp
   "Takes a subtree, and returns an expression suitable for stitching into an nquads result.
-   This may be identity (in the case of a sequence of nquads), or it might be the empty list
-   (in the case of an IRI literal)."
+   This may be identity (in the case of a sequence of nquads), or it might be the double-wrapped
+   argument (in the case of an IRI literal).
+   The second case is relevant because we want to be able to recur on sub-expressions for their string
+   result, but not have the final output polluted by single-length quads."
   [subtree]
   (cond
-    (string? subtree) []
+    (string? subtree) [[subtree]]
     (seq? subtree) subtree
     (vector? subtree) subtree
     :else (println "WTF-EXP?" subtree)))
@@ -137,8 +139,8 @@
       [b1 (<> pred) b2 g]
       [b2 (<> (rdf> "first")) (->obj left) g]
       [b2 (<> (rdf> "rest")) b3 g]
-      [b3 (<> (rdf> "first")) (->obj right)]
-      [b3 (<> (rdf> "rest")) (<> (rdf> "nil"))]]
+      [b3 (<> (rdf> "first")) (->obj right) g]
+      [b3 (<> (rdf> "rest")) (<> (rdf> "nil")) g]]
      (->exp left)
      (->exp right))))
 
