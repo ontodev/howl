@@ -253,7 +253,7 @@ subjects for later ease of indexing."
    return a sequence of HOWL block maps."
   ([quads] (quads-to-howl quads (statements->env quads)))
   ([quads env]
-   (render-graphs (collapse quads) env)))
+   (render-graphs (collapse (map (fn [[s p o g]] [g s p o]) quads)) env)))
 
 (defn triples-to-howl
   "Given a sequence of triples,
