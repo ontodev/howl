@@ -5,7 +5,7 @@
             [instaparse.core :as insta]
             [cemerick.url :as url]
 
-            [howl.util :as util :refer [<> owl> rdf> rdf-schema>]]
+            [howl.util :as util :refer [<>> owl> rdf> rdf-schema>]]
             [howl.expression :as exp]))
 
 ;; Parsing works like this:
@@ -451,20 +451,30 @@
         (handle-simple-block! id stack %))
      (nquad-relevant-blocks block-sequence))))
 
-(def quad-format "~a ~a ~a~@[ ~a~] .~%")
-
-(defn nquad->string
-  "Takes a single nquad and returns the appropriately formatted string."
-  [[a b c d]]
-  (pprint/cl-format nil quad-format a b c d))
+(defn print-nquad!
+  "Prints the given nquad to the given writer. If no writer is given, prints
+   to standard output."
+  ([nquad] (print-nquad! nquad *out*))
+  ([[g s p o] writer]
+   (let [object  (if (string? o)
+                   (<>> o)
+                   (let [val (get o :value)]
+                     (if-let [tp (get o :type)]
+                       (str val "^^" tp)
+                       (if-let [lang (get o :lang)]
+                         (str val "@" lang)
+                         val))))]
+     (pprint/cl-format
+      writer "~a <~a> ~a~@[ <~a>~] .~%"
+      (<>> s) p object g))))
 
 (defn print-nquads!
   "Prints the given nquads to the given writer. If no writer is given, prints
    to standard output."
   ([nquads] (print-nquads! nquads *out*))
-  ([nquads writer]
-   (doseq [[a b c d] nquads]
-     (pprint/cl-format writer quad-format a b c d))))
+  ([nquads writer] (doseq [q nquads] (print-nquad! q writer))))
+
+(defn nquad->string [nquad] (print-nquad! nquad nil))
 
 (defn print-triples!
   "Prints the given nquads to the given writer, omitting any graph data.

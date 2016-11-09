@@ -53,6 +53,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; General formatting shortcuts
 (defn <> [s] (str "<" s ">"))
+(defn <>> [s] (if (blank-name? s) s (<> s)))
 
 (def owl "http://www.w3.org/2002/07/owl#")
 (defn owl? [iri] (starts-with? owl iri))

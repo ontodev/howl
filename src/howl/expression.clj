@@ -144,10 +144,10 @@
    throws an error."
   [env name]
   (or (get-in env [:labels name])
-           (util/throw-exception
-            "NO SUCH NAME IN ENV."
-            "Name:" name
-            "Env:" (str env))))
+      (util/throw-exception
+       "NO SUCH NAME IN ENV."
+       "Name:" name
+       "Env:" (str env))))
 
 (defn ->exp
   "Takes a subtree, and returns an expression suitable for stitching into an nquads result.
