@@ -146,12 +146,14 @@
   (testing "returns a string unmodified"
     (is (= "foo" (parse-tree->string "foo"))))
 
-  (testing "for :LABEL, :PREFIX, :TRAILING_WHITESPACE, :SPACES and :ABSOLUTE_IRI blocks, returns the second element"
+  (testing "for :ABSOLUTE_IRI blocks, returns the third element"
+    (is (= "foo" (parse-tree->string [:ABSOLUTE_IRI "<" "foo" ">"]))))
+
+  (testing "for :LABEL, :PREFIX, :TRAILING_WHITESPACE, and :SPACES blocks, returns the second element"
     (is (= "foo" (parse-tree->string [:LABEL "foo"])))
     (is (= "foo" (parse-tree->string [:PREFIX "foo"])))
     (is (= "foo" (parse-tree->string [:TRAILING_WHITESPACE "foo"])))
-    (is (= "foo" (parse-tree->string [:SPACES "foo"])))
-    (is (= "foo" (parse-tree->string [:ABSOLUTE_IRI "foo"]))))
+    (is (= "foo" (parse-tree->string [:SPACES "foo"]))))
 
   (testing "for other forms, joins the recursion on rest"
     (is (= "foobar" (parse-tree->string [:BLAH [:LABEL "foo"] "bar"])))
@@ -474,20 +476,20 @@
     (is (= "test" (expand-tree {} "test")))
     (is (= 123 (expand-tree {} 123))))
   (testing "returns the expanded, absolute pointied names for IRIREFs, PREFIXED_NAMEs and LABELs"
-    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+    (is (= [:ABSOLUTE_IRI "<" "http://example.com/foo" ">"]
            (expand-tree
             {:labels {"foo" "http://example.com/foo"}}
             [:LABEL "foo"])))
-    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+    (is (= [:ABSOLUTE_IRI "<" "http://example.com/foo" ">"]
            (expand-tree
             {:prefixes {"ex" "http://example.com/"}}
             [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"])))
-    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+    (is (= [:ABSOLUTE_IRI "<" "http://example.com/foo" ">"]
            (expand-tree {:base "http://example.com/"} [:IRIREF "<" "foo" ">"])))
-    (is (= [:ABSOLUTE_IRI "<http://example.com/foo>"]
+    (is (= [:ABSOLUTE_IRI "<" "http://example.com/foo" ">"]
            (expand-tree {} [:IRIREF "<" "http://example.com/foo" ">"]))))
   (testing "otherwise, recurs into the given syntax tree"
-    (is (= [:PREDICATE [:ABSOLUTE_IRI "<http://example.com/foo>"]]
+    (is (= [:PREDICATE [:ABSOLUTE_IRI "<" "http://example.com/foo" ">"]]
            (expand-tree
             {:prefixes {"ex" "http://example.com/"}}
             [:PREDICATE [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]])))))
@@ -502,7 +504,7 @@
 
 (deftest test-simple-block->nquad
   (testing "works as expected on LITERAL_BLOCKs"
-    (is (= ["<http://example.com/subject-3>" "<http://example.com/label>" "\"Relative IRI\"" nil]
+    (is (= [nil "http://example.com/subject-3" "http://example.com/label" {:value "\"Relative IRI\""}]
            (simple-block->nquad
             {:exp [:LITERAL_BLOCK
                    [:PREDICATE [:IRIREF "<" "label" ">"]]
@@ -511,9 +513,9 @@
                    :subject "http://example.com/subject-3"
                    :base "http://example.com/"}}))))
   (testing "works as expected on LINK_BLOCKs"
-    (is (= ["<http://example.com/bar>"
-            "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
-            "<http://www.w3.org/2002/07/owl#Class>" nil]
+    (is (= [nil "http://example.com/bar"
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+            "http://www.w3.org/2002/07/owl#Class"]
            (simple-block->nquad
             {:exp [:LINK_BLOCK
                    [:PREDICATE [:LABEL "type"]]
@@ -525,11 +527,11 @@
 
 (deftest test-annotation-block->nquads
   (testing "basic annotation generation"
-    (is (= [["_:b0" "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" "<http://www.w3.org/2002/07/owl#Axiom>" nil]
-            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedSource>" "foo" nil]
-            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedProperty>" "bar" nil]
-            ["_:b0" "<http://www.w3.org/2002/07/owl#annotatedTarget>" "baz" nil]
-            ["_:b0" "<http://www.w3.org/2000/01/rdf-schema#seeAlso>" "<http://example.com/bat>" nil]]
+    (is (= [[nil "_:b0" "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" "http://www.w3.org/2002/07/owl#Axiom"]
+            [nil "_:b0" "http://www.w3.org/2002/07/owl#annotatedSource" "foo"]
+            [nil "_:b0" "http://www.w3.org/2002/07/owl#annotatedProperty" "bar"]
+            [nil "_:b0" "http://www.w3.org/2002/07/owl#annotatedTarget" "baz"]
+            [nil "_:b0" "http://www.w3.org/2000/01/rdf-schema#seeAlso" "http://example.com/bat"]]
            (annotation-block->nquads
             0 ["foo" "bar" "baz" nil]
             {:exp [:ANNOTATION
