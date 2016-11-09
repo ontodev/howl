@@ -137,7 +137,8 @@
   (if (string? parse-tree)
     parse-tree
     (case (first parse-tree)
-      (:LABEL :PREFIX :TRAILING_WHITESPACE :SPACES :ABSOLUTE_IRI) (second parse-tree)
+      :ABSOLUTE_IRI (get parse-tree 2)
+      (:LABEL :PREFIX :TRAILING_WHITESPACE :SPACES) (second parse-tree)
       (string/join (map parse-tree->string (rest parse-tree))))))
 
 (defn block->string
@@ -198,8 +199,8 @@
    :IRIREF or :PREFIXED_NAME nodes"
   [env node]
   (case (first node)
-    :BLANK_NODE (get node 2)
-    (:ABSOLUTE_IRI :WORD) (second node)
+    (:BLANK_NODE :ABSOLUTE_IRI) (get node 2)
+    :WORD(second node)
     :IRIREF (let [iri (get node 2)]
               (if (util/absolute-uri-string? iri)
                 iri
@@ -293,9 +294,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Name expansion
-;; TODO - :ABSOLUTE_IRI should behave a little differently. Return [:ABSOLUTE_IRI "<" name ">"] instead
-;;        of calling <> here. The nquad-generation chunk can then do the right thing.
-;;        Also, update name-from-node to handle them appropriately.
 
 (defn expand-tree
   "Takes an environment and a parse tree.
@@ -305,7 +303,7 @@
   (if (or (keyword? parse-tree) (string? parse-tree) (number? parse-tree))
     parse-tree
     (case (first parse-tree)
-      (:IRIREF :PREFIXED_NAME :LABEL) [:ABSOLUTE_IRI (<> (name-from-node env parse-tree))]
+      (:IRIREF :PREFIXED_NAME :LABEL) [:ABSOLUTE_IRI "<" (name-from-node env parse-tree) ">"]
       (map #(expand-tree env %) parse-tree))))
 
 (defn expand-block
@@ -351,22 +349,21 @@
    that get translated down to one quad."
   [block]
   (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
-    [(<> (get-in block [:env :subject]))
-     (<> pred)
+    [(get-in block [:env :graph])
+     (get-in block [:env :subject])
+     pred
      (case (first (block :exp))
        :LITERAL_BLOCK
-       (let [base (formatted (last (first-vector-starting-with :LITERAL (block :exp))))]
+       (let [base {:value (formatted (last (first-vector-starting-with :LITERAL (block :exp))))}]
          (if-let [type (get-in block [:env :defaults pred "TYPE"])]
-           (str base "^^" (<> type))
+           (assoc base :type type)
            (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
-             (str base "@" lang)
+             (assoc base :lang lang)
              base)))
        :LINK_BLOCK
-       (<> (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp))))
+       (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp)))
        ;; FIXME - the default case should throw an error once we're done implementing this
-       [:TODO (locate block) (first (block :exp))])
-     (if-let [graph (get-in block [:env :graph])]
-       (<> graph))]))
+       [:TODO (locate block) (first (block :exp))])]))
 
 (defn annotation-block->nquads
   "Returns an annotation block. Annotation blocks get encoded as multiple
@@ -375,11 +372,12 @@
   [id [source property target _] block]
   (let [name (str "_:b" id)
         base (simple-block->nquad (assoc block :exp (get-in block [:exp 2])))]
-    [[name (<> (rdf> "type")) (<> (owl> "Axiom")) nil]
-     [name (<> (owl> "annotatedSource")) source nil]
-     [name (<> (owl> "annotatedProperty")) property nil]
-     [name (<> (owl> "annotatedTarget")) target nil]
-     (vec (cons name (rest base)))]))
+    ;; TODO - replace the leading nil with a graph reference
+    [[nil name (rdf> "type") (owl> "Axiom")]
+     [nil name (owl> "annotatedSource") source]
+     [nil name (owl> "annotatedProperty") property]
+     [nil name (owl> "annotatedTarget") target]
+     (vec (cons nil (cons name (rest (rest base)))))]))
 
 (defn nquad-relevant-blocks
   "Takes a sequence of blocks, and filters out any blocks

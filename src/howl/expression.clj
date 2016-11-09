@@ -70,7 +70,7 @@
   (string-to-parse exp))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;; to nquads
+;;;;;;;;;; to NQuads
 
 (defn nquad-relevant-elems
   "Takes an expression tree and returns a sequence of sub-expressions relevant to
@@ -96,9 +96,9 @@
         left (convert-expression id env (first subs))
         right (convert-expression id env (second subs))]
     (concat
-     [[b (<> (rdf> "type")) (<> (owl> "Restriction")) g]
-      [b (<> (owl> "onProperty")) (->obj left) g]
-      [b (<> pred) (->obj right) g]]
+     [[g b (rdf> "type") (owl> "Restriction")]
+      [g b (owl> "onProperty") (->obj left)]
+      [g b pred (->obj right)]]
      left
      right)))
 
@@ -115,12 +115,12 @@
         left (convert-expression id env (first subs))
         right (convert-expression id env (second subs))]
     (concat
-     [[b1 (<> (rdf> "type")) (<> (owl> "Class")) g]
-      [b1 (<> pred) b2 g]
-      [b2 (<> (rdf> "first")) (->obj left) g]
-      [b2 (<> (rdf> "rest")) b3 g]
-      [b3 (<> (rdf> "first")) (->obj right) g]
-      [b3 (<> (rdf> "rest")) (<> (rdf> "nil")) g]]
+     [[g b1 (rdf> "type") (owl> "Class")]
+      [g b1 pred b2]
+      [g b2 (rdf> "first") (->obj left)]
+      [g b2 (rdf> "rest") b3]
+      [g b3 (rdf> "first") (->obj right)]
+      [g b3 (rdf> "rest") (rdf> "nil")]]
      left
      right)))
 
@@ -134,8 +134,8 @@
         b (util/fresh-blank! id)
         target (convert-expression id env (first (nquad-relevant-elems exp)))]
     (concat
-     [[b (rdf> "type") (owl> "Class") g]
-      [b (owl> "complementOf") (->obj target) g]]
+     [[g b (rdf> "type") (owl> "Class")]
+      [g b (owl> "complementOf") (->obj target)]]
      target)))
 
 (defn subexp->name
@@ -143,11 +143,11 @@
    Either returns the value associated with that name in that environment, or
    throws an error."
   [env name]
-  (<> (or (get-in env [:labels name])
-          (util/throw-exception
-           "NO SUCH NAME IN ENV."
-           "Name:" name
-           "Env:" (str env)))))
+  (or (get-in env [:labels name])
+           (util/throw-exception
+            "NO SUCH NAME IN ENV."
+            "Name:" name
+            "Env:" (str env))))
 
 (defn ->exp
   "Takes a subtree, and returns an expression suitable for stitching into an nquads result.

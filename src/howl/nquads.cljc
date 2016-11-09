@@ -1,5 +1,5 @@
 (ns howl.nquads
-  "Render parsed HOWL to N-Quads."
+  "Recover the Howl representation from a collection of NQuads"
   (:require [clojure.string :as string]
             [clojure.set]
             [howl.util :as util :refer [owl> rdf> rdf-schema>]]
