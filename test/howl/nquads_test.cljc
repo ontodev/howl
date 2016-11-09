@@ -1,8 +1,10 @@
 (ns howl.nquads-test
   "Test N-Quads rendering and supporting functions."
   (:require [clojure.test :refer :all]
+            [clojure.string :as string]
 
             [howl.nquads :refer :all]
+            [howl.core :as core]
             [howl.util :refer [rdf> owl>]]))
 
 (deftest test-statements->urls
@@ -196,8 +198,36 @@ return a PREFIXED_NAME instead"
              [:foo :mumble :baz :foobar]
              [:bar :baz :mumble :foo]])))))
 
+(def howl-blocks
+  (-> "PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX ex:> <http://example.com/>
+
+LABEL rdfs:label: label
+
+ex:foo
+label: Foo
+type:> owl:Class
+comment LANGUAGE en: A comment on 'Foo'.
+> comment TYPE xsd:string: An annotation on a comment.
+>> comment TYPE xsd:string: An annotation on an annotation.
+> rdfs:seeAlso:> ex:bat
+comment: Values can span multiple lines,
+  and include blank lines...
+
+  as long as each non-blank line is indented two spaces."
+      string/split-lines
+      core/parse-lines))
+
+(def test-env (:env (last howl-blocks)))
+
+(def collapsed-blocks
+  (-> howl-blocks
+      core/blocks->nquads
+      collapse))
+
 ;; TODO
-;;(deftest test-render-annotation-tree)
+;; (deftest test-render-annotation-tree
+;;   )
 
 (deftest test-render-predicates
   (testing "given a string object, return a LITERAL_BLOCK"

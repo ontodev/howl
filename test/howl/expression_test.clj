@@ -174,3 +174,5 @@
  and ('is about' some
     ('material entity'
      and ('has role' some 'evaluant role'))))")))
+
+;; TODO - test expression->nquads
