@@ -205,7 +205,7 @@
   (testing "get the IRI out of an absolute IRI"
     (is (= "http://example.com/"
            (name-from-node
-            {} [:ABSOLUTE_IRI "http://example.com/"]))))
+            {} [:ABSOLUTE_IRI "<" "http://example.com/" ">"]))))
   (testing "get the word out of a :WORD"
     (is (= "foobar"
            (name-from-node
@@ -222,7 +222,7 @@
   (testing "recur into :SUBJECT"
     (is (= "http://example.com/"
            (name-from-node
-            {} [:SUBJECT [:ABSOLUTE_IRI "http://example.com/"]])))))
+            {} [:SUBJECT [:ABSOLUTE_IRI "<" "http://example.com/" ">"]])))))
 
 (deftest test-locate
   (testing "when there is an :origin property in the targets meta, return it"
