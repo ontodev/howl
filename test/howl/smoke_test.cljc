@@ -30,4 +30,4 @@
          (is (let [f (slurp "test/test1.howl")
                    parsed (core/parse-lines (string/split-lines f))
                    e (:env (last parsed))]
-               (= f (-> parsed core/blocks->nquads nquads/quads-to-howl))))))))
+               (= parsed (-> parsed core/blocks->nquads nquads/quads-to-howl))))))))
