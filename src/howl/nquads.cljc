@@ -7,9 +7,15 @@
 
 (def default-graph "urn:x-arq:DefaultGraphNode")
 
+(defn default-graph-of [graph-map]
+  (or (get graph-map default-graph)
+      (get graph-map nil)))
+
+(defn without-default-graph [graph-map]
+  (dissoc (dissoc graph-map default-graph) nil))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Human-readable compression
-
 (defn statements->urls
   [statements]
   (filter
@@ -101,7 +107,7 @@ Used only in the two statements->* functions following."
     first
     (filter
      #(>= (second %) 3)
-     (into (list) (dissoc (frequencies (statements->urls statements)) default-graph))))))
+     (into (list) (without-default-graph (frequencies (statements->urls statements))))))))
 
 (defn statements->env
   [statements]
@@ -232,7 +238,7 @@ subjects for later ease of indexing."
   ([collapsed] (render-graphs collapsed {}))
   ([collapsed env]
    (concat
-    (render-subjects (get collapsed default-graph) env)
+    (render-subjects (default-graph-of collapsed) env)
     (mapcat
      (fn [[graph subjects]]
        (map
@@ -241,7 +247,7 @@ subjects for later ease of indexing."
          [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (leaf-node env graph)]]}]
          (render-subjects subjects env)
          [{:exp [:GRAPH_BLOCK "GRAPH"]}])))
-     (dissoc collapsed default-graph)))))
+     (without-default-graph collapsed)))))
 
 (defn collapse
   "Given a sequence of Quads or Triples, return a level-wise map"

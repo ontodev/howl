@@ -81,7 +81,8 @@
 
 (defn ->obj
   [subtree]
-  (first (first subtree)))
+  (let [elem (first subtree)]
+    (or (second elem) (first elem))))
 
 (declare convert-expression)
 

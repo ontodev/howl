@@ -175,4 +175,12 @@
     ('material entity'
      and ('has role' some 'evaluant role'))))")))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; nquads generation
+(deftest test-->obj
+  (testing "given a wrapped string, extracts it"
+    (is (= "foo" (exp/->obj [["foo"]]))))
+  (testing "given a sequence of nquads, returns the subject"
+    (is (= "foo" (exp/->obj [[:graph "foo" "bar" "baz"]])))))
+
 ;; TODO - test expression->nquads
