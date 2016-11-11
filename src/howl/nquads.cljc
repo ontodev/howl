@@ -242,7 +242,7 @@ subjects for later ease of indexing."
     (mapcat
      (fn [[graph subjects]]
        (map
-        #(when (empty? (% :env)) (assoc % :env env))
+        #(if (empty? (% :env)) (assoc % :env env) %)
         (concat
          [{:exp [:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:GRAPH (leaf-node env graph)]]}]
          (render-subjects subjects env)
@@ -257,7 +257,8 @@ subjects for later ease of indexing."
 (defn quads-to-howl
   "Given a sequence of quads,
    return a sequence of HOWL block maps."
-  ([quads] (quads-to-howl quads (statements->env quads)))
+  ([quads]
+   (quads-to-howl quads (statements->env quads)))
   ([quads env]
    (render-graphs (collapse quads) env)))
 
