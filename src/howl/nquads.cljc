@@ -171,14 +171,18 @@ subjects for later ease of indexing."
     #(util/starts-with? target %)
     (reverse (sort-by count candidates)))))
 
-(defn leaf-node [env thing]
-  (let [inv (invert-env env)]
-    (cond
-      (util/blank-name? thing) [:BLANK_NODE_LABEL thing]
-      (contains? (inv :labels) thing) [:LABEL (get-in inv [:labels thing])]
-      :else (if-let [pref (longest-prefix thing (keys (inv :prefixes)))]
-              [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
-              [:IRIREF "<" thing ">"]))))
+(defn leaf-node
+  ([env thing] (leaf-node env thing {}))
+  ([env thing established]
+   (let [inv (invert-env env)]
+     (cond
+       (util/blank-name? thing) [:BLANK_NODE_LABEL thing]
+       (and (contains? established thing)
+            (contains? (inv :labels) thing))
+         [:LABEL (get-in inv [:labels thing])]
+       :else (if-let [pref (longest-prefix thing (keys (inv :prefixes)))]
+               [:PREFIXED_NAME [:PREFIX (get-in inv [:prefixes pref])] ":" (subs thing (count pref))]
+               [:IRIREF "<" thing ">"])))))
 
 (defn render-literal [literal]
   (let [lns (string/split-lines literal)]
@@ -229,11 +233,15 @@ subjects for later ease of indexing."
 (defn render-subjects
   ([subject-map] (render-subjects subject-map {}))
   ([subject-map env]
-   (let [[blocks annotations] (separate-annotations subject-map)]
+   (let [[blocks annotations] (separate-annotations subject-map)
+         established (volatile! #{})]
      (mapcat
       (fn [[subject predicates]]
         (concat
-         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]] :env env}]
+         (let [est @established
+               subject-block [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject est)]] :env env}]]
+           (vswap! established #(clojure.set/union #{subject} %))
+           subject-block)
          (map (fn [block] {:exp block :env env})
               (render-predicates env predicates subject annotations "> "))))
       blocks))))
