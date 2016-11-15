@@ -212,8 +212,12 @@ subjects for later ease of indexing."
                #(not (nil? %))
                [:LITERAL_BLOCK
                 pred
-                (when (contains? object :lang) [:LANGUAGE [:SPACES " "] (object :lang)])
-                (when (contains? object :type) [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF (object :type)]]])
+                (when (and (contains? object :lang)
+                           (not= (object :lang) (get-in env [:defaults predicate "LANGUAGE"])))
+                  [:LANGUAGE [:SPACES " "] (object :lang)])
+                (when (and (contains? object :type)
+                           (not= (object :type) (get-in env [:defaults predicate "TYPE"])))
+                  [:TYPE [:SPACES " "] [:DATATYPE [:IRIREF (object :type)]]])
                 [:COLON "" ":" " "]
                 [:LITERAL (render-literal (object :value))]])))
            (mapcat
@@ -229,9 +233,13 @@ subjects for later ease of indexing."
      (mapcat
       (fn [[subject predicates]]
         (concat
-         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]]
-           :env env}]
-         (map (fn [block] {:exp block :env env}) (render-predicates env predicates subject annotations "> "))))
+         (let [leaf (leaf-node env subject)]
+           (when (not (contains? #{:LABEL :BLANK_NODE_LABEL} (first leaf)))
+             [{:exp [:SUBJECT_BLOCK [:SUBJECT leaf]] :env env}]))
+         (map (fn [block]
+                (println )
+                {:exp block :env env})
+              (render-predicates env predicates subject annotations "> "))))
       blocks))))
 
 (defn render-graphs
