@@ -27,7 +27,10 @@
 
      (deftest howl<->nquads-smoke-test
        (testing "we can round-trip between howl and nquads"
-         (is (let [f (slurp "test/test1.howl")
+         (is (let [f (slurp "test/test-no-exp.howl")
                    parsed (core/parse-lines (string/split-lines f))
-                   e (:env (last parsed))]
-               (= parsed (-> parsed core/blocks->nquads nquads/quads-to-howl))))))))
+                   e ((last parsed) :env)]
+               (= parsed
+                  (nquads/quads-to-howl
+                   (core/blocks->nquads parsed)
+                   e))))))))

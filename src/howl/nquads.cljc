@@ -233,12 +233,8 @@ subjects for later ease of indexing."
      (mapcat
       (fn [[subject predicates]]
         (concat
-         (let [leaf (leaf-node env subject)]
-           (when (not (contains? #{:LABEL :BLANK_NODE_LABEL} (first leaf)))
-             [{:exp [:SUBJECT_BLOCK [:SUBJECT leaf]] :env env}]))
-         (map (fn [block]
-                (println )
-                {:exp block :env env})
+         [{:exp [:SUBJECT_BLOCK [:SUBJECT (leaf-node env subject)]] :env env}]
+         (map (fn [block] {:exp block :env env})
               (render-predicates env predicates subject annotations "> "))))
       blocks))))
 

@@ -369,7 +369,7 @@
   "Returns an annotation block. Annotation blocks get encoded as multiple
    quads, and some of those depend on a target quad that is being annotated.
    The trailing quad is generated using simple-block->nquad"
-  [id [source property target _] block]
+  [id [_ source property target] block]
   (let [name (str "_:b" id)
         base (simple-block->nquad (assoc block :exp (get-in block [:exp 2])))]
     ;; TODO - replace the leading nil with a graph reference

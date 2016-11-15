@@ -533,7 +533,7 @@
             [nil "_:b0" "http://www.w3.org/2002/07/owl#annotatedTarget" "baz"]
             [nil "_:b0" "http://www.w3.org/2000/01/rdf-schema#seeAlso" "http://example.com/bat"]]
            (annotation-block->nquads
-            0 ["foo" "bar" "baz" nil]
+            0 [nil "foo" "bar" "baz"]
             {:exp [:ANNOTATION
                    [:ARROWS ">" " "]
                    [:LINK_BLOCK
