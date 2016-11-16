@@ -172,7 +172,7 @@ subjects for later ease of indexing."
     (reverse (sort-by count candidates)))))
 
 (defn leaf-node
-  ([env thing] (leaf-node env thing {}))
+  ([env thing] (leaf-node env thing #{}))
   ([env thing established]
    (let [inv (invert-env env)]
      (cond

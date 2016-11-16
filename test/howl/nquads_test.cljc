@@ -147,11 +147,18 @@ represeting annotations targeting it from the given annotations map"
     (is (= [:IRIREF "<" "http://example.com/foo" ">"]
            (leaf-node {} "http://example.com/foo"))))
   (testing "if the given IRI is specified as the value of a label in the given env
-return a LABEL instead"
-    (is (= [:LABEL "foo"]
+BUT that binding has not been established, return an IRIREF"
+    (is (= [:IRIREF "<" "http://example.com/foo" ">"]
            (leaf-node
             {:labels {"foo" "http://example.com/foo"}}
             "http://example.com/foo"))))
+  (testing "if the given IRI is specified as the value of a label in the given env
+AND that binding has been established, return a LABEL instead"
+    (is (= [:LABEL "foo"]
+           (leaf-node
+            {:labels {"foo" "http://example.com/foo"}}
+            "http://example.com/foo"
+            #{"http://example.com/foo"}))))
   (testing "if the given env contains a prefix fo the given IRI,
 return a PREFIXED_NAME instead"
     (is (= [:PREFIXED_NAME [:PREFIX "ex"] ":" "foo"]
