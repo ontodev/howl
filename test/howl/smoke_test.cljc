@@ -25,14 +25,12 @@
          (is (= (core/parse-lines (line-seq (clojure.java.io/reader "test/test1.howl")))
                 (parse-file "test/test1.howl")))))
 
-     ;; FIXME
-     ;; (deftest howl<->nquads-smoke-test
-     ;;   (testing "we can round-trip between howl and nquads"
-     ;;     (is (let [f (slurp "test/test-no-exp.howl")
-     ;;               parsed (core/parse-lines (string/split-lines f))
-     ;;               e ((last parsed) :env)]
-     ;;           (= parsed
-     ;;              (nquads/quads-to-howl
-     ;;               (core/blocks->nquads parsed)
-     ;;               e))))))
-     ))
+     (deftest howl<->nquads-smoke-test
+       (testing "we can round-trip between howl and nquads"
+         (is (let [f (slurp "test/test-no-exp.howl")
+                   parsed (core/parse-lines (string/split-lines f))
+                   e ((last parsed) :env)]
+               (= parsed
+                  (nquads/quads-to-howl
+                   (core/blocks->nquads parsed)
+                   e))))))))
