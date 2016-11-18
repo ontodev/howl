@@ -345,7 +345,7 @@ LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
   "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
 ARROWS   = #'>*' #'\\s*'
 DATATYPE = '' | #' +\\[' ('LINK' | LANGUAGE | NAME) ']'
-LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
+LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 
 (defmulti content->parse
   "Given an environment,
@@ -380,7 +380,7 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
    [nil nil]
 
    (= :LANGUAGE (first datatype))
-   [rdf:PlainLiteral (second datatype)]
+   [rdf:PlainLiteral (last datatype)]
 
    datatype
    [(name->iri env datatype) nil]
@@ -519,7 +519,7 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   (->> [(str "<" subject-iri ">")
         (str "<" predicate-iri ">")
         (cond
-         language                      (str "\"" value "\"" language)
+         language                      (str "\"" value "\"@" language)
          (= rdf:PlainLiteral datatype) (str "\"" value "\"")
          datatype                      (str "\"" value "\"^^<" datatype ">")
          :else                         (str "<" value ">"))
