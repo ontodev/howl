@@ -158,6 +158,50 @@ subjects for later ease of indexing."
    annotations-map))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; Filter AST for late bound
+(defn rdfs-label-block? [block]
+  (let [exp (block :exp)]
+    (and (= :LITERAL_BLOCK (first exp))
+         (= (rdf-schema> "label") (core/name-from-node (block :env) (second exp))))))
+
+(defn literal-block->label [block]
+  (let [base (second (get (block :exp) 3))]
+    (subs base 1 (- (count base) 1))))
+
+(defn rdfs-labels-in [blocks]
+  (map literal-block->label (filter rdfs-label-block? blocks)))
+
+(defn expand-labels-prior-to-declaration
+  [blocks]
+  (let [rdfs-labels (set (rdfs-labels-in blocks))]
+    ((fn rec [blocks declared]
+       (when (not (empty? blocks))
+         (let [head (first blocks)
+               exp (head :exp)]
+           (cond
+             (and (rdfs-label-block? head) (contains? declared (literal-block->label head)))
+             (lazy-seq (cons head (rec (rest blocks) declared)))
+             (rdfs-label-block? head)
+             (lazy-seq
+              (cons
+               head
+               (rec
+                (rest blocks)
+                (conj declared (literal-block->label head)))))
+             (and (= :SUBJECT_BLOCK (first exp))
+                  (let [lbl (second (second (second exp)))]
+                    (and (contains? rdfs-labels lbl)
+                         (not (contains? declared lbl)))))
+             ;; TODO - pull this out into a separate expand-label function. Also, have it consider a prefixed form (this is going to call for some refactoring of leaf-node)
+             (lazy-seq
+                (cons
+                 (assoc-in head [:exp 1] [:IRIREF "<" (get-in head [:env :labels (second (second (second exp)))]) ">"])
+                 (rec (rest blocks) declared)))
+             :else
+             (lazy-seq (cons head (rec (rest blocks) declared)))))))
+     blocks #{})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Output howl AST
 (defn invert-env [env]
   (merge

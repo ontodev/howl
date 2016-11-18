@@ -200,7 +200,7 @@
   [env node]
   (case (first node)
     (:BLANK_NODE :ABSOLUTE_IRI) (get node 2)
-    :WORD(second node)
+    :WORD (second node)
     :IRIREF (let [iri (get node 2)]
               (if (util/absolute-uri-string? iri)
                 iri
@@ -208,7 +208,7 @@
     :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
                      (str (get-in env [:prefixes prefix]) name))
     :LABEL (get-in env [:labels (second node)])
-    (:SUBJECT) (name-from-node env (second node))))
+    (:PREDICATE :SUBJECT) (name-from-node env (second node))))
 
 (defn maybe-name
   [env keyword parse-tree dest-keyword]
