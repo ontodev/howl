@@ -15,7 +15,7 @@
 
 #?(:clj
    (do
-     (deftest howl-smoke-test
+     #_(deftest howl-smoke-test
        (testing "high-level smoke test for the howl parer"
          (is (let [parse (parse-file "test/test1.howl")]
                (and (seq? parse)

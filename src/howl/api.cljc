@@ -8,7 +8,8 @@
    return a string of N-Quads."
   [content]
   (->> (string/split-lines content)
-       core/parse-lines
-       core/blocks->nquads
-       (map core/nquad->string)
+       core/lines->blocks
+       :blocks
+       (mapcat core/block->nquads)
+       (map core/nquad->nquad-string)
        (string/join \newline)))

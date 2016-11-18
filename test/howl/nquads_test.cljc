@@ -205,7 +205,7 @@ return a PREFIXED_NAME instead"
              [:foo :mumble :baz :foobar]
              [:bar :baz :mumble :foo]])))))
 
-(def howl-blocks
+#_(def howl-blocks
   (-> "PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX ex:> <http://example.com/>
 
@@ -225,9 +225,9 @@ comment: Values can span multiple lines,
       string/split-lines
       core/parse-lines))
 
-(def test-env (:env (last howl-blocks)))
+#_(def test-env (:env (last howl-blocks)))
 
-(def collapsed-blocks
+#_(def collapsed-blocks
   (-> howl-blocks
       core/blocks->nquads
       collapse))
@@ -236,7 +236,7 @@ comment: Values can span multiple lines,
 ;; (deftest test-render-annotation-tree
 ;;   )
 
-(deftest test-render-predicates
+#_(deftest test-render-predicates
   (testing "given a string object, return a LITERAL_BLOCK"
     (is (= [[:LINK_BLOCK
              [:PREDICATE [:IRIREF "<" "bar" ">"]]

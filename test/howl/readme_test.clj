@@ -1,35 +1,54 @@
 (ns howl.readme-test
   (:require [clojure.test :refer :all]
             [clojure.string :as string]
-            [clojure.data.json :as json]
             [howl.core :refer :all]))
 
 ;; Parse the README.md file
-;; looking for pairs of example blocks and their JSON results,
-;; then parse the example block and compare it to the expected result.
+;; looking for JSON blocks,
+;; then test each block.
 
-;; (defn run-test
-;;   [[block result]]
-;;   (try
-;;     (testing block
-;;       (is (= (clojure.walk/postwalk
-;;               #(if (keyword? %) (name %) %)
-;;               (parse-block "example.howl" 1 block))
-;;              (json/read-str result))))
-;;     (catch Exception e
-;;       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
+(def env
+  {:source "example.howl"
+   :line 1
+   :prefix-iri
+   {"rdf"  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    "rdfs" "http://www.w3.org/2000/01/rdf-schema#"
+    "xsd"  "http://www.w3.org/2001/XMLSchema#"
+    "owl"  "http://www.w3.org/2002/07/owl#"
+    "ex"   "http://example.com/"}
+   :label-iri
+   {"comment" "http://www.w3.org/2000/01/rdf-schema#comment"
+    "type"    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}
+   :label-datatype
+   {"type" [nil nil]}
+   :current-graph-iri "http://example.com/current-graph"
+   :current-subject-iri "http://example.com/current-subject"}) 
 
-;; #_(deftest test-readme-examples
-;;     (->> "README.md"
-;;          slurp
-;;          string/split-lines
-;;          (drop-while #(not (.startsWith % "## Syntax and Parsing")))
-;;          (partition-by #(.startsWith % "    "))
-;;          (filter #(.startsWith (first %) "    ")) ; keep indented
-;;          (map (fn [lines] (map #(string/replace % #"^    " "") lines)))
-;;          (map (fn [lines] (str (string/join "\n" lines) "\n")))
-;;          (partition 2)
-;;          (map run-test)
-;;          doall
-;;          (#(do (println "Running" (count %) "tests on README") %))
-;;          (apply = true)))
+(defn run-test
+  "Given a block map, process the :block value,
+   and check that the result is the same as the original block."
+  [block]
+  (try
+    (testing block
+      (is (= (second (process-block env (:block block)))
+             block)))
+    (catch Exception e
+      (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
+
+;; Find all indented JSON blocks in the README.
+(deftest test-readme-examples
+  (->> "README.md"
+       slurp
+       string/split-lines
+       (drop-while #(not (.startsWith % "## Syntax and Parsing")))
+       (partition-by #(.startsWith % "    "))
+       (filter #(.startsWith (first %) "    ")) ; keep indented
+       (map (fn [lines] (map #(string/replace % #"^    " "") lines)))
+       (map (fn [lines] (str (string/join "\n" lines) "\n")))
+       (filter #(.startsWith % "{"))
+       ;(take 2)
+       (map json->block)
+       (map run-test)
+       doall
+       (#(do (println "Running" (count %) "tests on README") %))
+       (apply = true)))

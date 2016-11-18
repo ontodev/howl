@@ -11,28 +11,32 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
 ## Example
 
-    PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
-    PREFIX rdfs:> http://www.w3.org/2000/01/rdf-schema#
-    PREFIX xsd:> http://www.w4.org/2001/XMLSchema#
-    PREFIX owl:> http://www.w3.org/2002/07/owl#
-    PREFIX obo:> http://purl.obolibrary.org/obo/
-    PREFIX ex:> http://example.com/
+The first part of the example is a *context* which can be stored in a separate file.
 
-    LABEL rdf:type: type
-    LABEL rdfs:label: label
-    LABEL rdfs:comment: comment
-    LABEL obo:BFO_0000051: has part
-    TYPE comment:> xsd:string
+    PREFIXES
+      rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      xsd: <http://www.w3.org/2001/XMLSchema#>
+      owl: <http://www.w3.org/2002/07/owl#>
+      obo: <http://purl.obolibrary.org/obo/>
+      ex: <http://example.com/>
+    LABELS
+      label: rdfs:label
+      comment [xsd:string]: rdfs:comment
+      type [IRI]: rdf:type
+      has part: obo:BFO_0000051
+      Manchester Syntax: <http://www.w3.org/TR/owl2-manchester-syntax/>
+      subclass of [Manchester Syntax]: rdfs:subClassOf
 
     ex:ontology
     label: Example Ontology
-    type:> owl:Ontology
+    type: owl:Ontology
 
     ex:foo
     label: Foo
-    type:> owl:Class
-    comment: A comment on 'Foo'.@en
-    > comment: An annotation on the comment.^^xsd:string
+    type: owl:Class
+    comment [@en]: A comment on 'Foo'.
+    > comment: An annotation on the comment.
     >> comment: An annotation on the annotation.
     comment: Values can span multiple lines,
       and include blank lines...
@@ -42,8 +46,8 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
     ex:bar
     label: Bar
-    type:> owl:Class
-    subClassOf:>> 'has part' some Bar
+    type: owl:Class
+    subclass of: 'has part' some Bar
 
     # Lines starting with '#' are just comments.
 
@@ -120,31 +124,23 @@ It might also work under Node.js -- let us know!
 
 Features in this example:
 
-- `PREFIX ex:> http://example.com/`
+- `PREFIXES`
     - set prefixes, similar to Turtle and SPARQL
-- `LABEL obo:BFO_0000051: has part`
+- `LABELS`
     - like PREFIXes for single terms
-- `TYPE comment:> xsd:string`
     - set default language tag or datatype for a predicate
 - prefixes, labels, and types
-    - can occur at any point in the document
     - can be included from an external document, keeping the main document very simple
     - can be automatically generated using tools (not yet supported)
 - `ex:ontology`
     - specify the current subject by its prefixed name, IRI, or label
 - `label: Example Ontology`
-    - use `: ` for literal statements
+    - make a statement about the subject
     - specify a predicate by its prefixed name, IRI, or label
-    - literals quotation marks
     - multi-line literals are indented
-    - optionally append a language tag or datatype
-- `type:> owl:Ontology`
-    - use `:> ` for link statements (when the object is a node)
-    - specify the object by its prefixed name, IRI, or label
-- `subClassOf:>> 'has part' some Bar`
-    - use `:>> ` for expression statements
-    - supports Manchester syntax, as used in [Protégé](http://protege.stanford.edu)
-- `> comment: An annotation on the comment.^^xsd:string`
+    - optionally specify the type or language
+- `> comment: An annotation on the comment.`
+    - make an annotation on a statement
     - use `> ` for an OWL annotation
     - use `>> ` for nested annotations (and so on)
 
@@ -157,12 +153,6 @@ Behind the scenes:
 
 - line-based format for stream processing
 - JSON format for parse information, for language agnostic tooling
-
-HOWL is designed to be simple and predictable. The most common mistakes will probably be using a label that has not been defined, or using the wrong separator.
-
-- `: ` for text, numbers, dates, and other literal values
-- `:> ` for links
-- `:>> ` for complex expressions, i.e. things that link to things
 
 There are plans for tools that will:
 
@@ -202,33 +192,11 @@ These are all the block types:
 - Blank
 - Comment
 - BASE
-- PREFIX
-- LABEL
-- TYPE
+- PREFIXES
+- LABELS
 - GRAPH
 - Subject
-- Literal (a statement in which the object is an RDF literal)
-- Link (a statement in which the object is an RDF node)
-- Expression (a statement in which the object is an OWL expression)
-
-
-### Blank
-
-If a HOWL stream starts with blank lines, these will be parsed as blank blocks. We keep track of this whitespace so that we can process a file and render it back with the exact formatting the user provided. Note that blank lines that don't being a stream are merged into the previous block.
-
-This blank block:
-
-        
-
-is parsed into this JSON object:
-
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "    \n",
-     "block-type": "BLANK_BLOCK",
-     "parse": ["BLANK_BLOCK"
-               ["EOL" "    \n"]],
-     "eol": "    \n"}
+- Statement
 
 
 ### Comment
@@ -241,17 +209,76 @@ This comment block:
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
+    {"source": "example.howl",
+     "line": 1,
      "block": "# Just a comment.\n",
      "block-type": "COMMENT_BLOCK",
-     "parse": ["COMMENT_BLOCK"
-               "# ",
-               "Just a comment."
-               ["EOL" "\n"]],
      "hash": "# ",
      "comment": "Just a comment.",
-     "eol": "\n"}
+     "parse-tree":
+     ["COMMENT_BLOCK",
+      "# ",
+      "Just a comment."],
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+
+### PREFIXES
+
+This prefix block:
+
+    PREFIXES
+      rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "block": "PREFIXES\nrdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
+     "block-type": "PREFIXES_BLOCK",
+     "parse-tree":
+     ["PREFIXES_BLOCK",
+      "PREFIXES",
+      ["WHITESPACE", "\n"],
+      ["PREFIX_LINE",
+       ["PREFIX", "rdf"],
+       ["COLON", "", ":", " "],
+       ["IRIREF", "<", "http://www.w3.org/1999/02/22-rdf-syntax-ns#", ">"]]],
+     "prefixes": {
+       "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     },
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+
+### LABELS
+
+HOWL makes RDF more readable by using labels rather than IRIs and prefixed names whenever possible. Label blocks allow you to associate a label to an identifier, without making any other assertions about it -- no triple will be generated. If you want to assert that a subject has a label, use the special `label:` predicate shown below.
+
+This label block:
+
+    LABELS
+      comment: rdfs:comment
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "block": "LABELS\ncomment: rdfs:comment\n",
+     "block-type": "LABELS_BLOCK",
+     "parse-tree":
+     ["LABELS_BLOCK",
+      "LABELS",
+      ["WHITESPACE", "\n"],
+      ["LABEL_LINE",
+       ["LABEL", "comment"],
+       ["COLON", "", ":" " "],
+       ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
+     "labels": {
+      "comment": "http://www.w3.org/2000/01/rdf-schema#comment"
+     },
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 
 ### BASE
@@ -260,100 +287,22 @@ Base blocks set the current base IRI for resolving relative IRIs. Multiple base 
 
 This prefix block:
 
-    BASE http://example.com/
+    BASE <http://example.com/>
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "BASE http://example.com/\n",
+    {"source": "example.howl",
+     "line": 1,
+     "block": "BASE <http://example.com/>\n",
      "block-type": "BASE_BLOCK",
-     "parse": ["BASE_BLOCK"
-               "BASE"
-               ["SPACES" " "]
-               ["BASE" ["ABSOLUTE_IRI" "http://example.com/"]]
-               ["EOL" "\n"]],
-     "base": ["ABSOLUTE_IRI" "http://example.com/"],
-     "eol": "\n"}
-
-
-### PREFIX
-
-Prefix blocks are identical to SPARQL prefix lines.
-
-This prefix block:
-
-    PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#
-
-is parsed into this JSON object:
-
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "PREFIX rdf:> http://www.w3.org/1999/02/22-rdf-syntax-ns#\n",
-     "block-type": "PREFIX_BLOCK",
-     "parse": ["PREFIX_BLOCK"
-               "PREFIX"
-               ["SPACES" " "]
-               ["PREFIX" "rdf"]
-               ["COLON_ARROW" "" ":>" " "]
-               ["PREFIXED"
-                ["ABSOLUTE_IRI" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"]]
-               ["EOL" "\n"]],
-     "prefix": "rdf",
-     "prefixed": ["ABSOLUTE_IRI" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"],
-     "eol": "\n"}
-
-
-### LABEL
-
-HOWL makes RDF more readable by using labels rather than IRIs and prefixed names whenever possible. Label blocks allow you to associate a label to an identifier, without making any other assertions about it -- no triple will be generated. If you want to assert that a subject has a label, use the special `label:` predicate shown below.
-
-This label block:
-
-    LABEL rdfs:comment: comment
-
-is parsed into this JSON object:
-
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "LABEL rdfs:comment: comment\n",
-     "block-type": "LABEL_BLOCK",
-     "parse": ["LABEL_BLOCK"
-               "LABEL"
-               ["SPACES" " "]
-               ["IDENTIFIER" ["PREFIXED_NAME" "rdfs" ":" "comment"]]
-               ["COLON" "" ":" " "]
-               ["LABEL" "comment"]
-               ["EOL" "\n"]],
-     "identifier": ["PREFIXED_NAME" "rdfs" ":" "comment"],
-     "label": "comment",
-     "eol": "\n"}
-
-
-### TYPE
-
-Like JSON-LD, HOWL allows you to associate a default datatype (or language tag) with a predicate. Unless they specify a datatype (or language tag), any literal object for that predicate will use that datatype (or language tag). No triple is generated for a type block.
-
-This type block:
-
-    TYPE comment:> xsd:string
-
-is parsed into this JSON object:
-
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "TYPE comment:> xsd:string\n",
-     "block-type": "TYPE_BLOCK",
-     "parse": ["TYPE_BLOCK"
-               "TYPE"
-               ["SPACES" " "]
-               ["PREDICATE" ["LABEL" "comment"]]
-               ["COLON_ARROW" "" ":>" " "]
-               ["DATATYPE" ["PREFIXED_NAME" "xsd" ":" "string"]]
-               ["EOL" "\n"]],
-     "predicate": ["LABEL" "comment"],
-     "datatype": ["PREFIXED_NAME" "xsd" ":" "string"],
-     "eol": "\n"}
+     "parse-tree":
+     ["BASE_BLOCK",
+      "BASE",
+      ["SPACES", " "],
+      ["IRIREF", "<", "http://example.com/", ">"]],
+     "base-iri": "http://example.com/",
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 
 ### GRAPH
@@ -371,32 +320,37 @@ This graph block:
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
+    {"source": "example.howl",
+     "line": 1,
      "block": "GRAPH ex:graph\n",
      "block-type": "GRAPH_BLOCK",
-     "parse": ["GRAPH_BLOCK"
-               "GRAPH"
-               ["SPACES" " "]
-               ["GRAPH" ["PREFIXED_NAME" "ex" ":" "graph"]]
-               ["EOL" "\n"]],
-     "graph": ["PREFIXED_NAME" "ex" ":" "graph"],
-     "eol": "\n"}
+     "parse-tree":
+     ["GRAPH_BLOCK",
+      "GRAPH",
+      ["SPACES", " "],
+      ["PREFIXED_NAME", "ex", ":", "graph"]],
+     "graph": ["PREFIXED_NAME", "ex", ":", "graph"],
+     "graph-iri": "http://example.com/graph",
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 This graph block:
 
-    GRAPH
+    DEFAULT GRAPH
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "GRAPH\n",
+    {"source": "example.howl",
+     "line": 1,
+     "block": "DEFAULT GRAPH\n",
      "block-type": "GRAPH_BLOCK",
-     "parse": ["GRAPH_BLOCK"
-               "GRAPH"
-               ["EOL" "\n"]],
-     "eol": "\n"}
+     "parse-tree":
+     ["GRAPH_BLOCK"
+      "DEFAULT GRAPH"],
+     "graph": null,
+     "graph-iri": null,
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 
 ### Subject
@@ -409,51 +363,118 @@ This subject block:
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
+    {"source": "example.howl",
+     "line": 1,
      "block": "ex:subject\n",
      "block-type": "SUBJECT_BLOCK",
-     "parse": ["SUBJECT_BLOCK"
-               ["SUBJECT" ["PREFIXED_NAME" "ex" ":" "subject"]]
-               ["EOL" "\n"]],
+     "parse-tree":
+     ["SUBJECT_BLOCK",
+      ["PREFIXED_NAME", "ex", ":", "subject"]],
      "subject": ["PREFIXED_NAME" "ex" ":" "subject"],
-     "eol": "\n"}
+     "subject-iri": "http://example.com/subject",
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 
-### Literal
+### Statement
 
 The key difference between the HOWL syntax for literals and the Turtle or NTriples syntax is that HOWL does not require quotation marks. A literal block consists of a predicate, a `: ` (colon and one or more spaces), followed by the literal content, and optionally ending with a language tag or datatype.
 
 This literal block:
 
-    comment: This comment has a datatype.^^xsd:string
+    comment: This is an RDFS comment.
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "comment: This comment has a datatype.^^xsd:string\n",
-     "block-type": "LITERAL_BLOCK",
-     "parse": ["LITERAL_BLOCK"
-               ["ARROWS" "" ""]
-               ["PREDICATE" ["LABEL" "comment"]]
-               ["COLON" "" ":" " "]
-               ["LITERAL"
-                "This comment has a datatype."
-                "^^"
-                ["DATATYPE" ["PREFIXED_NAME" "xsd" ":" "string"]]]
-               ["EOL" "\n"]],
+    {"source": "example.howl",
+     "line": 1,
+     "block": "comment: This is an RDFS comment.\n",
+     "block-type": "STATEMENT_BLOCK",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["LABEL", "comment"],
+      ["DATATYPE"],
+      ["COLON", "", ":", " "],
+      "This is an RDFS comment."],
      "arrows": "",
-     "predicate": ["LABEL" "comment"],
+     "predicate": ["LABEL", "comment"],
+     "datatype": null,
+     "content": "This is an RDFS comment.",
+     "graph-iri": "http://example.com/current-graph",
+     "subject-iri": "http://example.com/current-subject",
+     "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+     "language": null,
+     "object-iri": null,
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+This literal block:
+
+    comment [@en]: This is an English comment.
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "block": "comment [@en]: This is an English comment.\n",
+     "block-type": "STATEMENT_BLOCK",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["LABEL", "comment"],
+      ["DATATYPE", " [", ["LANGUAGE", "@en"], "]"],
+      ["COLON", "", ":", " "],
+      "This is an English comment."],
+     "arrows": "",
+     "predicate": ["LABEL", "comment"],
+     "datatype": ["LANGUAGE", "@en"],
+     "content": "This is an English comment.",
+     "graph-iri": "http://example.com/current-graph",
+     "subject-iri": "http://example.com/current-subject",
+     "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "object-iri": null,
+     "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+     "language": "@en",
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+This literal block:
+
+    comment [xsd:string]: This comment has a datatype.
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "block": "comment [xsd:string]: This comment has a datatype.\n",
+     "block-type": "STATEMENT_BLOCK",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["LABEL", "comment"],
+      ["DATATYPE", " [", ["PREFIXED_NAME", "xsd", ":", "string"], "]"],
+      ["COLON", "", ":", " "],
+      "This comment has a datatype."],
+     "arrows": "",
+     "predicate": ["LABEL", "comment"],
+     "datatype": ["PREFIXED_NAME", "xsd", ":", "string"],
      "content": "This comment has a datatype.",
-     "datatype": ["PREFIXED_NAME" "xsd" ":" "string"],
-     "eol": "\n"}
+     "graph-iri": "http://example.com/current-graph",
+     "subject-iri": "http://example.com/current-subject",
+     "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "object-iri": null,
+     "datatype-iri": "http://www.w3.org/2001/XMLSchema#string",
+     "language": null,
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 So these HOWL blocks:
 
 ```
 PREFIX rdfs:> http://www.w3.org/2000/01/rdf-schema#
-PREFIX xsd:> http://www.w4.org/2001/XMLSchema#
+PREFIX xsd:> http://www.w3.org/2001/XMLSchema#
 PREFIX ex:> http://example.com
 LABEL rdfs:comment: comment
 GRAPH ex:graph
@@ -467,7 +488,7 @@ specify this NQuad (with newlines added for readability):
 <http://example.com/graph>
 <http://example.com/subject>
 <http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
-"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+"This comment has a datatype."^^<http://www.w3.org/2001/XMLSchema#string> .
 ```
 
 
@@ -477,24 +498,63 @@ To express a triple where the object is an IRI, we use a link block. The subject
 
 This link block:
 
-    rdf:type:> owl:Class
+    rdf:type [LINK]: owl:Class
 
 is parsed into this JSON object:
 
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "block": "rdf:type:> owl:Class\n",
-     "block-type": "LINK_BLOCK",
-     "parse": ["LINK_BLOCK"
-               ["ARROWS" "" ""]
-               ["PREDICATE" ["PREFIXED_NAME" "rdf" ":" "type"]]
-               ["COLON_ARROW" "" ":>" " "]
-               ["OBJECT" ["PREFIXED_NAME" "owl" ":" "Class"]]
-               ["EOL" "\n"]],
+    {"source": "example.howl",
+     "line": 1,
+     "block": "rdf:type [LINK]: owl:Class\n",
+     "block-type": "STATEMENT_BLOCK",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["PREFIXED_NAME", "rdf", ":", "type"]
+      ["DATATYPE", " [", "LINK", "]"],
+      ["COLON", "", ":", " "],
+      ["PREFIXED_NAME", "owl", ":", "Class"]],
      "arrows": "",
-     "predicate": ["PREFIXED_NAME" "rdf" ":" "type"],
-     "object": ["PREFIXED_NAME" "owl" ":" "Class"],
-     "eol": "\n"}
+     "predicate": ["PREFIXED_NAME", "rdf", ":", "type"],
+     "datatype": "LINK",
+     "content": ["PREFIXED_NAME", "owl", ":", "Class"],
+     "graph-iri": "http://example.com/current-graph",
+     "subject-iri": "http://example.com/current-subject",
+     "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+     "object-iri": "http://www.w3.org/2002/07/owl#Class",
+     "datatype-iri": null,
+     "language": null,
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+We can assign default datatypes to labels. When that label is used as a predicate, and no datatype is specified, the default datatype will apply. We have assigned the special type "LINK" to the label "type":
+
+    type: owl:Class
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "block": "type: owl:Class\n",
+     "block-type": "STATEMENT_BLOCK",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["LABEL", "type"]
+      ["DATATYPE"],
+      ["COLON", "", ":", " "],
+      ["PREFIXED_NAME", "owl", ":", "Class"]],
+     "arrows": "",
+     "predicate": ["LABEL", "type"],
+     "datatype": null,
+     "content": ["PREFIXED_NAME", "owl", ":", "Class"],
+     "graph-iri": "http://example.com/current-graph",
+     "subject-iri": "http://example.com/current-subject",
+     "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+     "object-iri": "http://www.w3.org/2002/07/owl#Class",
+     "datatype-iri": null,
+     "language": null,
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
 
 So these HOWL blocks:
 
@@ -526,6 +586,7 @@ This expression block:
 
 is parsed into this JSON object:
 
+    TODO
     {"file-name": "example.howl",
      "line-number": 1,
      "block": "rdfs:subClassOf:>> 'has part' some foo\n",
@@ -597,6 +658,7 @@ This literal block:
 
 is parsed into this JSON object:
 
+    TODO
     {"file-name": "example.howl",
      "line-number": 1,
      "block": "> comment: A comment on a comment.\n"
@@ -638,7 +700,7 @@ specify these six NTriples (with newlines added for readability):
 ```
 <http://example.com/subject>
 <http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>
-"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+"This comment has a datatype."^^<http://www.w3.org/2001/XMLSchema#string> .
 
 _:b1
 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
@@ -654,7 +716,7 @@ _:b1
 
 _:b1
 <http://www.w3.org/2002/07/owl#annotatedTarget>
-"This comment has a datatype."^^<http://www.w4.org/2001/XMLSchema#string> .
+"This comment has a datatype."^^<http://www.w3.org/2001/XMLSchema#string> .
 
 _:b1
 <http://www.w3.org/1999/02/22-rdf-syntax-ns#comment>

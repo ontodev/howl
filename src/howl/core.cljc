@@ -1,50 +1,430 @@
 (ns howl.core
   "Parse HOWL."
   (:require [clojure.string :as string]
-            [clojure.pprint :as pprint]
+            [clojure.walk :refer [postwalk]]
+            [clojure.data.json :as json]
             [instaparse.core :as insta]
             [cemerick.url :as url]
 
             [howl.util :as util :refer [<>> owl> rdf> rdf-schema>]]
             [howl.expression :as exp]))
 
-;; Parsing works like this:
-;;
-;; 1. lines->blocks
-;;     - converts a lazy seq of lines to a lazy seq of {:exp [:PARSE_TREE ...]},
-;;       complete with metadata designating origin name/line-number
-;;     - groups lines into blocks before parsing each block (done in one step, 'cause
-;;       it's otherwise difficult to factor in the error reporting hooks we need)
-;;
-;; 2. (map condense-chars)
-;;     - some parse blocks emit one-char strings. As in, things like [:TAG "f" "o" "o" "b" "a" "r"].
-;;       This step condenses such blocks down to [:TAG "foobar"]
-;;     - some parse blocks emit partial strings. For instance [:LABEL "FOO" [:SPACES "   "] "BAR"] is a
-;;       possible output for the block parser. This step condenses those down to [:LABEL "FOO   BAR"]
-;;
-;; 3. (map parse-expressions)
-;;     - some blocks contain sub-expressions expressed in a different syntax.
-;;       The preliminary parse leaves such expressions as strings to be dealt
-;;       with separately. This step deals with them.
-;;
-;; 4. environments
-;;     - some blocks introduce new bindings to be used by other expressions. Mostly prefixes
-;;       and new labels.
-;;       This step extracts those bindings and puts them in the appropriate :env key.
-;;     - Each environment includes the previous, and environments survive past end of file for
-;;       usability reasons.
-;;     - Each name is valid from the point where it's declared to the point where it's shadowed.
-;;
-;; 5. (map expand-block)
-;;     - this step expands prefixed names into literals, and
+;; ## Links
 
-;; Principal Datastructure
-;; type block = {:env environment :exp parse-tree}
-;; type parse-tree = Vector (keyword | string | parse-tree)
-;; type env = {labels prefixes graph subject}
+; Adapted from the NQuads spec *)
+; WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF
+(def iri-grammar "
+IRIREF           = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
+BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
+UCHAR            = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
+PN_CHARS_BASE    = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]'
+PN_CHARS_U       = PN_CHARS_BASE | '_' | ':'
+PN_CHARS         = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
+HEX              = #'[0-9A-Fa-f]+'
+")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Preliminary parse
+(def prefixed-name-grammar "
+PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:\\]]*'
+PREFIX        = #'(\\w|-)+'
+")
+
+(def label-grammar "
+LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
+KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT'
+<WORD>  = #'[^\\s]*[^:\\]\\s]'
+SPACES  = #' +'
+")
+
+(def link-grammar-partial
+  "LINK = NAME_OR_BLANK
+<NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
+<NAME> = IRIREF / PREFIXED_NAME / LABEL
+<IRI>  = IRIREF / PREFIXED_NAME")
+
+(def link-transformations
+  {:IRIREF (fn [& xs] [:IRIREF "<" (apply str (rest (butlast xs))) ">"])
+   :LABEL  (fn [& xs] [:LABEL (apply str xs)])})
+
+(def link-grammar
+  (string/join
+   \newline
+   [link-grammar-partial
+    iri-grammar
+    prefixed-name-grammar
+    label-grammar]))
+
+(def link-parser (insta/parser link-grammar))
+
+(defn parse-link
+  [content]
+  (let [result (link-parser content)]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "Link parser failure")))
+    (->> result
+         (insta/transform link-transformations)
+         second)))
+
+(defn iriref->iri
+  [env [_ _ iri _]]
+  ; TODO: check absolute
+  iri)
+
+(defn prefixed-name->iri
+  [env [_ prefix _ local]]
+  ; TODO: check absolute
+  (str (get-in env [:prefix-iri prefix] "ERROR") local))
+
+(defn label->iri
+  [env [_ label]]
+  ; TODO: check absolute
+  (get-in env [:label-iri label]))
+
+(defn id->iri
+  [env parse]
+  (case (first parse)
+    :IRIREF        (iriref->iri env parse)
+    :PREFIXED_NAME (prefixed-name->iri env parse)
+    ; TODO: catch error
+    ))
+
+(defn name->iri
+  [env parse]
+  (case (first parse)
+    :IRIREF        (iriref->iri env parse)
+    :PREFIXED_NAME (prefixed-name->iri env parse)
+    :LABEL         (label->iri env parse)
+    ; TODO: catch error
+    ))
+
+(def block-grammar-partial "
+<BLOCK> = WHITESPACE
+          (COMMENT_BLOCK
+           / PREFIXES_BLOCK
+           / LABELS_BLOCK
+           / BASE_BLOCK
+           / GRAPH_BLOCK
+           / SUBJECT_BLOCK
+           / STATEMENT_BLOCK)
+          WHITESPACE
+
+COLON           = #' *' ':'  #' +'
+WHITESPACE      = #'(\r|\n|\\s)*'
+")
+
+
+;; # BLOCKS
+
+; There are seven block types in HOWL:
+; COMMENT, PREFIXES, LABELS, BASE, GRAPH, SUBJECT, STATEMENT
+;
+; The core of HOWL processing is the "block map",
+; which contains enough information to convert into any supported format:
+; HOWL, NQuads, JSON.
+;
+; We use a hub-and-spoke model with the block map representation in the middle,
+; then provide methods for each conversion:
+;
+; - HOWL string to block
+; - block to HOWL string
+; - NQuad to block
+; - block to NQuad
+; - JSON string to block
+; - block to JSON string
+;
+; We also have blocks to blocks transformations,
+; such as normalization and sorting.
+
+
+; To turn a string into a
+; We have general functions for parsing block
+
+(defmulti parse->block
+  "Given an environment and a map with :parse-tree and :block-type keys,
+   return the updated environment and block map."
+  (fn [env block] (:block-type block)))
+
+(defmethod parse->block :default
+  [env block]
+  (println block)
+  (throw (Exception. "Parse error")))
+
+; TODO: block->string
+
+
+
+; Sometimes we want to reformat or normalize a block.
+; By default, we do nothing.
+
+(defmulti normalize-block
+  "Given an environment and a block map,
+   return the normalized block map."
+  (fn [env block] (:block-type block)))
+
+(defmethod normalize-block :default
+  [env block]
+  block)
+
+
+; When converting blocks to NQuads
+; Be default, do nothing.
+
+(defmulti block->nquads
+  "Given a (fully expanded) block,
+   return a sequence of zero or more NQuad vectors."
+  (fn [env block] (:block-type block)))
+
+(defmethod block->nquads :default
+  [block]
+  [])
+
+
+
+
+;; ## COMMENT_BLOCK
+
+; A COMMENT_BLOCK is a line with a hash (#) as the first character.
+; The line is ignored by most processing,
+; and does not have an NQuads representation.
+
+(def comment-block-grammar "COMMENT_BLOCK = #'#+\\s*' #'.*'")
+
+(defmethod parse->block :COMMENT_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  [env
+   (assoc
+    block
+    :hash    (second parse-tree)
+    :comment (nth parse-tree 2))])
+
+
+
+
+;; ## PREFIXES_BLOCK
+
+; Prefixes are used to contract and expand prefixed names.
+; Prefix mappings are stored in the environment
+; as forward- and reverse- maps.
+;
+; A PREFIXES_BLOCK starts with a 'PREFIXES' keyword,
+; followed by one or or more PREFIX_LINES
+; each containing a PREFIX and and IRI.
+; The PREFIXES_BLOCK does not have an NQuad representation.
+
+(def prefixes-block-grammar
+  "PREFIXES_BLOCK = 'PREFIXES' (WHITESPACE PREFIX_LINE)+
+PREFIX_LINE = PREFIX COLON IRIREF")
+
+(defn extract-prefixes
+  "Given a parse tree for PREFIXES_BLOCK,
+   return a map from prefix string to IRI string."
+  [parse-tree]
+  (->> parse-tree
+       (filter vector?)
+       (filter #(= :PREFIX_LINE (first %)))
+       (map
+        (fn [[_ [_ prefix] _ [_ _ iri _]]]
+          ; TODO: make sure IRI is absolute?
+          [prefix iri]))
+       (into {})))
+
+(defmethod parse->block :PREFIXES_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [prefixes (extract-prefixes parse-tree)]
+    [(update-in env [:prefix-iri] merge prefixes)
+     (assoc block :prefixes prefixes)]))
+
+
+;; ## LABELS_BLOCK
+;
+; Labels provide mappings from human-readable strings to IRIs.
+; They can also define default types for predicates.
+; Label mappings are stored in the environment
+; as forward- and reverse- maps.
+
+(def labels-block-grammar
+"LABELS_BLOCK = 'LABELS' (WHITESPACE LABEL_LINE)+
+LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
+
+(defn extract-labels
+  "Given a parse tree for LABELS_BLOCK,
+   return a map from label string to IRI string."
+  [env parse-tree]
+  (->> parse-tree
+       (filter vector?)
+       (filter #(= :LABEL_LINE (first %)))
+       (map
+        (fn [[_ [_ label] _ id]]
+          [label (id->iri env id)]))
+       (into {})))
+
+(defmethod parse->block :LABELS_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [labels (extract-labels env parse-tree)]
+    [(update-in env [:label-iri] merge labels)
+     (assoc block :labels labels)]))
+
+
+
+;; ## BASE_BLOCK
+;
+; The base block sets the base IRI
+; use to resolve relate IRIs.
+
+(def base-block-grammar "BASE_BLOCK = 'BASE' SPACES IRIREF")
+
+(defmethod parse->block :BASE_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [base-iri (get-in parse-tree [3 2])]
+    ; TODO: check that IRI is absolute
+    [(assoc env :base-iri base-iri)
+     (assoc block :base-iri base-iri)]))
+
+
+
+;; ## GRAPH_BLOCK
+;
+; The graph block declares the graph for all statements
+; until the next graph block.
+; Processing starts with the (unnamed) default graph.
+; Graph blocks can either be 'GRAPH NAME'
+; or 'DEFAULT GRAPH'.
+
+(def graph-block-grammar "GRAPH_BLOCK = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?")
+
+(defmethod parse->block :GRAPH_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [graph     (get parse-tree 3 nil)
+        graph-iri (when graph (name->iri env graph))]
+    ; TODO: check that IRI is absolute
+    [(assoc env :current-graph-iri graph-iri)
+     (assoc
+      block
+      :graph graph
+      :graph-iri graph-iri)]))
+
+
+;; ## SUBJECT_BLOCK
+;
+; The subject block declares the subject of all statements
+; until the next subject block.
+
+(def subject-block-grammar "SUBJECT_BLOCK = NAME_OR_BLANK")
+
+(defmethod parse->block :SUBJECT_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [subject     (second parse-tree)
+        subject-iri (name->iri env subject)]
+    ; TODO: check that IRI is absolute
+    [(assoc env :current-subject-iri subject-iri)
+     (assoc
+      block
+      :subject subject
+      :subject-iri subject-iri)]))
+
+
+
+;; ## STATEMENT_BLOCK
+
+(def statement-block-grammar
+  "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'.*'
+ARROWS   = #'>*' #'\\s*'
+DATATYPE = '' | #' +\\[' ('LINK' | LANGUAGE | NAME) ']'
+LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
+
+(defmulti content->parse
+  "Given an environment,
+   a datatype IRI string (or nil when the object is an IRI),
+   and a content string,
+   return the object IRI (maybe nil)
+   and the parse tree for the content."
+  (fn [env datatype-iri content] datatype-iri))
+
+(defmethod content->parse :default
+  [env datatype-iri content]
+  [nil content])
+
+(defmethod content->parse nil
+  [env datatype-iri content]
+  (let [result (parse-link content)]
+    [(name->iri env result) result]))
+
+(def rdf:PlainLiteral "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
+
+(defn get-datatype
+  "Given an environment, a predicate parse, and a datatype parse,
+   return the datatype-iri (nil for object IRI) and language (or nil).
+   This will be the for the given datatype (unless it is null),
+   or the predicate's default datatype (if it has one),
+   or just rdf:PlainLiteral."
+  [env predicate datatype]
+  (cond
+   (= "LINK" datatype)
+   [nil nil]
+
+   (= :LANGUAGE (first datatype))
+   [rdf:PlainLiteral (second datatype)]
+
+   datatype
+   [(name->iri env datatype) nil]
+
+   (and (= :LABEL (first predicate))
+        (get-in env [:label-datatype (second predicate)]))
+   (get-in env [:label-datatype (second predicate)])
+
+   :else
+   [rdf:PlainLiteral nil]))
+
+(defmethod parse->block :STATEMENT_BLOCK
+  [env {:keys [parse-tree] :as block}]
+  (let [predicate     (get parse-tree 2)
+        predicate-iri (name->iri env predicate)
+        datatype      (get-in parse-tree [3 2])
+        [datatype-iri language] (get-datatype env predicate datatype)
+        [object-iri content] (content->parse env datatype-iri (last parse-tree))]
+    ; TODO: check that IRIs are absolute
+    [env ; TODO: add rdfs:label
+     (assoc
+      block
+      :parse-tree (assoc parse-tree 5 content) ; update parse
+      :arrows (get-in parse-tree [1 1])
+      :predicate predicate
+      :datatype datatype
+      :content content
+      :graph-iri (:current-graph-iri env)
+      :subject-iri (:current-subject-iri env) ; TODO: handle missing
+      :predicate-iri predicate-iri
+      :object-iri object-iri
+      :datatype-iri datatype-iri
+      :language language)]))
+
+
+
+(def block-grammar
+  (string/join
+   \newline
+   [block-grammar-partial
+    comment-block-grammar
+    prefixes-block-grammar
+    labels-block-grammar
+    base-block-grammar
+    graph-block-grammar
+    subject-block-grammar
+    statement-block-grammar
+    link-grammar]))
+
+(def block-parser (insta/parser block-grammar))
+
+(defn parse-block
+  [block]
+  (let [result (block-parser block)]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "Parse failure")))
+    (->> result
+         (insta/transform link-transformations)
+         vec)))
+
 (defn group-lines
   "Given a sequence of lines, returns a lazy sequence of grouped lines"
   [lines]
@@ -55,432 +435,120 @@
           @ct))
    lines))
 
-(def block-parser
-  (insta/parser
-   "<BLOCK> = (COMMENT_BLOCK
-               / BASE_BLOCK / PREFIX_BLOCK
-               / DEFAULT_BLOCK / LABEL_BLOCK
-               / GRAPH_BLOCK / SUBJECT_BLOCK
-               / LITERAL_BLOCK / LINK_BLOCK
-               / ANNOTATION / EXPRESSION_BLOCK)?
-              TRAILING_WHITESPACE
-
-    COMMENT_BLOCK    = #'#+\\s*' #'.*'
-    BASE_BLOCK       = 'BASE'   SPACES BASE
-    PREFIX_BLOCK     = 'PREFIX' SPACES PREFIX COLON_ARROW PREFIXED
-    LABEL_BLOCK      = 'LABEL'  SPACES SUBJECT COLON LABEL
-    DEFAULT_BLOCK    = 'DEFAULT' SPACES PREDICATE SPACES
-                       ('LANGUAGE' SPACES LANGUAGE | 'TYPE' SPACES DATATYPE | 'NONE')
-    GRAPH_BLOCK      = 'GRAPH' (SPACES GRAPH)?
-    SUBJECT_BLOCK    = SUBJECT
-    ANNOTATION       = ARROWS (LITERAL_BLOCK | LINK_BLOCK)
-    LITERAL_BLOCK    = PREDICATE
-                       (SPACES 'LANGUAGE' SPACES LANGUAGE | SPACES 'TYPE' SPACES DATATYPE)?
-                       COLON LITERAL
-    LINK_BLOCK       = PREDICATE SPACES? COLON_ARROW OBJECT
-    EXPRESSION_BLOCK = PREDICATE (SPACES 'TYPE' SPACES DATATYPE)?
-                       COLON_ARROW EXPRESSION
-
-    <NAME>          = IRIREF / PREFIXED_NAME / LABEL
-    <NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
-    BASE            = IRIREF
-    PREFIXED        = IRIREF
-    GRAPH           = NAME
-    SUBJECT         = NAME_OR_BLANK
-    PREDICATE       = NAME
-    OBJECT          = NAME_OR_BLANK
-    DATATYPE        = NAME_OR_BLANK
-
-    (* TERMINALS *)
-    PREFIX              = #'(\\w|-)+'
-    PREFIXED_NAME       = PREFIX ':' #'[^\\s:/][^\\s:]*'
-    COLON               = #' *' ':'  #' +'
-    COLON_ARROW         = #' *' ':>' #' +'
-    SPACES              = #' +'
-    ARROWS              = #'>+' #'\\s*'
-    LABEL               = !(KEYWORD | '<' | '>' | '#') (WORD SPACES?)* WORD
-    KEYWORD             = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT'
-    <WORD>              = !('LANGUAGE' | 'TYPE') #'[^\\s]*[^:>\\s]'
-    LITERAL             = #'(\n|.)*.+'
-    EXPRESSION          = #'(?:.|\r?\n)+'
-    TRAILING_WHITESPACE = #'(\r|\n|\\s)*'
-
-    (* Adapted from the NQuads spec *)
-    (* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF ? *)
-    LANGUAGE         = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'
-    IRIREF           = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
-    BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
-    UCHAR            = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
-    PN_CHARS_BASE    = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]'
-    PN_CHARS_U       = PN_CHARS_BASE | '_' | ':'
-    PN_CHARS         = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
-    HEX              = #'[0-9A-Fa-f]+'
-    "))
+(defn process-block
+  "Given an environment a source, a line number, and a block string,
+   return the update environment and the block map."
+  [{:keys [source line] :as env} block-string]
+  (let [[[_ lws] parse-tree [_ tws]] (parse-block block-string)]
+    (parse->block
+     env
+     {:source source
+      :line line
+      :block block-string
+      :block-type (first parse-tree)
+      :parse-tree parse-tree
+      :leading-whitespace lws
+      :trailing-whitespace tws})))
 
 (defn lines->blocks
-  "Takes a seq of lines. Returns a seq of {:exp [:PARSE_TREE ...]} objects."
-  [lines & {:keys [source] :or {source "interactive"}}]
-  ((fn rec [groups ct]
-     (when (not (empty? groups))
-       (let [g (first groups)]
-         (lazy-seq
-          (cons (with-meta
-                  {:exp (first (insta/parse block-parser (string/join \newline g)))}
-                  {:origin {:name source :line ct}})
-                (rec (rest groups) (+ ct (count g))))))))
-   (group-lines lines) 1))
+  "Given a sequence of lines,
+   group them, process them,
+   and return a lazy sequence of block maps."
+  [{:keys [source] :or {source "interactive"} :as env} lines]
+  (reduce
+   (fn [env lines]
+     (let [[env block] (process-block env (string/join \newline lines))]
+       (-> env
+           (update-in [:blocks] conj block)
+           (update-in [:line] + (count lines)))))
+   env
+   (group-lines lines)))
 
-(defn parse-tree->string
-  "Takes a parse-tree that came from the block-parser, and
-   returns the corresponding string"
-  [parse-tree]
-  (if (string? parse-tree)
-    parse-tree
-    (case (first parse-tree)
-      :ABSOLUTE_IRI (get parse-tree 2)
-      (:LABEL :PREFIX :TRAILING_WHITESPACE :SPACES) (second parse-tree)
-      (string/join (map parse-tree->string (rest parse-tree))))))
 
-(defn block->string
+;; ## NQUADS
+;
+; NQuads is a line-based concrete syntax for RDF.
+; Each line consists of a subject, predicate, object, and optional graph.
+; The predicate and graph are always absolute IRIs.
+; The subject is an absolute IRI or blank node.
+; The object can be: an IRI, a blank node, or a literal.
+; Literals are quoted strings with an optional language tag or type IRI.
+;
+; We represent NQuads as vectors of strings:
+; [graph subject predicate object type/language]
+
+(defn nquad-string->nquad
+  "Given a line from an NQuads file,
+   return an NQuad vector."
+  [line]
+  [])
+
+(defn nquad->nquad-string
+  [nquad]
+  )
+
+(defn nquad->ntriple-string
+  [nquad]
+  )
+
+(defn nquad->blocks
+  "Given an environment and an nquad vector,
+   return the updated environment and zero or more block maps."
+  [{:keys [current-graph current-subject iri-labels] :as env}
+   [graph subject predicate object datatype]]
+  (remove
+   nil?
+   [; many new graph
+    ; maybe new subject
+    ; new statement
+    ]))
+
+
+
+
+;; ## JSON
+
+; The JSON conversion is almost trivial.
+; The only trick is converting certain JSON strings to Clojure keywords.
+
+(defn block->json-string
   [block]
-  (parse-tree->string (block :exp)))
+  )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Condense step
-(defn condense-tree
-  "Takes a parse-tree and condenses single-character strings into a single string."
-  [parse-tree]
-  (if (or (string? parse-tree) (keyword? parse-tree) (nil? parse-tree) (number? parse-tree))
-    parse-tree
-    (case (first parse-tree)
-      :IRIREF [:IRIREF
-               (second parse-tree)
-               (string/join (drop 2 (drop-last parse-tree)))
-               (last parse-tree)]
-      :LABEL [:LABEL (string/join (map #(if (string? %) % (second %)) (rest parse-tree)))]
-      (:TRAILING_WHITESPACE) parse-tree
-      (vec (map condense-tree parse-tree)))))
+(defn json-string->block
+  [json]
+  )
 
-(defn condense-chars [block]
-  (assoc block :exp (condense-tree (block :exp))))
+(defn json->parse
+  "Given the JSON representation of a parse vector,
+   return the EDN representation."
+  [json]
+  (postwalk
+   (fn [form]
+     (if (vector? form)
+       (assoc form 0 (keyword (first form)))
+       form))
+   json))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Parsing expressions
-(defn parse-expressions
-  "Takes a parse-tree. Runs a separate parser on
-   any contained :EXPRESSION_BLOCKs"
-  [block]
-  (if (= :EXPRESSION_BLOCK (first (block :exp)))
-    (assoc
-     block :exp
-     (vec
-      (map (fn [elem]
-             (if (and (vector? elem)
-                      (= :EXPRESSION (first elem)))
-               (exp/string-to-parse (second elem))
-               elem))
-           (block :exp))))
-    block))
+(defn json->value
+  [key value]
+  (case key
+    "block-type" (keyword value)
+    "parse-tree" (json->parse value)
+    "graph"      (json->parse value)
+    "subject"    (json->parse value)
+    "predicate"  (json->parse value)
+    "datatype"   (json->parse value)
+    "content"    (json->parse value)
+    value))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Extracting environments
-(defn first-vector-starting-with
-  [keyword parse-tree]
-  (first (filter #(and (vector? %) (= keyword (first %))) parse-tree)))
+(defn json->block
+  "Given a JSON representation of block,
+   return the EDN representation."
+  [json]
+  (->> (json/read-str json :value-fn json->value)
+       (map (fn [[k v]] [(keyword k) v]))
+       (into {})))
 
-(defn contents-of-vector
-  [keyword parse-tree]
-  (second (first-vector-starting-with keyword parse-tree)))
 
-(defn name-from-node
-  "Takes an environment and a node, and returns the absolute name
-   contained in the node.
-   Does not work on all nodes, just :BLANK_NODE, :ABSOLUTE_IRI,
-   :IRIREF or :PREFIXED_NAME nodes"
-  [env node]
-  (case (first node)
-    (:BLANK_NODE :ABSOLUTE_IRI) (get node 2)
-    :WORD(second node)
-    :IRIREF (let [iri (get node 2)]
-              (if (util/absolute-uri-string? iri)
-                iri
-                (str (url/url (env :base) iri))))
-    :PREFIXED_NAME (let [[_ [_ prefix] _ name] node]
-                     (str (get-in env [:prefixes prefix]) name))
-    :LABEL (get-in env [:labels (second node)])
-    (:SUBJECT) (name-from-node env (second node))))
 
-(defn maybe-name
-  [env keyword parse-tree dest-keyword]
-  (if-let [cont (contents-of-vector keyword parse-tree)]
-    {dest-keyword (name-from-node env cont)}
-    {}))
-
-(defn parse-tree->names
-  "Takes an environment and a parse tree.
-   Returns the names found in the parse tree.
-   This function needs an environment, because the given parse-tree
-   might contain relative/prefixed names which need to be expanded."
-  [env parse-tree]
-  (case (first parse-tree)
-    :PREFIX_BLOCK {:prefixes
-                   {(contents-of-vector :PREFIX parse-tree)
-                    (name-from-node env (contents-of-vector :PREFIXED parse-tree))}}
-    :LABEL_BLOCK {:labels
-                  {(contents-of-vector :LABEL parse-tree)
-                   (name-from-node env (contents-of-vector :SUBJECT parse-tree))}}
-    :DEFAULT_BLOCK (let [key (nth parse-tree 5)]
-                     {:defaults
-                      ;; TODO - the below will error when called with a label that hasn't
-                      ;;        already been declared. We should do an explicit validation
-                      ;;        pass at some point to catch that explicitly and provide a
-                      ;;        better error message
-                      {(name-from-node env (contents-of-vector :PREDICATE parse-tree))
-                       (if (= key "NONE")
-                         {"LANGUAGE" nil "TYPE" nil}
-                         {key
-                          (if (= key "LANGUAGE")
-                            (contents-of-vector :LANGUAGE parse-tree)
-                            (name-from-node env (contents-of-vector :DATATYPE parse-tree)))})}})
-    :GRAPH_BLOCK (if-let [cont (contents-of-vector :GRAPH parse-tree)]
-                   (let [g (name-from-node env cont)]
-                     ;; TODO - check if we should be restoring the subject afterwards.
-                     ;;        If so, this will get a bit more elaborate.
-                     {:graph g :subject g})
-                   {:graph nil :subject nil})
-    :SUBJECT_BLOCK (maybe-name env :SUBJECT parse-tree :subject)
-    :BASE_BLOCK (maybe-name env :BASE parse-tree :base)
-    ;; If a user declares an rdfs#label as part of their data corpus, automatically promote
-    ;; it to a Howl LABEL equivalent.
-    :LITERAL_BLOCK (if (and (env :subject)
-                            (= (rdf-schema> "label")
-                               (name-from-node
-                                env (contents-of-vector :PREDICATE parse-tree))))
-                     {:labels {(contents-of-vector :LITERAL parse-tree) (env :subject)}}
-                     {})
-    {}))
-
-(defn merge-environments
-  "Merges two environments.
-   We could dispense with this if we wanted to introduce an extra
-   level of map for the keys [:graph :subject :base]."
-  [a b]
-  {:prefixes (merge (a :prefixes) (b :prefixes))
-   :labels (merge (a :labels) (b :labels))
-   :defaults (merge-with merge (a :defaults) (b :defaults))
-   :graph (if (contains? b :graph) (b :graph) (a :graph))
-   :subject (or (b :subject) (a :subject))
-   :base (or (b :base) (a :base))})
-
-(defn environment-of
-  "Takes an environment and a block, and returns the new environment.
-   Most of the time, it'll be the same one, but some forms (such as DEFAULT,
-   LABEL, PREFIX, GRAPH and SUBJECT) introduce new name associations
-   which will either add to the env or shadow something from it."
-  [prev-env block]
-  (merge-environments prev-env (parse-tree->names prev-env (block :exp))))
-
-(defn environments
-  "Takes a sequence of blocks and a starting environment.
-   Returns a sequence of blocks decorated with local environments."
-  ([blocks] (environments blocks {}))
-  ([blocks env]
-   (when (not (empty? blocks))
-     (lazy-seq
-      (let [block (first blocks)
-            next-env (environment-of env block)]
-        (cons (assoc block :env next-env)
-              (environments (rest blocks) next-env)))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Name expansion
-
-(defn expand-tree
-  "Takes an environment and a parse tree.
-   Returns a parse tree with IRIREFs and PREFIXED_NAMEs
-   expanded to ABSOLUTE_IRIs"
-  [env parse-tree]
-  (if (or (keyword? parse-tree) (string? parse-tree) (number? parse-tree))
-    parse-tree
-    (case (first parse-tree)
-      (:IRIREF :PREFIXED_NAME :LABEL) [:ABSOLUTE_IRI "<" (name-from-node env parse-tree) ">"]
-      (map #(expand-tree env %) parse-tree))))
-
-(defn expand-block
-  [block]
-  (assoc block :exp (expand-tree (block :env) (block :exp))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Top-level interface
-(defn parse-lines
-  "Takes a seq of lines, groups them appropriately, and runs the parsing step on them.
-   Produces a seq of blocks ({:exp :env} maps)"
-  [lines & {:keys [starting-env source]
-            :or {starting-env {} source "interactive"}}]
-  (->> lines
-       (#(lines->blocks % :source source))
-       (map condense-chars)
-       (map parse-expressions)
-       (#(environments % starting-env))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Error basics
-(defn locate
-  [block]
-  (if-let [m (meta block)]
-    (m :origin)
-    (str block)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Converting to nquads
-(defn formatted
-  "Takes a string value, chomps two spaces off every line other than the first
-   (to account for the Howl indentation block grouping), wraps it in quotes and
-   escapes any newlines."
-  [val]
-  (let [split (string/split-lines val)
-        v (string/join
-           "\\n" (cons (first split)
-                       (map #(string/replace % #"^  " "") (rest split))))]
-    (str "\"" v "\"")))
-
-(defn simple-block->nquad
-  "Returns an nquad from a simple block. These include any blocks
-   that get translated down to one quad."
-  [block]
-  (let [pred (name-from-node (block :env) (contents-of-vector :PREDICATE (block :exp)))]
-    [(get-in block [:env :graph])
-     (get-in block [:env :subject])
-     pred
-     (case (first (block :exp))
-       :LITERAL_BLOCK
-       (let [base {:value (formatted (last (first-vector-starting-with :LITERAL (block :exp))))}]
-         (if-let [type (get-in block [:env :defaults pred "TYPE"])]
-           (assoc base :type type)
-           (if-let [lang (get-in block [:env :defaults pred "LANGUAGE"])]
-             (assoc base :lang lang)
-             base)))
-       :LINK_BLOCK
-       (name-from-node (block :env) (contents-of-vector :OBJECT (block :exp)))
-       ;; FIXME - the default case should throw an error once we're done implementing this
-       [:TODO (locate block) (first (block :exp))])]))
-
-(defn annotation-block->nquads
-  "Returns an annotation block. Annotation blocks get encoded as multiple
-   quads, and some of those depend on a target quad that is being annotated.
-   The trailing quad is generated using simple-block->nquad"
-  [id [_ source property target] block]
-  (let [name (str "_:b" id)
-        base (simple-block->nquad (assoc block :exp (get-in block [:exp 2])))]
-    ;; TODO - replace the leading nil with a graph reference
-    [[nil name (rdf> "type") (owl> "Axiom")]
-     [nil name (owl> "annotatedSource") source]
-     [nil name (owl> "annotatedProperty") property]
-     [nil name (owl> "annotatedTarget") target]
-     (vec (cons nil (cons name (rest (rest base)))))]))
-
-(defn nquad-relevant-blocks
-  "Takes a sequence of blocks, and filters out any blocks
-   that have no nquad encoding. Specifically, blocks like PREFIX or
-   LABEL whose job is only establishing environment bindings, rather
-   than being encoded directly in the result."
-  [block-sequence]
-  (filter
-   #(and % (not-any?
-            #{:PREFIX_BLOCK :LABEL_BLOCK
-              :BASE_BLOCK :DEFAULT_BLOCK :SUBJECT_BLOCK :GRAPH_BLOCK
-              :COMMENT_BLOCK}
-            (take 1 (get % :exp))))
-   block-sequence))
-
-(defn find-target
-  "Takes a number of leading arrows, and a target-stack, and returns
-   the target quad. This gets called in the situation where several blocks
-   in a row start with />+/. There might be a situation like
-
-   foo
-   > bar
-   >> baz
-   > mumble
-
-   Semantically, `foo` is some quad, `bar` is an annotation on `foo`, `baz` is
-   an annotation on `bar` and `mumble` is a second annotation on `foo`.
-   `find-target` will return the first quad in the `target-stack` that has
-   fewer leading arrows than the given `arrow-ct`."
-  [arrows-ct target-stack]
-  (second
-   (first
-    (drop-while
-     #(>= (first %) arrows-ct)
-     target-stack))))
-
-(defn handle-annotation-block!
-  "Takes id and stack atoms, along with a block, and handles the processing
-   involved in rendering an :ANNOTATION block."
-  [id stack block]
-  (swap! id inc)
-  (let [arrow-level (count (second (second (block :exp))))
-        target (find-target arrow-level @stack)
-        res (annotation-block->nquads
-             @id (find-target arrow-level @stack)
-             block)]
-    (swap! stack #(cons [arrow-level (last res)] %))
-    res))
-
-(defn handle-expression-block! [id block]
-  (swap! id inc)
-  (exp/expression->nquads id (block :env) (last (block :exp)) ))
-
-(defn handle-simple-block!
-  "Takes id and stack atoms, along with a block, and handles the processing
-   involved in rendering a non-annotation block."
-  [id stack block]
-  (let [res (simple-block->nquad block)]
-    (reset! stack (list [0 res]))
-    [res]))
-
-(defn blocks->nquads
-  "Takes a sequence of blocks and emits a sequence of nquads"
-  [block-sequence]
-  (let [id (atom 0)
-        stack (atom (list))]
-    (mapcat
-     #(case (first (get % :exp))
-        :ANNOTATION (handle-annotation-block! id stack %)
-        :EXPRESSION_BLOCK (handle-expression-block! id %)
-        (handle-simple-block! id stack %))
-     (nquad-relevant-blocks block-sequence))))
-
-(defn print-nquad!
-  "Prints the given nquad to the given writer. If no writer is given, prints
-   to standard output."
-  ([nquad] (print-nquad! nquad *out*))
-  ([[g s p o] writer]
-   (let [object  (if (string? o)
-                   (<>> o)
-                   (let [val (get o :value)]
-                     (if-let [tp (get o :type)]
-                       (str val "^^" tp)
-                       (if-let [lang (get o :lang)]
-                         (str val "@" lang)
-                         val))))]
-     (pprint/cl-format
-      writer "~a <~a> ~a~@[ <~a>~] .~%"
-      (<>> s) p object g))))
-
-(defn print-nquads!
-  "Prints the given nquads to the given writer. If no writer is given, prints
-   to standard output."
-  ([nquads] (print-nquads! nquads *out*))
-  ([nquads writer] (doseq [q nquads] (print-nquad! q writer))))
-
-(defn nquad->string [nquad] (print-nquad! nquad nil))
-
-(defn print-triples!
-  "Prints the given nquads to the given writer, omitting any graph data.
-   If no writer is given, prints to standard output."
-  ([nquads] (print-triples! nquads *out*))
-  ([nquads writer]
-   (print-nquads!
-    (map (fn [q] (concat (take 3 q) [nil])) nquads)
-    writer)))

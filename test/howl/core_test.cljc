@@ -24,7 +24,8 @@
     (is (= '(("foo" "  bar") ("baz"))
            (group-lines ["foo" "  bar" "baz"])))))
 
-(deftest test-top-level-productions
+
+#_(deftest test-top-level-productions
   (testing "COMMENT_BLOCK"
     (is (= (block-parser "# just a comment")
            [[:COMMENT_BLOCK "# " "just a comment"]
@@ -126,13 +127,13 @@
   "trailing colon:"
   "trailing colon arrow:>"])
 
-(deftest test-labels-parse
+#_(deftest test-labels-parse
  (testing "Bad labels either cause an outright parse failure, or return a parse tree that does not designate a :LABEL_BLOCK"
    (doseq [bad-label bad-labels]
      (is (or (insta/failure? (block-parser bad-label))
              (not= :LABEL_BLOCK (first (block-parser bad-label))))))))
 
-(deftest test-lines->blocks
+#_(deftest test-lines->blocks
   (testing "returns a {:exp ParseTree} map, with source and line count in metadata"
     (is (= (first (lines->blocks ["PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"]))
            {:exp [:PREFIX_BLOCK "PREFIX"
@@ -142,7 +143,7 @@
     (is (= (meta (first (lines->blocks ["PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"])))
            {:origin {:name "interactive", :line 1}}))))
 
-(deftest test-parse-tree->string
+#_(deftest test-parse-tree->string
   (testing "returns a string unmodified"
     (is (= "foo" (parse-tree->string "foo"))))
 
@@ -159,12 +160,12 @@
     (is (= "foobar" (parse-tree->string [:BLAH [:LABEL "foo"] "bar"])))
     (is (= "foo bar" (parse-tree->string [:BLAH [:LABEL "foo"] [:SPACES " "] [:BLEEH [:BLUH "bar"]]])))))
 
-(deftest test-lines<->blocks
+#_(deftest test-lines<->blocks
   (testing "calling block->string on an element of the return value of lines->blocks returns the string we started with"
     (is (let [ln "PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"]
           (= ln (block->string (first (lines->blocks [ln]))))))))
 
-(deftest test-condense-tree
+#_(deftest test-condense-tree
   (testing "condenses :IRIREF blocks"
     (is (= [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]
            (condense-tree [:IRIREF "<" "h" "t" "t" "p" ":" "/" "/" "w" "w" "w" "." "w" "3" "." "o" "r" "g" "/" "1" "9" "9" "9" "/" "0" "2" "/" "2" "2" "-" "r" "d" "f" "-" "s" "y" "n" "t" "a" "x" "-" "n" "s" "#" ">"]))))
@@ -197,7 +198,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Environment extraction
-(deftest test-name-from-node
+#_(deftest test-name-from-node
   (testing "get the name out of a blank node"
     (is (= "testing"
            (name-from-node
@@ -224,14 +225,14 @@
            (name-from-node
             {} [:SUBJECT [:ABSOLUTE_IRI "<" "http://example.com/" ">"]])))))
 
-(deftest test-locate
+#_(deftest test-locate
   (testing "when there is an :origin property in the targets meta, return it"
     (is (= (locate ^{:origin {:name "local" :line 3}} [:BLOCK])
            {:name "local" :line 3})))
   (testing "when there is no :origin in the targets meta, return the stringified target"
     (is (= (locate [:BLOCK]) (str [:BLOCK])))))
 
-(deftest test-parse-tree->names
+#_(deftest test-parse-tree->names
   (testing "a :PREFIX_BLOCK returns new prefixes"
     (is (= {:prefixes {"ex" "http://example.com/"}}
            (parse-tree->names
@@ -302,7 +303,7 @@
     (is (= {} (parse-tree->names {} [:LINK_BLOCK ""])))
     (is (= {} (parse-tree->names {} [:EXPRESSION_BLOCK ""])))))
 
-(deftest test-merge-environments
+#_(deftest test-merge-environments
   (testing "merges :prefixes and :labels with merge"
     (is (let [res (merge-environments
                    {:labels {:a "foo"} :prefixes {:b "bar"}}
@@ -438,7 +439,7 @@
    {:exp [:SUBJECT_BLOCK [:SUBJECT [:PREFIXED_NAME [:PREFIX "obo"] ":" "IAO_0000136"]]]}
    {:exp [:LITERAL_BLOCK [:PREDICATE [:LABEL "label"]] [:COLON "" ":" " "] [:LITERAL "is about"]]}])
 
-(deftest test-environments
+#_(deftest test-environments
   (testing "the empty sequence of blocks return nil"
     (is (nil? (environments []))))
   (testing "a sequence of blocks gets decorated with an environment"
@@ -465,12 +466,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; name expansion
-(defspec test-<>
+#_(defspec test-<>
   (prop/for-all
    [v gen/string]
    (= (str "<" v ">") (<> v))))
 
-(deftest test-expand-tree
+#_(deftest test-expand-tree
   (testing "returns strings, keywords and numbers as-is"
     (is (= :test (expand-tree {} :test)))
     (is (= "test" (expand-tree {} "test")))
@@ -496,13 +497,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; nquad generation
-(deftest test-formatted
+#_(deftest test-formatted
   (testing "double spaces are removed from all but the first line of multiline strings, and newlines are escaped"
     (is (= "\"foo\\nbar\\nbaz\"" (formatted "foo
   bar
   baz")))))
 
-(deftest test-simple-block->nquad
+#_(deftest test-simple-block->nquad
   (testing "works as expected on LITERAL_BLOCKs"
     (is (= [nil "http://example.com/subject-3" "http://example.com/label" {:value "\"Relative IRI\""}]
            (simple-block->nquad
@@ -525,7 +526,7 @@
                    :labels {"type" "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}
                    :subject "http://example.com/bar"}})))))
 
-(deftest test-annotation-block->nquads
+#_(deftest test-annotation-block->nquads
   (testing "basic annotation generation"
     (is (= [[nil "_:b0" "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" "http://www.w3.org/2002/07/owl#Axiom"]
             [nil "_:b0" "http://www.w3.org/2002/07/owl#annotatedSource" "foo"]
@@ -547,7 +548,7 @@
              :env {:prefixes {"rdfs" "http://www.w3.org/2000/01/rdf-schema#"
                               "ex" "http://example.com/"}}})))))
 
-(deftest test-nquad-relevant-blocks
+#_(deftest test-nquad-relevant-blocks
   (testing "drops any block types that don't affect the NQuads representation of a document"
     (is (= (map
             (fn [exp] {:exp exp})
@@ -566,7 +567,7 @@
               [:ANNOTATION]
               [:COMMENT_BLOCK]]))))))
 
-(deftest test-find-target
+#_(deftest test-find-target
 
   ;; NOTE - At the moment, blocks like
   ;;
@@ -586,13 +587,13 @@
     (is (= :mumble (find-target 2 [[1 :mumble] [2 :baz] [1 :bar] [0 :foo]])))
     (is (= :baz (find-target 3 [[2 :baz] [1 :bar] [0 :foo]])))))
 
-(deftest test-handle-annotation-block!
+#_(deftest test-handle-annotation-block!
   ;; TODO
   )
 (deftest test-handle-simple-block!
   ;; TODO
   )
-(deftest test-blocks->nquads
+#(deftest test-blocks->nquads
   ;; TODO
   )
 
@@ -601,7 +602,7 @@
    gen/string-ascii gen/string-ascii gen/string-ascii
    (gen/one-of [gen/string-ascii (gen/return nil)])))
 
-(defspec test-nquad->string
+#_(defspec test-nquad->string
   (prop/for-all
    [q an-nquad]
    (let [[a b c d] q
@@ -612,7 +613,7 @@
           (util/substring? result c)
           (or (nil? d) (util/substring? result d))))))
 
-(defspec test-print-nquads!
+#_(defspec test-print-nquads!
   (prop/for-all
    [v (gen/not-empty (gen/vector an-nquad))]
    (let [result (with-out-str (print-nquads! v))]
