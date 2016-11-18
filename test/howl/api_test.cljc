@@ -3,7 +3,7 @@
   (:require [clojure.test :refer :all]
             [howl.api :refer :all]))
 
-(println (howl-to-nquads (slurp "test/typed-context/context.howl")))
+;(println (howl-to-nquads (slurp "test/typed-context/context.howl")))
 
 (deftest test-howl-to-nquads
   (testing "Render some HOWL to N-Quads"

@@ -16,11 +16,15 @@
     "xsd"  "http://www.w3.org/2001/XMLSchema#"
     "owl"  "http://www.w3.org/2002/07/owl#"
     "ex"   "http://example.com/"}
-   :label-iri
-   {"comment" "http://www.w3.org/2000/01/rdf-schema#comment"
-    "type"    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}
-   :label-datatype
-   {"type" [nil nil]}
+   :labels
+   {"comment"
+    {:iri "http://www.w3.org/2000/01/rdf-schema#comment"
+     :datatype-iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
+     :language nil}
+    "type"
+    {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+     :datatype-iri nil
+     :language nil}}
    :current-graph-iri "http://example.com/current-graph"
    :current-subject-iri "http://example.com/current-subject"}) 
 

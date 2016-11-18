@@ -1,7 +1,7 @@
 (ns howl.core
   "Parse HOWL."
   (:require [clojure.string :as string]
-            [clojure.walk :refer [postwalk]]
+            [clojure.walk :refer [postwalk keywordize-keys]]
             [clojure.data.json :as json]
             [instaparse.core :as insta]
             [cemerick.url :refer [url]]
@@ -30,7 +30,7 @@ PREFIX        = #'(\\w|-)+'
 
 (def label-grammar "
 LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
-KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT'
+KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT' | 'LINK'
 <WORD>  = #'[^\\s]*[^:\\]\\s]'
 SPACES  = #' +'
 ")
@@ -43,7 +43,7 @@ SPACES  = #' +'
 
 (def link-transformations
   {:IRIREF (fn [& xs] [:IRIREF "<" (apply str (rest (butlast xs))) ">"])
-   :LABEL  (fn [& xs] [:LABEL (apply str xs)])})
+   :LABEL  (fn [& xs] [:LABEL (->> xs flatten (filter string?) (apply str))])})
 
 (def link-grammar
   (string/join
@@ -89,10 +89,10 @@ SPACES  = #' +'
 (defn label->iri
   "Given a label, return an absolute IRI string."
   [env [_ label]]
-  (when-not (get-in env [:label-iri label])
+  (when-not (get-in env [:labels label :iri])
     (throw (Exception. (format "Could not find label '%s'." label))))
   ; Should be absolute when assigned.
-  (get-in env [:label-iri label]))
+  (get-in env [:labels label :iri]))
 
 (defn id->iri
   [env parse]
@@ -111,21 +111,35 @@ SPACES  = #' +'
     ; TODO: catch error
     ))
 
-(def block-grammar-partial "
-<BLOCK> = WHITESPACE
-          (COMMENT_BLOCK
-           / PREFIXES_BLOCK
-           / LABELS_BLOCK
-           / BASE_BLOCK
-           / GRAPH_BLOCK
-           / SUBJECT_BLOCK
-           / STATEMENT_BLOCK)
-          WHITESPACE
 
-COLON       = #' *' ':'  #' +'
-WHITESPACE  = #'(\\r|\\n|\\s)*'
-INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
-")
+;; ## Datatypes
+
+(def rdf:PlainLiteral "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
+
+(def default-datatype-map
+  {:datatype-iri rdf:PlainLiteral
+   :language nil})
+
+(defn unpack-datatype
+  "Given an environment and a datatype parse,
+   return a map with :datatype-iri and :language keys,
+   or nil."
+  [env datatype]
+  (cond
+   (= "LINK" datatype)
+   {:datatype-iri nil
+    :language nil}
+
+   (= :LANGUAGE (first datatype))
+   {:datatype-iri rdf:PlainLiteral
+    :language (last datatype)}
+
+   datatype
+   {:datatype-iri (name->iri env datatype)
+    :language nil}
+
+   :else
+   default-datatype-map))
 
 
 ;; # BLOCKS
@@ -239,7 +253,6 @@ PREFIX_LINE = PREFIX COLON IRIREF")
        (filter #(= :PREFIX_LINE (first %)))
        (map
         (fn [[_ [_ prefix] _ [_ _ iri _]]]
-          ; TODO: make sure IRI is absolute?
           [prefix (check-iri iri)]))
        (into {})))
 
@@ -256,27 +269,40 @@ PREFIX_LINE = PREFIX COLON IRIREF")
 ; They can also define default types for predicates.
 ; Label mappings are stored in the environment
 ; as forward- and reverse- maps.
+; The DATATYPE definition is the same as STATEMENT_BLOCK below.
 
 (def labels-block-grammar
 "LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
-LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
+LABEL_LINE = LABEL DATATYPE COLON IRI")
+
+(defn extract-label
+  [env datatype id]
+  (assoc
+   (unpack-datatype env datatype)
+   :iri (id->iri env id)))
 
 (defn extract-labels
   "Given a parse tree for LABELS_BLOCK,
-   return a map from label string to IRI string."
+   return a map from label string to map."
   [env parse-tree]
-  (->> parse-tree
-       (filter vector?)
-       (filter #(= :LABEL_LINE (first %)))
-       (map
-        (fn [[_ [_ label] _ id]]
-          [label (id->iri env id)]))
-       (into {})))
+  (reduce
+   (fn [labels [_ [_ label] datatype _ id]]
+     (assoc
+      labels
+      label
+      (extract-label
+       (update-in env [:labels] merge labels)
+       (get datatype 2)
+       id)))
+   {}
+   (->> parse-tree
+        (filter vector?)
+        (filter #(= :LABEL_LINE (first %))))))
 
 (defmethod parse->block :LABELS_BLOCK
   [env {:keys [parse-tree] :as block}]
   (let [labels (extract-labels env parse-tree)]
-    [(update-in env [:label-iri] merge labels)
+    [(update-in env [:labels] merge labels)
      (assoc block :labels labels)]))
 
 
@@ -366,41 +392,18 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   (let [result (parse-link content)]
     [(name->iri env result) result]))
 
-(def rdf:PlainLiteral "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
-
-(defn get-datatype
-  "Given an environment, a predicate parse, and a datatype parse,
-   return the datatype-iri (nil for object IRI) and language (or nil).
-   This will be the for the given datatype (unless it is null),
-   or the predicate's default datatype (if it has one),
-   or just rdf:PlainLiteral."
-  [env predicate datatype]
-  (cond
-   (= "LINK" datatype)
-   [nil nil]
-
-   (= :LANGUAGE (first datatype))
-   [rdf:PlainLiteral (last datatype)]
-
-   datatype
-   [(name->iri env datatype) nil]
-
-   (and (= :LABEL (first predicate))
-        (get-in env [:label-datatype (second predicate)]))
-   (get-in env [:label-datatype (second predicate)])
-
-   :else
-   [rdf:PlainLiteral nil]))
-
 (defmethod parse->block :STATEMENT_BLOCK
   [env {:keys [parse-tree] :as block}]
   (let [predicate     (get parse-tree 2)
         predicate-iri (name->iri env predicate)
         datatype      (get-in parse-tree [3 2])
-        [datatype-iri language] (get-datatype env predicate datatype)
+        {:keys [datatype-iri language]}
+        (or (when datatype (unpack-datatype env datatype))
+            (when (= :LABEL (first predicate))
+              (get-in env [:labels (second predicate)]))
+            default-datatype-map)
         [object content] (content->parse env datatype-iri (last parse-tree))]
-    ; TODO: check that IRIs are absolute
-    [env ; TODO: add rdfs:label
+    [env
      (assoc
       block
       :parse-tree (assoc parse-tree 5 content) ; update parse
@@ -425,6 +428,25 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
                 (string/replace "\"" "\\\""))
      :datatype datatype-iri
      :language language}]])
+
+
+
+
+(def block-grammar-partial "
+<BLOCK> = WHITESPACE
+          (COMMENT_BLOCK
+           / PREFIXES_BLOCK
+           / LABELS_BLOCK
+           / BASE_BLOCK
+           / GRAPH_BLOCK
+           / SUBJECT_BLOCK
+           / STATEMENT_BLOCK)
+          WHITESPACE
+
+COLON       = #' *' ':'  #' +'
+WHITESPACE  = #'(\\r|\\n|\\s)*'
+INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
+")
 
 
 (def block-grammar
@@ -575,6 +597,7 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   [key value]
   (case key
     "block-type" (keyword value)
+    "labels"     (->> value (map (fn [[k v]] [k (keywordize-keys v)])) (into {}))
     "parse-tree" (json->parse value)
     "graph"      (json->parse value)
     "subject"    (json->parse value)

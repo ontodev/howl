@@ -272,10 +272,45 @@ is parsed into this JSON object:
       ["INDENTATION", "\n  "],
       ["LABEL_LINE",
        ["LABEL", "comment"],
+       ["DATATYPE"],
        ["COLON", "", ":" " "],
        ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
      "labels": {
-      "comment": "http://www.w3.org/2000/01/rdf-schema#comment"
+      "comment": {
+       "iri": "http://www.w3.org/2000/01/rdf-schema#comment"
+       "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+       "language": null
+      }
+     },
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n"}
+
+This label block:
+
+    LABELS
+      comment [@en]: rdfs:comment
+
+is parsed into this JSON object:
+
+    {"source": "example.howl",
+     "line": 1,
+     "string": "LABELS\n  comment [@en]: rdfs:comment\n",
+     "block-type": "LABELS_BLOCK",
+     "parse-tree":
+     ["LABELS_BLOCK",
+      "LABELS",
+      ["INDENTATION", "\n  "],
+      ["LABEL_LINE",
+       ["LABEL", "comment"],
+       ["DATATYPE", " [", ["LANGUAGE", "@", "en"], "]"],
+       ["COLON", "", ":" " "],
+       ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
+     "labels": {
+      "comment": {
+       "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+       "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+       "language": "en"
+      }
      },
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
