@@ -108,8 +108,9 @@ SPACES  = #' +'
            / STATEMENT_BLOCK)
           WHITESPACE
 
-COLON           = #' *' ':'  #' +'
-WHITESPACE      = #'(\r|\n|\\s)*'
+COLON       = #' *' ':'  #' +'
+WHITESPACE  = #'(\\r|\\n|\\s)*'
+INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
 ")
 
 
@@ -172,7 +173,7 @@ WHITESPACE      = #'(\r|\n|\\s)*'
 (defmulti block->nquads
   "Given a (fully expanded) block,
    return a sequence of zero or more NQuad vectors."
-  (fn [env block] (:block-type block)))
+  :block-type)
 
 (defmethod block->nquads :default
   [block]
@@ -212,7 +213,7 @@ WHITESPACE      = #'(\r|\n|\\s)*'
 ; The PREFIXES_BLOCK does not have an NQuad representation.
 
 (def prefixes-block-grammar
-  "PREFIXES_BLOCK = 'PREFIXES' (WHITESPACE PREFIX_LINE)+
+  "PREFIXES_BLOCK = 'PREFIXES' (INDENTATION PREFIX_LINE)+
 PREFIX_LINE = PREFIX COLON IRIREF")
 
 (defn extract-prefixes
@@ -243,7 +244,7 @@ PREFIX_LINE = PREFIX COLON IRIREF")
 ; as forward- and reverse- maps.
 
 (def labels-block-grammar
-"LABELS_BLOCK = 'LABELS' (WHITESPACE LABEL_LINE)+
+"LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
 LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
 
 (defn extract-labels
@@ -327,7 +328,7 @@ LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
 ;; ## STATEMENT_BLOCK
 
 (def statement-block-grammar
-  "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'.*'
+  "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
 ARROWS   = #'>*' #'\\s*'
 DATATYPE = '' | #' +\\[' ('LINK' | LANGUAGE | NAME) ']'
 LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
@@ -336,13 +337,15 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   "Given an environment,
    a datatype IRI string (or nil when the object is an IRI),
    and a content string,
-   return the object IRI (maybe nil)
-   and the parse tree for the content."
+   return the object and the parse tree for the content."
   (fn [env datatype-iri content] datatype-iri))
+
+; The default behaviour is to remove indentation.
 
 (defmethod content->parse :default
   [env datatype-iri content]
-  [nil content])
+  (let [unindented (string/replace content #"(?m)^  |^ " "")]
+    [unindented unindented]))
 
 (defmethod content->parse nil
   [env datatype-iri content]
@@ -381,7 +384,7 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
         predicate-iri (name->iri env predicate)
         datatype      (get-in parse-tree [3 2])
         [datatype-iri language] (get-datatype env predicate datatype)
-        [object-iri content] (content->parse env datatype-iri (last parse-tree))]
+        [object content] (content->parse env datatype-iri (last parse-tree))]
     ; TODO: check that IRIs are absolute
     [env ; TODO: add rdfs:label
      (assoc
@@ -394,10 +397,20 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
       :graph-iri (:current-graph-iri env)
       :subject-iri (:current-subject-iri env) ; TODO: handle missing
       :predicate-iri predicate-iri
-      :object-iri object-iri
+      :object object
       :datatype-iri datatype-iri
       :language language)]))
 
+(defmethod block->nquads :STATEMENT_BLOCK
+  [{:keys [graph-iri subject-iri predicate-iri object datatype-iri language]}]
+  [[graph-iri
+    subject-iri
+    predicate-iri
+    {:value (-> object
+                (string/replace "\n" "\\n")
+                (string/replace "\"" "\\\""))
+     :datatype datatype-iri
+     :language language}]])
 
 
 (def block-grammar
@@ -438,13 +451,13 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 (defn process-block
   "Given an environment a source, a line number, and a block string,
    return the update environment and the block map."
-  [{:keys [source line] :as env} block-string]
-  (let [[[_ lws] parse-tree [_ tws]] (parse-block block-string)]
+  [{:keys [source line] :as env} source-string]
+  (let [[[_ lws] parse-tree [_ tws]] (parse-block source-string)]
     (parse->block
      env
      {:source source
       :line line
-      :block block-string
+      :string source-string
       :block-type (first parse-tree)
       :parse-tree parse-tree
       :leading-whitespace lws
@@ -457,11 +470,11 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   [{:keys [source] :or {source "interactive"} :as env} lines]
   (reduce
    (fn [env lines]
-     (let [[env block] (process-block env (string/join \newline lines))]
+     (let [[env block] (process-block env (apply str lines))]
        (-> env
            (update-in [:blocks] conj block)
            (update-in [:line] + (count lines)))))
-   env
+   (assoc env :source source :line 1 :blocks [])
    (group-lines lines)))
 
 
@@ -484,8 +497,18 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   [])
 
 (defn nquad->nquad-string
-  [nquad]
-  )
+  [[graph-iri subject-iri predicate-iri {:keys [value datatype language]}]]
+  (->> [(str "<" subject-iri ">")
+        (str "<" predicate-iri ">")
+        (cond
+         language                      (str "\"" value "\"" language)
+         (= rdf:PlainLiteral datatype) (str "\"" value "\"")
+         datatype                      (str "\"" value "\"^^<" datatype ">")
+         :else                         (str "<" value ">"))
+        (when graph-iri (str "<" graph-iri ">"))
+        "."]
+       (remove nil?)
+       (string/join " ")))
 
 (defn nquad->ntriple-string
   [nquad]

@@ -211,7 +211,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "# Just a comment.\n",
+     "string": "# Just a comment.\n",
      "block-type": "COMMENT_BLOCK",
      "hash": "# ",
      "comment": "Just a comment.",
@@ -234,12 +234,12 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "PREFIXES\nrdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
+     "string": "PREFIXES\n  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
      "block-type": "PREFIXES_BLOCK",
      "parse-tree":
      ["PREFIXES_BLOCK",
       "PREFIXES",
-      ["WHITESPACE", "\n"],
+      ["INDENTATION", "\n  "],
       ["PREFIX_LINE",
        ["PREFIX", "rdf"],
        ["COLON", "", ":", " "],
@@ -264,12 +264,12 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "LABELS\ncomment: rdfs:comment\n",
+     "string": "LABELS\n  comment: rdfs:comment\n",
      "block-type": "LABELS_BLOCK",
      "parse-tree":
      ["LABELS_BLOCK",
       "LABELS",
-      ["WHITESPACE", "\n"],
+      ["INDENTATION", "\n  "],
       ["LABEL_LINE",
        ["LABEL", "comment"],
        ["COLON", "", ":" " "],
@@ -293,7 +293,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "BASE <http://example.com/>\n",
+     "string": "BASE <http://example.com/>\n",
      "block-type": "BASE_BLOCK",
      "parse-tree":
      ["BASE_BLOCK",
@@ -322,7 +322,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "GRAPH ex:graph\n",
+     "string": "GRAPH ex:graph\n",
      "block-type": "GRAPH_BLOCK",
      "parse-tree":
      ["GRAPH_BLOCK",
@@ -342,7 +342,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "DEFAULT GRAPH\n",
+     "string": "DEFAULT GRAPH\n",
      "block-type": "GRAPH_BLOCK",
      "parse-tree":
      ["GRAPH_BLOCK"
@@ -365,7 +365,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "ex:subject\n",
+     "string": "ex:subject\n",
      "block-type": "SUBJECT_BLOCK",
      "parse-tree":
      ["SUBJECT_BLOCK",
@@ -388,7 +388,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "comment: This is an RDFS comment.\n",
+     "string": "comment: This is an RDFS comment.\n",
      "block-type": "STATEMENT_BLOCK",
      "parse-tree":
      ["STATEMENT_BLOCK",
@@ -406,7 +406,7 @@ is parsed into this JSON object:
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
      "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
      "language": null,
-     "object-iri": null,
+     "object": "This is an RDFS comment.",
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
 
@@ -418,7 +418,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "comment [@en]: This is an English comment.\n",
+     "string": "comment [@en]: This is an English comment.\n",
      "block-type": "STATEMENT_BLOCK",
      "parse-tree":
      ["STATEMENT_BLOCK",
@@ -434,7 +434,7 @@ is parsed into this JSON object:
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-     "object-iri": null,
+     "object": "This is an English comment.",
      "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
      "language": "@en",
      "leading-whitespace": "",
@@ -448,7 +448,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "comment [xsd:string]: This comment has a datatype.\n",
+     "string": "comment [xsd:string]: This comment has a datatype.\n",
      "block-type": "STATEMENT_BLOCK",
      "parse-tree":
      ["STATEMENT_BLOCK",
@@ -464,7 +464,7 @@ is parsed into this JSON object:
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-     "object-iri": null,
+     "object": "This comment has a datatype.",
      "datatype-iri": "http://www.w3.org/2001/XMLSchema#string",
      "language": null,
      "leading-whitespace": "",
@@ -504,7 +504,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "rdf:type [LINK]: owl:Class\n",
+     "string": "rdf:type [LINK]: owl:Class\n",
      "block-type": "STATEMENT_BLOCK",
      "parse-tree":
      ["STATEMENT_BLOCK",
@@ -520,7 +520,7 @@ is parsed into this JSON object:
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-     "object-iri": "http://www.w3.org/2002/07/owl#Class",
+     "object": "http://www.w3.org/2002/07/owl#Class",
      "datatype-iri": null,
      "language": null,
      "leading-whitespace": "",
@@ -534,7 +534,7 @@ is parsed into this JSON object:
 
     {"source": "example.howl",
      "line": 1,
-     "block": "type: owl:Class\n",
+     "string": "type: owl:Class\n",
      "block-type": "STATEMENT_BLOCK",
      "parse-tree":
      ["STATEMENT_BLOCK",
@@ -550,7 +550,7 @@ is parsed into this JSON object:
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-     "object-iri": "http://www.w3.org/2002/07/owl#Class",
+     "object": "http://www.w3.org/2002/07/owl#Class",
      "datatype-iri": null,
      "language": null,
      "leading-whitespace": "",
@@ -589,7 +589,7 @@ is parsed into this JSON object:
     TODO
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "rdfs:subClassOf:>> 'has part' some foo\n",
+     "string": "rdfs:subClassOf:>> 'has part' some foo\n",
      "block-type": "EXPRESSION_BLOCK",
      "parse": ["EXPRESSION_BLOCK"
                ["PREDICATE" ["PREFIXED_NAME" "rdfs" ":" "subClassOf"]]
@@ -661,7 +661,7 @@ is parsed into this JSON object:
     TODO
     {"file-name": "example.howl",
      "line-number": 1,
-     "block": "> comment: A comment on a comment.\n"
+     "string": "> comment: A comment on a comment.\n"
      "block-type": "LITERAL_BLOCK",
      "parse": ["LITERAL_BLOCK"
                ["ARROWS" ">" " "]

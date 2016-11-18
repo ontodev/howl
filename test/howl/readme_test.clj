@@ -30,7 +30,7 @@
   [block]
   (try
     (testing block
-      (is (= (second (process-block env (:block block)))
+      (is (= (second (process-block env (:string block)))
              block)))
     (catch Exception e
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
@@ -50,5 +50,5 @@
        (map json->block)
        (map run-test)
        doall
-       (#(do (println "Running" (count %) "tests on README") %))
+       ;(#(do (println "Running" (count %) "tests on README") %))
        (apply = true)))
