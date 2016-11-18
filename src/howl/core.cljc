@@ -4,7 +4,7 @@
             [clojure.walk :refer [postwalk]]
             [clojure.data.json :as json]
             [instaparse.core :as insta]
-            [cemerick.url :as url]
+            [cemerick.url :refer [url]]
 
             [howl.util :as util :refer [<>> owl> rdf> rdf-schema>]]
             [howl.expression :as exp]))
@@ -65,19 +65,33 @@ SPACES  = #' +'
          (insta/transform link-transformations)
          second)))
 
+(defn check-iri
+  [iri]
+  (str (url iri)))
+
+(defn resolve-iri
+  [{:keys [base-iri] :or {base-iri "file:///howl-unspecified-base/"}} iri]
+  (try
+   (check-iri iri)
+   (catch Exception e
+     (str (url base-iri iri)))))
+
 (defn iriref->iri
   [env [_ _ iri _]]
-  ; TODO: check absolute
-  iri)
+  (resolve-iri env iri))
 
 (defn prefixed-name->iri
   [env [_ prefix _ local]]
-  ; TODO: check absolute
-  (str (get-in env [:prefix-iri prefix] "ERROR") local))
+  (when-not (get-in env [:prefix-iri prefix])
+    (throw (Exception. (format "Could not find prefix '%s'." prefix))))
+  (resolve-iri env (str (get-in env [:prefix-iri prefix]) local)))
 
 (defn label->iri
+  "Given a label, return an absolute IRI string."
   [env [_ label]]
-  ; TODO: check absolute
+  (when-not (get-in env [:label-iri label])
+    (throw (Exception. (format "Could not find label '%s'." label))))
+  ; Should be absolute when assigned.
   (get-in env [:label-iri label]))
 
 (defn id->iri
@@ -226,7 +240,7 @@ PREFIX_LINE = PREFIX COLON IRIREF")
        (map
         (fn [[_ [_ prefix] _ [_ _ iri _]]]
           ; TODO: make sure IRI is absolute?
-          [prefix iri]))
+          [prefix (check-iri iri)]))
        (into {})))
 
 (defmethod parse->block :PREFIXES_BLOCK
@@ -276,7 +290,7 @@ LABEL_LINE = LABEL COLON IRI") ; TODO: add DATATYPE
 
 (defmethod parse->block :BASE_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [base-iri (get-in parse-tree [3 2])]
+  (let [base-iri (check-iri (get-in parse-tree [3 2]))]
     ; TODO: check that IRI is absolute
     [(assoc env :base-iri base-iri)
      (assoc block :base-iri base-iri)]))
@@ -472,10 +486,14 @@ LANGUAGE = #'@[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
    (fn [env lines]
      (let [[env block] (process-block env (apply str lines))]
        (-> env
-           (update-in [:blocks] conj block)
+           (update-in [:blocks] (fnil conj []) block)
            (update-in [:line] + (count lines)))))
-   (assoc env :source source :line 1 :blocks [])
+   (assoc env :source source :line 1)
    (group-lines lines)))
+
+(defn reset-environment
+  [env]
+  (dissoc env :current-graph-iri :current-subject-iri))
 
 
 ;; ## NQUADS
