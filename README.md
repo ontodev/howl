@@ -379,17 +379,17 @@ This subject block:
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "SUBJECT_BLOCK",
+     "source": "example.howl",
      "line": 1,
      "string": "ex:subject\n",
-     "block-type": "SUBJECT_BLOCK",
      "parse-tree":
      ["SUBJECT_BLOCK",
       ["PREFIXED_NAME", "ex", ":", "subject"]],
-     "subject": ["PREFIXED_NAME" "ex" ":" "subject"],
-     "subject-iri": "http://example.com/subject",
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "subject-name": ["PREFIXED_NAME" "ex" ":" "subject"],
+     "subject": "http://example.com/subject"}
 
 
 ### Statement

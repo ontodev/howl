@@ -24,7 +24,7 @@
     {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
      :datatype "LINK"}}
    :graph "http://example.com/current-graph"
-   :current-subject-iri "http://example.com/current-subject"})
+   :subject "http://example.com/current-subject"})
 
 (defn run-test
   "Given a block map, process the :block value,

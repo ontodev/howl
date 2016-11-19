@@ -207,16 +207,19 @@ ARROWS      = #'>*' #'\\s*'"
 ; The subject block declares the subject of all statements
 ; until the next subject block.
 
+; Example
+
+[:SUBJECT_BLOCK [:PREFIXED_NAME "ex" ":" "subject"]]
+
 (defmethod parse->block :SUBJECT_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [subject     (second parse-tree)
-        subject-iri (link/name->iri env subject)]
-    ; TODO: check that IRI is absolute
-    [(assoc env :current-subject-iri subject-iri)
+  (let [subject-name (second parse-tree)
+        subject      (link/name->iri env subject-name)]
+    [(assoc env :subject subject)
      (assoc
       block
-      :subject subject
-      :subject-iri subject-iri)]))
+      :subject-name subject-name
+      :subject subject)]))
 
 
 
@@ -260,7 +263,7 @@ ARROWS      = #'>*' #'\\s*'"
       :datatype datatype
       :content content
       :graph-iri (:graph env)
-      :subject-iri (:current-subject-iri env) ; TODO: handle missing
+      :subject-iri (:subject env) ; TODO: handle missing
       :predicate-iri predicate-iri
       :object object
       :datatype-iri datatype-iri)]))
