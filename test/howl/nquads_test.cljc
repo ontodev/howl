@@ -7,6 +7,21 @@
             [howl.core :as core]
             [howl.util :refer [rdf> owl>]]))
 
+(deftest test-nquad-string->nquad
+  (testing "parse"
+    (are [x y] (= (nquad-string->nquad x) y)
+         "<s> <p> <o> ."            [nil "s" "p" "o" "LINK"]
+         "<s> <p> <o> <g> ."        ["g" "s" "p" "o" "LINK"]
+         "<s> <p> \"o\" ."          [nil "s" "p" "o" "PLAIN"]
+         "<s> <p> \"o\"@en ."       [nil "s" "p" "o" "@en"]
+         "<s> <p> \"o\"^^<d> ."     [nil "s" "p" "o" "d"]
+         "<s> <p> \"o\"@en <g> ."   ["g" "s" "p" "o" "@en"]
+         "<s> <p> \"o\"^^<d> <g> ." ["g" "s" "p" "o" "d"]
+         "_:s <p> \"o\"@en <g> ."   ["g" "_:s" "p" "o" "@en"]
+         "<s> <p> _:o <g> ."        ["g" "s" "p" "_:o" "LINK"]
+         )))
+
+
 #_(deftest test-statements->urls
   (testing "Takes a list of statements and returns a lazy list containing only the URLs in those statements"
     (is (= ["http://example.com"]

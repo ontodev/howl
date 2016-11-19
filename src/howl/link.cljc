@@ -17,9 +17,9 @@ LINK            = NAME_OR_BLANK
 <NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
 <NAME>          = IRIREF / PREFIXED_NAME / LABEL
 <IRI>           = IRIREF / PREFIXED_NAME
-  
+
 (* Adapted from the NQuads spec *)
-(* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF *)  
+(* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF *)
 IRIREF           = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
 BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
 UCHAR            = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
@@ -35,14 +35,18 @@ LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
 KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT' | 'LINK' | 'PLAIN'
 <WORD>  = #'[^\\s]*[^:\\]\\s]'
 SPACES  = #' +'
-                   
+
 DATATYPE        = '' | #' +\\[' ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME) ']'
 LANGUAGE_TAG    = '@' LANGUAGE_CODE
 <LANGUAGE_CODE> = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 
 (def link-transformations
-  {:IRIREF (fn [& xs] [:IRIREF "<" (apply str (rest (butlast xs))) ">"])
-   :LABEL  (fn [& xs] [:LABEL (->> xs flatten (filter string?) (apply str))])})
+  {:IRIREF
+   (fn [& xs] [:IRIREF "<" (apply str (rest (butlast xs))) ">"])
+   :BLANK_NODE_LABEL
+   (fn [& xs] [:BLANK_NODE_LABEL "_:" (->> (rest xs) flatten (filter string?) (apply str))])
+   :LABEL
+   (fn [& xs] [:LABEL (->> xs flatten (filter string?) (apply str))])})
 
 (def link-parser (insta/parser link-grammar))
 
