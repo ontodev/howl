@@ -22,7 +22,7 @@
            / STATEMENT_BLOCK)
           WHITESPACE
 
-COMMENT_BLOCK   = #'#+\\s*' #'.*'
+COMMENT_BLOCK   = #'#+.*'
 PREFIX_BLOCK    = 'PREFIX' SPACES PREFIX COLON IRIREF
 LABEL_BLOCK     = 'LABEL' SPACES LABEL DATATYPE COLON IRI
 BASE_BLOCK      = 'BASE' SPACES IRIREF
@@ -89,17 +89,18 @@ ARROWS      = #'>*' #'\\s*'"
 ; The line is ignored by most processing,
 ; and does not have an NQuads representation.
 
+; Example
+
+[:COMMENT_BLOCK "# comment"]
+
 (defmethod parse->block :COMMENT_BLOCK
   [env {:keys [parse-tree] :as block}]
   [env
-   (assoc
-    block
-    :hash    (second parse-tree)
-    :comment (last parse-tree))])
+   (assoc block :comment (last parse-tree))])
 
 (defmethod block->parse :COMMENT_BLOCK
-  [{:keys [hash comment] :as block}]
-  [:COMMENT_BLOCK hash comment])
+  [{:keys [comment] :as block}]
+  [:COMMENT_BLOCK comment])
 
 
 ;; ## PREFIX_BLOCK

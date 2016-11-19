@@ -207,18 +207,16 @@ This comment block:
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "COMMENT_BLOCK",
+     "source": "example.howl",
      "line": 1,
      "string": "# Just a comment.\n",
-     "block-type": "COMMENT_BLOCK",
-     "hash": "# ",
-     "comment": "Just a comment.",
      "parse-tree":
      ["COMMENT_BLOCK",
-      "# ",
-      "Just a comment."],
+      "# Just a comment."],
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "comment": "# Just a comment."}
 
 
 ### PREFIX
