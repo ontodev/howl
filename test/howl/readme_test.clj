@@ -1,7 +1,8 @@
 (ns howl.readme-test
   (:require [clojure.test :refer :all]
             [clojure.string :as string]
-            [howl.core :refer :all]))
+            [howl.howl :as howl]
+            [howl.json :as json]))
 
 ;; Parse the README.md file
 ;; looking for JSON blocks,
@@ -34,7 +35,7 @@
   [block]
   (try
     (testing block
-      (is (= (second (process-block env (:string block)))
+      (is (= (second (howl/process-block env (:string block)))
              block)))
     (catch Exception e
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
@@ -51,7 +52,7 @@
        (map (fn [lines] (str (string/join "\n" lines) "\n")))
        (filter #(.startsWith % "{"))
        ;(take 2)
-       (map json->block)
+       (map json/json->block)
        (map run-test)
        doall
        ;(#(do (println "Running" (count %) "tests on README") %))

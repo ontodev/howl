@@ -10,6 +10,9 @@
     (is (= (slurp "test/nquads/test1.nq")
            (howl-to-nquads
             (slurp "test/empty-context/test1.howl"))))
+    ;(is (= (slurp "test/empty-context/test1.howl" )
+    ;       (nquads-to-howl
+    ;        (slurp "test/nquads/test1.nq"))))
     (is (= (slurp "test/nquads/test1.nq")
            (howl-to-nquads
             (slurp "test/untyped-context/context.howl")

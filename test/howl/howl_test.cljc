@@ -1,4 +1,4 @@
-(ns howl.core-test
+(ns howl.howl-test
   "Test core functions."
   (:require [clojure.test :refer :all]
             [clojure.test.check.clojure-test
@@ -11,7 +11,7 @@
             [instaparse.core :as insta]
 
             [howl.util :as util :refer [<>]]
-            [howl.core :refer :all]))
+            [howl.howl :refer :all]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; Parsing

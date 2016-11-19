@@ -1,7 +1,9 @@
 (ns howl.api
   "Cross-platform API for HOWL."
   (:require [clojure.string :as string]
-            [howl.core :as core]))
+            [howl.core :as core]
+            [howl.howl :as howl]
+            [howl.nquads :as nquads]))
 
 (defn append-newline
   [s]
@@ -15,7 +17,7 @@
    (fn [env howl-string]
      (->> (string/split-lines howl-string)
           (map append-newline)
-          (core/lines->blocks (core/reset-environment env))))
+          (howl/lines->blocks (core/reset-environment env))))
    {}
    howl-strings))
 
@@ -25,7 +27,7 @@
   [& howl-strings]
   (->> (apply parse-howl-strings howl-strings)
        :blocks
-       (mapcat core/block->nquads)
-       (map core/nquad->nquad-string)
+       (mapcat nquads/block->nquads)
+       (map nquads/nquad->nquad-string)
        (string/join \newline)
        append-newline))
