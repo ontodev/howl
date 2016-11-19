@@ -5,10 +5,21 @@
             [cemerick.url :refer [url]]))
 
 ;; ## Links
+;
+; These are tools for working with links,
+; which occur in many of the supported HOWL formats.
 
-; Adapted from the NQuads spec *)
-; WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF
-(def iri-grammar "
+; TODO: Fix label grammar
+; TODO: Fix prefixed name
+
+(def link-grammar "
+LINK            = NAME_OR_BLANK
+<NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
+<NAME>          = IRIREF / PREFIXED_NAME / LABEL
+<IRI>           = IRIREF / PREFIXED_NAME
+  
+(* Adapted from the NQuads spec *)
+(* WARN: Java doesn't support five-digit Unicode for \u10000-\uEFFFF *)  
 IRIREF           = '<' (#'[^\u0000-\u0020<>\"{}|^`\\\\]' | UCHAR)* '>'
 BLANK_NODE_LABEL = '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
 UCHAR            = '\\\\u' HEX HEX HEX HEX | '\\\\U' HEX HEX HEX HEX HEX HEX HEX HEX
@@ -16,37 +27,22 @@ PN_CHARS_BASE    = #'[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D
 PN_CHARS_U       = PN_CHARS_BASE | '_' | ':'
 PN_CHARS         = PN_CHARS_U | #'[-0-9\u00B7\u0300-\u036F\u203F-\u2040]'
 HEX              = #'[0-9A-Fa-f]+'
-")
 
-(def prefixed-name-grammar "
 PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:\\]]*'
 PREFIX        = #'(\\w|-)+'
-")
 
-(def label-grammar "
 LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
-KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT' | 'LINK'
+KEYWORD = 'BASE' | 'GRAPH' | 'PREFIXES' | 'LABELS' | 'DEFAULT' | 'LINK' | 'PLAIN'
 <WORD>  = #'[^\\s]*[^:\\]\\s]'
 SPACES  = #' +'
-")
-
-(def link-grammar-partial
-  "LINK = NAME_OR_BLANK
-<NAME_OR_BLANK> = IRIREF / BLANK_NODE_LABEL / PREFIXED_NAME / LABEL
-<NAME> = IRIREF / PREFIXED_NAME / LABEL
-<IRI>  = IRIREF / PREFIXED_NAME")
+                   
+DATATYPE        = '' | #' +\\[' ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME) ']'
+LANGUAGE_TAG    = '@' LANGUAGE_CODE
+<LANGUAGE_CODE> = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 
 (def link-transformations
   {:IRIREF (fn [& xs] [:IRIREF "<" (apply str (rest (butlast xs))) ">"])
    :LABEL  (fn [& xs] [:LABEL (->> xs flatten (filter string?) (apply str))])})
-
-(def link-grammar
-  (string/join
-   \newline
-   [link-grammar-partial
-    iri-grammar
-    prefixed-name-grammar
-    label-grammar]))
 
 (def link-parser (insta/parser link-grammar))
 
@@ -106,34 +102,11 @@ SPACES  = #' +'
     ; TODO: catch error
     ))
 
-
-;; ## Datatypes
-
-(def rdf:PlainLiteral "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
-
-(def default-datatype-map
-  {:datatype-iri rdf:PlainLiteral
-   :language nil})
-
 (defn unpack-datatype
-  "Given an environment and a datatype parse,
-   return a map with :datatype-iri and :language keys,
-   or nil."
   [env datatype]
   (cond
-   (= "LINK" datatype)
-   {:datatype-iri nil
-    :language nil}
-
-   (= :LANGUAGE (first datatype))
-   {:datatype-iri rdf:PlainLiteral
-    :language (last datatype)}
-
-   datatype
-   {:datatype-iri (name->iri env datatype)
-    :language nil}
-
-   :else
-   default-datatype-map))
-
-
+   (nil? datatype) nil
+   (= "PLAIN" datatype) "PLAIN"
+   (= "LINK" datatype) "LINK"
+   (= :LANGUAGE_TAG (first datatype)) (str "@" (last datatype))
+   :else (name->iri env datatype)))

@@ -19,15 +19,12 @@
     "ex"   "http://example.com/"}
    :labels
    {"comment"
-    {:iri "http://www.w3.org/2000/01/rdf-schema#comment"
-     :datatype-iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
-     :language nil}
+    {:iri "http://www.w3.org/2000/01/rdf-schema#comment"}
     "type"
     {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-     :datatype-iri nil
-     :language nil}}
+     :datatype "LINK"}}
    :current-graph-iri "http://example.com/current-graph"
-   :current-subject-iri "http://example.com/current-subject"}) 
+   :current-subject-iri "http://example.com/current-subject"})
 
 (defn run-test
   "Given a block map, process the :block value,

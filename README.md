@@ -278,8 +278,6 @@ is parsed into this JSON object:
      "labels": {
       "comment": {
        "iri": "http://www.w3.org/2000/01/rdf-schema#comment"
-       "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
-       "language": null
       }
      },
      "leading-whitespace": "",
@@ -302,14 +300,13 @@ is parsed into this JSON object:
       ["INDENTATION", "\n  "],
       ["LABEL_LINE",
        ["LABEL", "comment"],
-       ["DATATYPE", " [", ["LANGUAGE", "@", "en"], "]"],
+       ["DATATYPE", " [", ["LANGUAGE_TAG", "@", "en"], "]"],
        ["COLON", "", ":" " "],
        ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
      "labels": {
       "comment": {
        "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-       "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
-       "language": "en"
+       "datatype": "@en"
       }
      },
      "leading-whitespace": "",
@@ -439,8 +436,7 @@ is parsed into this JSON object:
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-     "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
-     "language": null,
+     "datatype-iri": null,
      "object": "This is an RDFS comment.",
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
@@ -459,19 +455,18 @@ is parsed into this JSON object:
      ["STATEMENT_BLOCK",
       ["ARROWS", "", ""],
       ["LABEL", "comment"],
-      ["DATATYPE", " [", ["LANGUAGE", "@", "en"], "]"],
+      ["DATATYPE", " [", ["LANGUAGE_TAG", "@", "en"], "]"],
       ["COLON", "", ":", " "],
       "This is an English comment."],
      "arrows": "",
      "predicate": ["LABEL", "comment"],
-     "datatype": ["LANGUAGE", "@", "en"],
+     "datatype": ["LANGUAGE_TAG", "@", "en"],
      "content": "This is an English comment.",
      "graph-iri": "http://example.com/current-graph",
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "This is an English comment.",
-     "datatype-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
-     "language": "en",
+     "datatype-iri": "@en",
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
 
@@ -501,7 +496,6 @@ is parsed into this JSON object:
      "predicate-iri": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "This comment has a datatype.",
      "datatype-iri": "http://www.w3.org/2001/XMLSchema#string",
-     "language": null,
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
 
@@ -556,8 +550,7 @@ is parsed into this JSON object:
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
      "object": "http://www.w3.org/2002/07/owl#Class",
-     "datatype-iri": null,
-     "language": null,
+     "datatype-iri": "LINK",
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
 
@@ -586,8 +579,7 @@ is parsed into this JSON object:
      "subject-iri": "http://example.com/current-subject",
      "predicate-iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
      "object": "http://www.w3.org/2002/07/owl#Class",
-     "datatype-iri": null,
-     "language": null,
+     "datatype-iri": "LINK",
      "leading-whitespace": "",
      "trailing-whitespace": "\n"}
 

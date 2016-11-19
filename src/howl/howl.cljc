@@ -130,9 +130,10 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 
 (defn extract-label
   [env datatype id]
-  (assoc
-   (link/unpack-datatype env datatype)
-   :iri (link/id->iri env id)))
+  (let [datatype (link/unpack-datatype env datatype)]
+    (merge
+     {:iri (link/id->iri env id)}
+     (when datatype {:datatype datatype}))))
 
 (defn extract-labels
   "Given a parse tree for LABELS_BLOCK,
@@ -222,9 +223,7 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 
 (def statement-block-grammar
   "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
-ARROWS   = #'>*' #'\\s*'
-DATATYPE = '' | #' +\\[' ('LINK' | LANGUAGE | NAME) ']'
-LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
+ARROWS   = #'>*' #'\\s*'")
 
 (defmulti content->parse
   "Given an environment,
@@ -240,7 +239,7 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   (let [unindented (string/replace content #"(?m)^  |^ " "")]
     [unindented unindented]))
 
-(defmethod content->parse nil
+(defmethod content->parse "LINK"
   [env datatype-iri content]
   (let [result (link/parse-link content)]
     [(link/name->iri env result) result]))
@@ -250,11 +249,10 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
   (let [predicate     (get parse-tree 2)
         predicate-iri (link/name->iri env predicate)
         datatype      (get-in parse-tree [3 2])
-        {:keys [datatype-iri language]}
+        datatype-iri
         (or (when datatype (link/unpack-datatype env datatype))
             (when (= :LABEL (first predicate))
-              (get-in env [:labels (second predicate)]))
-            link/default-datatype-map)
+              (get-in env [:labels (second predicate) :datatype])))
         [object content] (content->parse env datatype-iri (last parse-tree))]
     [env
      (assoc
@@ -268,9 +266,7 @@ LANGUAGE = '@' #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
       :subject-iri (:current-subject-iri env) ; TODO: handle missing
       :predicate-iri predicate-iri
       :object object
-      :datatype-iri datatype-iri
-      :language language)]))
-
+      :datatype-iri datatype-iri)]))
 
 
 (def block-grammar-partial "
