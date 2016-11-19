@@ -269,6 +269,8 @@ is parsed into this JSON object:
      "leading-whitespace": "",
      "trailing-whitespace": "\n",
      "label": "comment",
+     "datatype-name": null,
+     "target-name": ["PREFIXED_NAME", "rdfs", ":", "comment"],
      "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
      "datatype": null}
 
@@ -293,6 +295,8 @@ is parsed into this JSON object:
      "leading-whitespace": "",
      "trailing-whitespace": "\n",
      "label": "comment",
+     "datatype-name": ["LANGUAGE_TAG", "@", "en"],
+     "target-name": ["PREFIXED_NAME", "rdfs", ":", "comment"],
      "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
      "datatype": "@en"}
 

@@ -9,8 +9,6 @@
             [howl.core :as core]
             [howl.util :as util]))
 
-;; # BLOCKS
-
 (def block-grammar
   (str
 "<BLOCK> = WHITESPACE
@@ -37,6 +35,112 @@ COLON       = #' *' ':'  #' +'
 ARROWS      = #'>*' #'\\s*'"
    link/link-grammar))
 
+
+(defmulti block->parse
+  "Given a block, return a new parse-tree."
+  :block-type)
+
+(defmulti parse->block
+  "Given a parse-tree,
+   return a block map for this block type."
+  first)
+
+
+(defmethod block->parse :COMMENT_BLOCK
+  [{:keys [comment] :as block}]
+  [:COMMENT_BLOCK comment])
+
+(defmethod parse->block :COMMENT_BLOCK
+  [[_ comment]]
+  {:comment comment})
+
+
+(defmethod block->parse :PREFIX_BLOCK
+  [{:keys [prefix iri] :as block}]
+  [:PREFIX_BLOCK
+   "PREFIX"
+   [:SPACES " "]
+   [:PREFIX prefix]
+   [:COLON "" ":" " "]
+   [:IRIREF "<" iri ">"]])
+
+(defmethod parse->block :PREFIX_BLOCK
+  [[_ _ _ [_ prefix] _ [_ _ iri _]]]
+  (link/check-iri iri)
+  {:prefix prefix :iri iri})
+
+
+(defmethod block->parse :LABEL_BLOCK
+  [{:keys [label datatype-name target-name] :as block}]
+  [:LABEL_BLOCK
+   "LABEL"
+   [:SPACES " "]
+   [:LABEL "type"]
+   (if datatype-name
+     [:DATATYPE " [" datatype-name "]"]
+     [:DATATYPE])
+   [:COLON "" ":" " "]
+   target-name])
+
+(defmethod parse->block :LABEL_BLOCK
+  [[_ _ _ [_ label] [_ _ datatype-name _] _ target]]
+  {:label label
+   :datatype-name datatype-name
+   :target-name target})
+
+
+(defmethod block->parse :BASE_BLOCK
+  [{:keys [base] :as block}]
+  [:BASE_BLOCK
+   "BASE"
+   [:SPACES " "]
+   [:IRIREF "<" base ">"]])
+
+(defmethod parse->block :BASE_BLOCK
+  [[_ _ _ [_ _ iri _]]]
+  {:base iri})
+
+
+(defmethod parse->block :GRAPH_BLOCK
+  [env {:keys [graph-name] :as block}]
+  (if graph-name
+    [:GRAPH_BLOCK "GRAPH" [:SPACES " "] graph-name]
+    [:GRAPH_BLOCK "DEFAULT GRAPH"]))
+
+(defmethod parse->block :GRAPH_BLOCK
+  [[_ _ _ name]]
+  {:graph-name name})
+
+
+(defmethod parse->block :SUBJECT_BLOCK
+  [env {:keys [subject-name] :as block}]
+  [:SUBJECT_BLOCK subject-name])
+
+(defmethod parse->block :SUBJECT_BLOCK
+  [[_ name]]
+  {:subject-name name})
+
+
+(defmethod parse->block :STATEMENT_BLOCK
+  [env {:keys [arrows predicate-name datatype-name content] :as block}]
+  [:STATEMENT_BLOCK
+   (if (string/blank? arrows)
+     [:ARROWS "" ""]
+     [:ARROWS arrows " "])
+   predicate-name
+   [:DATATYPE " [" datatype-name "]"]
+   [:COLON " " ":" " "]
+   content])
+
+(defmethod parse->block :STATEMENT_BLOCK
+  [[_ [_ arrows _] predicate-name [_ _ datatype-name _] _ content]]
+  {:arrows arrows
+   :predicate-name predicate-name
+   :datatype-name datatype-name
+   :content content})
+
+
+
 (def block-parser (insta/parser block-grammar))
 
 (defn parse-block
@@ -48,219 +152,6 @@ ARROWS      = #'>*' #'\\s*'"
     (->> result
          (insta/transform link/link-transformations)
          vec)))
-
-
-; To turn a string into a
-; We have general functions for parsing block
-
-(defmulti parse->block
-  "Given an environment and a map with :parse-tree and :block-type keys,
-   return a block map."
-  (fn [env block] (:block-type block)))
-
-(defmethod parse->block :default
-  [env block]
-  (println block)
-  (throw (Exception. "Parse error")))
-
-(defmulti block->parse
-  "Given a block, return a new :parse-tree."
-  :block-type)
-
-; TODO: remove this
-(defmethod block->parse :default
-  [block]
-  [:DEFAULT "DEFAULT"])
-
-(defn block->howl-string
-  [{:keys [leading-whitespace parse-tree trailing-whitespace]
-    :or {leading-whitespace "LEAD"
-         parse-tree [:ERROR "PARSE_TREE"]
-         trailing-whitespace "TRAIL"}}]
-  (str leading-whitespace
-       (->> parse-tree flatten (filter string?) (apply str))
-       trailing-whitespace))
-
-
-
-
-;; ## COMMENT_BLOCK
-
-; A COMMENT_BLOCK is a line with a hash (#) as the first character.
-; The line is ignored by most processing,
-; and does not have an NQuads representation.
-
-; Example
-
-[:COMMENT_BLOCK "# comment"]
-
-(defmethod parse->block :COMMENT_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  [env
-   (assoc block :comment (last parse-tree))])
-
-(defmethod block->parse :COMMENT_BLOCK
-  [{:keys [comment] :as block}]
-  [:COMMENT_BLOCK comment])
-
-
-;; ## PREFIX_BLOCK
-
-; Prefixes are used to contract and expand prefixed names.
-; Prefix mappings are stored in the environment
-; as forward- and reverse- maps.
-;
-; A PREFIX_BLOCK starts with a 'PREFIX' keyword,
-; followed by a PREFIX and an IRI.
-; The PREFIX_BLOCK does not have an NQuad representation.
-
-; Example
-
-[:PREFIX_BLOCK
- "PREFIX"
- [:SPACES " "]
- [:PREFIX "rdf"]
- [:COLON "" ":" " "]
- [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]]
-
-(defmethod parse->block :PREFIX_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [[_ _ _ [_ prefix] _ [_ _ iri _]] parse-tree]
-    (link/check-iri iri)
-    [(assoc-in env [:prefix-iri prefix] iri)
-     (assoc block :prefix prefix :iri iri)]))
-
-
-;; ## LABEL_BLOCK
-;
-; Labels provide mappings from human-readable strings to IRIs.
-; They can also define default types for predicates.
-; Label mappings are stored in the environment
-; as forward- and reverse- maps.
-; The DATATYPE definition is the same as STATEMENT_BLOCK below.
-
-; Example
-
-[:LABEL_BLOCK
- "LABEL"
- [:SPACES " "]
- [:LABEL "type"]
- [:DATATYPE " [" "LINK" "]"]
- [:COLON "" ":" " "]
- [:PREFIXED_NAME "rdf" ":" "type"]]
-
-(defmethod parse->block :LABEL_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [[_ _ _ [_ label] dt _ id] parse-tree
-        iri (link/id->iri env id)
-        datatype (link/unpack-datatype env (get dt 2))]
-    [(assoc-in
-      env
-      [:labels label]
-      (merge {:iri iri} (when datatype {:datatype datatype})))
-     (assoc block :label label :iri iri :datatype datatype)]))
-
-
-
-;; ## BASE_BLOCK
-;
-; The base block sets the base IRI
-; use to resolve relate IRIs.
-
-; Example
-
-[:BASE_BLOCK "BASE" [:SPACES " "] [:IRIREF "<" "http://example.com" ">"]]
-
-(defmethod parse->block :BASE_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [[_ _ _ [_ _ iri _]] parse-tree]
-    (link/check-iri iri)
-    [(assoc env :base iri)
-     (assoc block :base iri)]))
-
-
-
-;; ## GRAPH_BLOCK
-;
-; The graph block declares the graph for all statements
-; until the next graph block.
-; Processing starts with the (unnamed) default graph.
-; Graph blocks can either be 'GRAPH NAME'
-; or 'DEFAULT GRAPH'.
-
-; Examples
-[:GRAPH_BLOCK "DEFAULT GRAPH"]
-[:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:PREFIXED_NAME "ex" ":" "graph"]]
-
-(defmethod parse->block :GRAPH_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [graph-name (get parse-tree 3)
-        graph      (when graph-name (link/name->iri env graph-name))]
-    [(assoc env :graph graph)
-     (assoc
-      block
-      :graph-name graph-name
-      :graph graph)]))
-
-
-;; ## SUBJECT_BLOCK
-;
-; The subject block declares the subject of all statements
-; until the next subject block.
-
-; Example
-
-[:SUBJECT_BLOCK [:PREFIXED_NAME "ex" ":" "subject"]]
-
-(defmethod parse->block :SUBJECT_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [subject-name (second parse-tree)
-        subject      (link/name->iri env subject-name)]
-    [(assoc env :subject subject)
-     (assoc
-      block
-      :subject-name subject-name
-      :subject subject)]))
-
-
-
-;; ## STATEMENT_BLOCK
-
-; Example
-
-[:STATEMENT_BLOCK
- [:ARROWS "" ""]
- [:LABEL "type"]
- [:DATATYPE " [" "LINK" "]"]
- [:COLON " " ":" " "]
- "owl:Class"]
-
-(defmethod parse->block :STATEMENT_BLOCK
-  [env {:keys [parse-tree] :as block}]
-  (let [predicate-name  (get parse-tree 2)
-        predicate-label (link/name->label predicate-name)
-        predicate       (link/name->iri env predicate-name)
-        datatype-name   (get-in parse-tree [3 2])
-        datatype
-        (or (when datatype-name (link/unpack-datatype env datatype-name))
-            (when predicate-label
-              (get-in env [:labels predicate-label :datatype])))
-        [object content] (core/content->parse env datatype (last parse-tree))]
-
-    [env
-     (assoc
-      block
-      :parse-tree (assoc parse-tree 5 content) ; update parse
-      :arrows (get-in parse-tree [1 1])
-      :predicate-name predicate-name
-      :datatype-name datatype-name
-      :content content
-      :graph (:graph env)
-      :subject (:subject env) ; TODO: handle missing
-      :predicate predicate
-      :object object
-      :datatype datatype)]))
-
 
 (defn group-lines
   "Given a sequence of lines, returns a lazy sequence of grouped lines"
@@ -274,18 +165,20 @@ ARROWS      = #'>*' #'\\s*'"
 
 (defn process-block
   "Given an environment a source, a line number, and a block string,
-   return the update environment and the block map."
+   return the updated block map."
   [{:keys [source line] :as env} source-string]
   (let [[[_ lws] parse-tree [_ tws]] (parse-block source-string)]
-    (parse->block
-     env
-     {:source source
-      :line line
-      :string source-string
-      :block-type (first parse-tree)
-      :parse-tree parse-tree
-      :leading-whitespace lws
-      :trailing-whitespace tws})))
+    (->> parse-tree
+         parse->block
+         (merge
+          {:block-type (first parse-tree)
+           :source source
+           :line line
+           :string source-string
+           :parse-tree parse-tree
+           :leading-whitespace lws
+           :trailing-whitespace tws})
+         (core/names->iris env))))
 
 (defn lines->blocks
   "Given a sequence of lines,
@@ -294,11 +187,20 @@ ARROWS      = #'>*' #'\\s*'"
   [{:keys [source] :or {source "interactive"} :as env} lines]
   (reduce
    (fn [env lines]
-     (let [[env block] (process-block env (apply str lines))]
-       (-> env
+     (let [block (process-block env (apply str lines))]
+       (-> (core/update-environment env block)
            (update-in [:blocks] (fnil conj []) block)
            (update-in [:line] + (count lines)))))
    (assoc env :source source :line 1)
    (group-lines lines)))
 
+
+(defn block->howl-string
+  [{:keys [leading-whitespace parse-tree trailing-whitespace]
+    :or {leading-whitespace "LEAD"
+         parse-tree [:ERROR "PARSE_TREE"]
+         trailing-whitespace "TRAIL"}}]
+  (str leading-whitespace
+       (->> parse-tree flatten (filter string?) (apply str))
+       trailing-whitespace))
 

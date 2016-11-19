@@ -32,7 +32,7 @@
   [block]
   (try
     (testing block
-      (is (= (second (howl/process-block env (:string block)))
+      (is (= (howl/process-block env (:string block))
              block)))
     (catch Exception e
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))

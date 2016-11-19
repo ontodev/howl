@@ -43,7 +43,8 @@
     "block-type" (keyword value)
     "labels"     (keywordize-child-maps value)
     ("parse-tree" "graph-name" "subject-name"
-     "predicate-name" "datatype-name" "content")
+     "predicate-name" "datatype-name" "target-name"
+     "content")
     (json->parse value)
     value))
 
