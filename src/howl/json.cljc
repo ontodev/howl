@@ -16,6 +16,14 @@
   [json]
   )
 
+(defn keywordize-child-maps
+  "Given a map where the values are maps,
+   convert the keys of the child maps to keywords."
+  [coll]
+  (->> coll
+       (map (fn [[k v]] [k (keywordize-keys v)]))
+       (into {})))
+
 (defn json->parse
   "Given the JSON representation of a parse vector,
    return the EDN representation."
@@ -28,16 +36,15 @@
    json))
 
 (defn json->value
+  "Given a JSON key and value,
+   return an EDN value."
   [key value]
   (case key
-    "block-type"   (keyword value)
-    "labels"       (->> value (map (fn [[k v]] [k (keywordize-keys v)])) (into {}))
-    "parse-tree"   (json->parse value)
-    "graph-name"   (json->parse value)
-    "subject-name" (json->parse value)
-    "predicate"    (json->parse value)
-    "datatype"     (json->parse value)
-    "content"      (json->parse value)
+    "block-type" (keyword value)
+    "labels"     (keywordize-child-maps value)
+    ("parse-tree" "graph-name" "subject-name"
+     "predicate-name" "datatype-name" "content")
+    (json->parse value)
     value))
 
 (defn json->block
@@ -47,6 +54,3 @@
   (->> (json/read-str json :value-fn json->value)
        (map (fn [[k v]] [(keyword k) v]))
        (into {})))
-
-
-

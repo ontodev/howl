@@ -6,6 +6,7 @@
             [instaparse.core :as insta]
 
             [howl.link :as link]
+            [howl.core :as core]
             [howl.util :as util]))
 
 ;; # BLOCKS
@@ -225,48 +226,40 @@ ARROWS      = #'>*' #'\\s*'"
 
 ;; ## STATEMENT_BLOCK
 
-(defmulti content->parse
-  "Given an environment,
-   a datatype IRI string (or nil when the object is an IRI),
-   and a content string,
-   return the object and the parse tree for the content."
-  (fn [env datatype-iri content] datatype-iri))
+; Example
 
-; The default behaviour is to remove indentation.
-
-(defmethod content->parse :default
-  [env datatype-iri content]
-  (let [unindented (string/replace content #"(?m)^  |^ " "")]
-    [unindented unindented]))
-
-(defmethod content->parse "LINK"
-  [env datatype-iri content]
-  (let [result (link/parse-link content)]
-    [(link/name->iri env result) result]))
+[:STATEMENT_BLOCK
+ [:ARROWS "" ""]
+ [:LABEL "type"]
+ [:DATATYPE " [" "LINK" "]"]
+ [:COLON " " ":" " "]
+ "owl:Class"]
 
 (defmethod parse->block :STATEMENT_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [predicate     (get parse-tree 2)
-        predicate-iri (link/name->iri env predicate)
-        datatype      (get-in parse-tree [3 2])
-        datatype-iri
-        (or (when datatype (link/unpack-datatype env datatype))
-            (when (= :LABEL (first predicate))
-              (get-in env [:labels (second predicate) :datatype])))
-        [object content] (content->parse env datatype-iri (last parse-tree))]
+  (let [predicate-name  (get parse-tree 2)
+        predicate-label (link/name->label predicate-name)
+        predicate       (link/name->iri env predicate-name)
+        datatype-name   (get-in parse-tree [3 2])
+        datatype
+        (or (when datatype-name (link/unpack-datatype env datatype-name))
+            (when predicate-label
+              (get-in env [:labels predicate-label :datatype])))
+        [object content] (core/content->parse env datatype (last parse-tree))]
+
     [env
      (assoc
       block
       :parse-tree (assoc parse-tree 5 content) ; update parse
       :arrows (get-in parse-tree [1 1])
-      :predicate predicate
-      :datatype datatype
+      :predicate-name predicate-name
+      :datatype-name datatype-name
       :content content
-      :graph-iri (:graph env)
-      :subject-iri (:subject env) ; TODO: handle missing
-      :predicate-iri predicate-iri
+      :graph (:graph env)
+      :subject (:subject env) ; TODO: handle missing
+      :predicate predicate
       :object object
-      :datatype-iri datatype-iri)]))
+      :datatype datatype)]))
 
 
 (defn group-lines

@@ -32,14 +32,14 @@
 
 
 (defmethod block->nquads :STATEMENT_BLOCK
-  [{:keys [graph-iri subject-iri predicate-iri object datatype-iri]}]
-  [[graph-iri
-    subject-iri
-    predicate-iri
+  [{:keys [graph subject predicate object datatype]}]
+  [[graph
+    subject
+    predicate
     (-> object
         (string/replace "\n" "\\n")
         (string/replace "\"" "\\\""))
-    datatype-iri]])
+    datatype]])
 
 (defn nquad->blocks
   "Given an environment and an nquad vector,
@@ -51,9 +51,9 @@
    [; many new graph
     ; maybe new subject
     [{:block-type :STATEMENT_BLOCK
-      :graph-iri graph
-      :subject-iri subject
-      :predicate-iri predicate
+      :graph graph
+      :subject subject
+      :predicate predicate
       :object object
       :datatype datatype}]]))
 

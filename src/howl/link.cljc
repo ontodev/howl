@@ -106,6 +106,12 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     ; TODO: catch error
     ))
 
+(defn name->label
+  "Given a name parse, return a label string
+   or nil if the name is not a label."
+  [parse]
+  (when (= :LABEL (first parse)) (second parse)))
+
 (defn unpack-datatype
   [env datatype]
   (cond

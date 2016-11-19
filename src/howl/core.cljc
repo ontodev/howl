@@ -1,7 +1,7 @@
 (ns howl.core
   "Core HOWL definitions and operations."
-  (:require [clojure.string :as string]))
-
+  (:require [clojure.string :as string]
+            [howl.link :as link]))
 
 ;; # BLOCKS
 
@@ -32,3 +32,23 @@
   (dissoc env :current-graph-iri :current-subject-iri))
 
 
+;; ## Content
+
+(defmulti content->parse
+  "Given an environment,
+   a datatype IRI string (or nil when the object is an IRI),
+   and a content string,
+   return the object and the parse tree for the content."
+  (fn [env datatype content] datatype))
+
+; The default behaviour is to remove indentation.
+
+(defmethod content->parse :default
+  [env datatype content]
+  (let [unindented (string/replace content #"(?m)^  |^ " "")]
+    [unindented unindented]))
+
+(defmethod content->parse "LINK"
+  [env datatype content]
+  (let [result (link/parse-link content)]
+    [(link/name->iri env result) result]))
