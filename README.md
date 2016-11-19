@@ -336,19 +336,19 @@ This graph block:
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "GRAPH_BLOCK",
+     "source": "example.howl",
      "line": 1,
      "string": "GRAPH ex:graph\n",
-     "block-type": "GRAPH_BLOCK",
      "parse-tree":
      ["GRAPH_BLOCK",
       "GRAPH",
       ["SPACES", " "],
       ["PREFIXED_NAME", "ex", ":", "graph"]],
-     "graph": ["PREFIXED_NAME", "ex", ":", "graph"],
-     "graph-iri": "http://example.com/graph",
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "graph-name": ["PREFIXED_NAME", "ex", ":", "graph"],
+     "graph": "http://example.com/graph"}
 
 This graph block:
 
@@ -356,17 +356,17 @@ This graph block:
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "GRAPH_BLOCK",
+     "source": "example.howl",
      "line": 1,
      "string": "DEFAULT GRAPH\n",
-     "block-type": "GRAPH_BLOCK",
      "parse-tree":
      ["GRAPH_BLOCK"
       "DEFAULT GRAPH"],
-     "graph": null,
-     "graph-iri": null,
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "graph-name": null,
+     "graph": null}
 
 
 ### Subject

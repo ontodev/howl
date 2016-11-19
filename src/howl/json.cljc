@@ -33,7 +33,7 @@
     "block-type" (keyword value)
     "labels"     (->> value (map (fn [[k v]] [k (keywordize-keys v)])) (into {}))
     "parse-tree" (json->parse value)
-    "graph"      (json->parse value)
+    "graph-name" (json->parse value)
     "subject"    (json->parse value)
     "predicate"  (json->parse value)
     "datatype"   (json->parse value)

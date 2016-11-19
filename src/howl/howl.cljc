@@ -187,16 +187,19 @@ ARROWS      = #'>*' #'\\s*'"
 ; Graph blocks can either be 'GRAPH NAME'
 ; or 'DEFAULT GRAPH'.
 
+; Examples
+[:GRAPH_BLOCK "DEFAULT GRAPH"]
+[:GRAPH_BLOCK "GRAPH" [:SPACES " "] [:PREFIXED_NAME "ex" ":" "graph"]]
+
 (defmethod parse->block :GRAPH_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [graph     (get parse-tree 3 nil)
-        graph-iri (when graph (link/name->iri env graph))]
-    ; TODO: check that IRI is absolute
-    [(assoc env :current-graph-iri graph-iri)
+  (let [graph-name (get parse-tree 3)
+        graph      (when graph-name (link/name->iri env graph-name))]
+    [(assoc env :graph graph)
      (assoc
       block
-      :graph graph
-      :graph-iri graph-iri)]))
+      :graph-name graph-name
+      :graph graph)]))
 
 
 ;; ## SUBJECT_BLOCK
@@ -256,7 +259,7 @@ ARROWS      = #'>*' #'\\s*'"
       :predicate predicate
       :datatype datatype
       :content content
-      :graph-iri (:current-graph-iri env)
+      :graph-iri (:graph env)
       :subject-iri (:current-subject-iri env) ; TODO: handle missing
       :predicate-iri predicate-iri
       :object object
