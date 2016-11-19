@@ -32,7 +32,7 @@ PREFIXED_NAME = #'(\\w|-)+' ':' #'[^\\s:/][^\\s:\\]]*'
 PREFIX        = #'(\\w|-)+'
 
 LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
-KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABELS' | 'DEFAULT' | 'LINK' | 'PLAIN'
+KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT' | 'LINK' | 'PLAIN'
 <WORD>  = #'[^\\s]*[^:\\]\\s]'
 SPACES  = #' +'
 

@@ -15,26 +15,25 @@
 "<BLOCK> = WHITESPACE
           (COMMENT_BLOCK
            / PREFIX_BLOCK
-           / LABELS_BLOCK
+           / LABEL_BLOCK
            / BASE_BLOCK
            / GRAPH_BLOCK
            / SUBJECT_BLOCK
            / STATEMENT_BLOCK)
           WHITESPACE
 
-COMMENT_BLOCK = #'#+\\s*' #'.*'
-PREFIX_BLOCK  = 'PREFIX' SPACES PREFIX COLON IRIREF
-LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
-LABEL_LINE = LABEL DATATYPE COLON IRI
-BASE_BLOCK = 'BASE' SPACES IRIREF
-GRAPH_BLOCK = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?
-SUBJECT_BLOCK = NAME_OR_BLANK
+COMMENT_BLOCK   = #'#+\\s*' #'.*'
+PREFIX_BLOCK    = 'PREFIX' SPACES PREFIX COLON IRIREF
+LABEL_BLOCK     = 'LABEL' SPACES LABEL DATATYPE COLON IRI
+BASE_BLOCK      = 'BASE' SPACES IRIREF
+GRAPH_BLOCK     = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?
+SUBJECT_BLOCK   = NAME_OR_BLANK
 STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
 
 WHITESPACE  = #'(\\r|\\n|\\s)*'
 INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
 COLON       = #' *' ':'  #' +'
-ARROWS   = #'>*' #'\\s*'"
+ARROWS      = #'>*' #'\\s*'"
    link/link-grammar))
 
 (def block-parser (insta/parser block-grammar))
@@ -130,7 +129,7 @@ ARROWS   = #'>*' #'\\s*'"
      (assoc block :prefix prefix :iri iri)]))
 
 
-;; ## LABELS_BLOCK
+;; ## LABEL_BLOCK
 ;
 ; Labels provide mappings from human-readable strings to IRIs.
 ; They can also define default types for predicates.
@@ -138,36 +137,26 @@ ARROWS   = #'>*' #'\\s*'"
 ; as forward- and reverse- maps.
 ; The DATATYPE definition is the same as STATEMENT_BLOCK below.
 
-(defn extract-label
-  [env datatype id]
-  (let [datatype (link/unpack-datatype env datatype)]
-    (merge
-     {:iri (link/id->iri env id)}
-     (when datatype {:datatype datatype}))))
+; Example
 
-(defn extract-labels
-  "Given a parse tree for LABELS_BLOCK,
-   return a map from label string to map."
-  [env parse-tree]
-  (reduce
-   (fn [labels [_ [_ label] datatype _ id]]
-     (assoc
-      labels
-      label
-      (extract-label
-       (update-in env [:labels] merge labels)
-       (get datatype 2)
-       id)))
-   {}
-   (->> parse-tree
-        (filter vector?)
-        (filter #(= :LABEL_LINE (first %))))))
+[:LABEL_BLOCK
+ "LABEL"
+ [:SPACES " "]
+ [:LABEL "type"]
+ [:DATATYPE " [" "LINK" "]"]
+ [:COLON "" ":" " "]
+ [:PREFIXED_NAME "rdf" ":" "type"]]
 
-(defmethod parse->block :LABELS_BLOCK
+(defmethod parse->block :LABEL_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [labels (extract-labels env parse-tree)]
-    [(update-in env [:labels] merge labels)
-     (assoc block :labels labels)]))
+  (let [[_ _ _ [_ label] dt _ id] parse-tree
+        iri (link/id->iri env id)
+        datatype (link/unpack-datatype env (get dt 2))]
+    [(assoc-in
+      env
+      [:labels label]
+      (merge {:iri iri} (when datatype {:datatype datatype})))
+     (assoc block :label label :iri iri :datatype datatype)]))
 
 
 

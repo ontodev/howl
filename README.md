@@ -19,13 +19,12 @@ The first part of the example is a *context* which can be stored in a separate f
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
     PREFIX obo: <http://purl.obolibrary.org/obo/>
     PREFIX ex: <http://example.com/>
-    LABELS
-      label: rdfs:label
-      comment [xsd:string]: rdfs:comment
-      type [IRI]: rdf:type
-      has part: obo:BFO_0000051
-      Manchester Syntax: <http://www.w3.org/TR/owl2-manchester-syntax/>
-      subclass of [Manchester Syntax]: rdfs:subClassOf
+    LABEL label: rdfs:label
+    LABEL comment [xsd:string]: rdfs:comment
+    LABEL type [IRI]: rdf:type
+    LABEL has part: obo:BFO_0000051
+    LABEL Manchester Syntax: <http://www.w3.org/TR/owl2-manchester-syntax/>
+    LABEL subclass of [Manchester Syntax]: rdfs:subClassOf
 
     ex:ontology
     label: Example Ontology
@@ -125,7 +124,7 @@ Features in this example:
 
 - `PREFIX`
     - set prefixes, similar to Turtle and SPARQL
-- `LABELS`
+- `LABEL`
     - like PREFIXes for single terms
     - set default language tag or datatype for a predicate
 - prefixes, labels, and types
@@ -192,7 +191,7 @@ These are all the block types:
 - Comment
 - BASE
 - PREFIX
-- LABELS
+- LABEL
 - GRAPH
 - Subject
 - Statement
@@ -247,66 +246,57 @@ is parsed into this JSON object:
      "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"}
 
 
-### LABELS
+### LABEL
 
 HOWL makes RDF more readable by using labels rather than IRIs and prefixed names whenever possible. Label blocks allow you to associate a label to an identifier, without making any other assertions about it -- no triple will be generated. If you want to assert that a subject has a label, use the special `label:` predicate shown below.
 
 This label block:
 
-    LABELS
-      comment: rdfs:comment
+    LABEL comment: rdfs:comment
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "LABEL_BLOCK",
+     "source": "example.howl",
      "line": 1,
-     "string": "LABELS\n  comment: rdfs:comment\n",
-     "block-type": "LABELS_BLOCK",
+     "string": "LABEL comment: rdfs:comment\n",
      "parse-tree":
-     ["LABELS_BLOCK",
-      "LABELS",
-      ["INDENTATION", "\n  "],
-      ["LABEL_LINE",
-       ["LABEL", "comment"],
-       ["DATATYPE"],
-       ["COLON", "", ":" " "],
-       ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
-     "labels": {
-      "comment": {
-       "iri": "http://www.w3.org/2000/01/rdf-schema#comment"
-      }
-     },
+     ["LABEL_BLOCK",
+      "LABEL",
+      ["SPACES", " "],
+      ["LABEL", "comment"],
+      ["DATATYPE"],
+      ["COLON", "", ":" " "],
+      ["PREFIXED_NAME", "rdfs", ":", "comment"]],
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "label": "comment",
+     "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "datatype": null}
 
 This label block:
 
-    LABELS
-      comment [@en]: rdfs:comment
+    LABEL comment [@en]: rdfs:comment
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "LABEL_BLOCK",
+     "source": "example.howl",
      "line": 1,
-     "string": "LABELS\n  comment [@en]: rdfs:comment\n",
-     "block-type": "LABELS_BLOCK",
+     "string": "LABEL comment [@en]: rdfs:comment\n",
      "parse-tree":
-     ["LABELS_BLOCK",
-      "LABELS",
-      ["INDENTATION", "\n  "],
-      ["LABEL_LINE",
-       ["LABEL", "comment"],
-       ["DATATYPE", " [", ["LANGUAGE_TAG", "@", "en"], "]"],
-       ["COLON", "", ":" " "],
-       ["PREFIXED_NAME", "rdfs", ":", "comment"]]],
-     "labels": {
-      "comment": {
-       "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-       "datatype": "@en"
-      }
-     },
+     ["LABEL_BLOCK",
+      "LABEL",
+      ["SPACES", " "],
+      ["LABEL", "comment"],
+      ["DATATYPE", " [", ["LANGUAGE_TAG", "@", "en"], "]"],
+      ["COLON", "", ":" " "],
+      ["PREFIXED_NAME", "rdfs", ":", "comment"]],
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "label": "comment",
+     "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "datatype": "@en"}
 
 
 ### BASE
