@@ -166,12 +166,16 @@ ARROWS      = #'>*' #'\\s*'"
 ; The base block sets the base IRI
 ; use to resolve relate IRIs.
 
+; Example
+
+[:BASE_BLOCK "BASE" [:SPACES " "] [:IRIREF "<" "http://example.com" ">"]]
+
 (defmethod parse->block :BASE_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [base-iri (link/check-iri (get-in parse-tree [3 2]))]
-    ; TODO: check that IRI is absolute
-    [(assoc env :base-iri base-iri)
-     (assoc block :base-iri base-iri)]))
+  (let [[_ _ _ [_ _ iri _]] parse-tree]
+    (link/check-iri iri)
+    [(assoc env :base iri)
+     (assoc block :base iri)]))
 
 
 

@@ -301,24 +301,24 @@ is parsed into this JSON object:
 
 Base blocks set the current base IRI for resolving relative IRIs. Multiple base blocks can occur, each changing the current base from that point until the next base block.
 
-This prefix block:
+This base block:
 
     BASE <http://example.com/>
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "BASE_BLOCK",
+     "source": "example.howl",
      "line": 1,
      "string": "BASE <http://example.com/>\n",
-     "block-type": "BASE_BLOCK",
      "parse-tree":
      ["BASE_BLOCK",
       "BASE",
       ["SPACES", " "],
       ["IRIREF", "<", "http://example.com/", ">"]],
-     "base-iri": "http://example.com/",
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "base": "http://example.com/"}
 
 
 ### GRAPH
