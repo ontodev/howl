@@ -14,7 +14,7 @@
   (str
 "<BLOCK> = WHITESPACE
           (COMMENT_BLOCK
-           / PREFIXES_BLOCK
+           / PREFIX_BLOCK
            / LABELS_BLOCK
            / BASE_BLOCK
            / GRAPH_BLOCK
@@ -23,8 +23,7 @@
           WHITESPACE
 
 COMMENT_BLOCK = #'#+\\s*' #'.*'
-PREFIXES_BLOCK = 'PREFIXES' (INDENTATION PREFIX_LINE)+
-PREFIX_LINE = PREFIX COLON IRIREF
+PREFIX_BLOCK  = 'PREFIX' SPACES PREFIX COLON IRIREF
 LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
 LABEL_LINE = LABEL DATATYPE COLON IRI
 BASE_BLOCK = 'BASE' SPACES IRIREF
@@ -104,34 +103,31 @@ ARROWS   = #'>*' #'\\s*'"
   [:COMMENT_BLOCK hash comment])
 
 
-;; ## PREFIXES_BLOCK
+;; ## PREFIX_BLOCK
 
 ; Prefixes are used to contract and expand prefixed names.
 ; Prefix mappings are stored in the environment
 ; as forward- and reverse- maps.
 ;
-; A PREFIXES_BLOCK starts with a 'PREFIXES' keyword,
-; followed by one or or more PREFIX_LINES
-; each containing a PREFIX and and IRI.
-; The PREFIXES_BLOCK does not have an NQuad representation.
+; A PREFIX_BLOCK starts with a 'PREFIX' keyword,
+; followed by a PREFIX and an IRI.
+; The PREFIX_BLOCK does not have an NQuad representation.
 
-(defn extract-prefixes
-  "Given a parse tree for PREFIXES_BLOCK,
-   return a map from prefix string to IRI string."
-  [parse-tree]
-  (->> parse-tree
-       (filter vector?)
-       (filter #(= :PREFIX_LINE (first %)))
-       (map
-        (fn [[_ [_ prefix] _ [_ _ iri _]]]
-          [prefix (link/check-iri iri)]))
-       (into {})))
+; Example
 
-(defmethod parse->block :PREFIXES_BLOCK
+[:PREFIX_BLOCK
+ "PREFIX"
+ [:SPACES " "]
+ [:PREFIX "rdf"]
+ [:COLON "" ":" " "]
+ [:IRIREF "<" "http://www.w3.org/1999/02/22-rdf-syntax-ns#" ">"]]
+
+(defmethod parse->block :PREFIX_BLOCK
   [env {:keys [parse-tree] :as block}]
-  (let [prefixes (extract-prefixes parse-tree)]
-    [(update-in env [:prefix-iri] merge prefixes)
-     (assoc block :prefixes prefixes)]))
+  (let [[_ _ _ [_ prefix] _ [_ _ iri _]] parse-tree]
+    (link/check-iri iri)
+    [(assoc-in env [:prefix-iri prefix] iri)
+     (assoc block :prefix prefix :iri iri)]))
 
 
 ;; ## LABELS_BLOCK

@@ -13,13 +13,12 @@ This is work-in-progress. Your [feedback](http://github.com/ontodev/howl/issues)
 
 The first part of the example is a *context* which can be stored in a separate file.
 
-    PREFIXES
-      rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-      xsd: <http://www.w3.org/2001/XMLSchema#>
-      owl: <http://www.w3.org/2002/07/owl#>
-      obo: <http://purl.obolibrary.org/obo/>
-      ex: <http://example.com/>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX obo: <http://purl.obolibrary.org/obo/>
+    PREFIX ex: <http://example.com/>
     LABELS
       label: rdfs:label
       comment [xsd:string]: rdfs:comment
@@ -124,7 +123,7 @@ It might also work under Node.js -- let us know!
 
 Features in this example:
 
-- `PREFIXES`
+- `PREFIX`
     - set prefixes, similar to Turtle and SPARQL
 - `LABELS`
     - like PREFIXes for single terms
@@ -192,7 +191,7 @@ These are all the block types:
 - Blank
 - Comment
 - BASE
-- PREFIXES
+- PREFIX
 - LABELS
 - GRAPH
 - Subject
@@ -223,32 +222,29 @@ is parsed into this JSON object:
      "trailing-whitespace": "\n"}
 
 
-### PREFIXES
+### PREFIX
 
 This prefix block:
 
-    PREFIXES
-      rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 is parsed into this JSON object:
 
-    {"source": "example.howl",
+    {"block-type": "PREFIX_BLOCK",
+     "source": "example.howl",
      "line": 1,
-     "string": "PREFIXES\n  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
-     "block-type": "PREFIXES_BLOCK",
-     "parse-tree":
-     ["PREFIXES_BLOCK",
-      "PREFIXES",
-      ["INDENTATION", "\n  "],
-      ["PREFIX_LINE",
-       ["PREFIX", "rdf"],
-       ["COLON", "", ":", " "],
-       ["IRIREF", "<", "http://www.w3.org/1999/02/22-rdf-syntax-ns#", ">"]]],
-     "prefixes": {
-       "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     },
+     "string": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n",
      "leading-whitespace": "",
-     "trailing-whitespace": "\n"}
+     "trailing-whitespace": "\n",
+     "parse-tree":
+     ["PREFIX_BLOCK",
+      "PREFIX",
+      ["SPACES", " "],
+      ["PREFIX", "rdf"],
+      ["COLON", "", ":", " "],
+      ["IRIREF", "<", "http://www.w3.org/1999/02/22-rdf-syntax-ns#", ">"]],
+     "prefix": "rdf",
+     "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"}
 
 
 ### LABELS
