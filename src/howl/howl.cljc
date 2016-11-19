@@ -10,25 +10,45 @@
 
 ;; # BLOCKS
 
-; There are seven block types in HOWL:
-; COMMENT, PREFIXES, LABELS, BASE, GRAPH, SUBJECT, STATEMENT
-;
-; The core of HOWL processing is the "block map",
-; which contains enough information to convert into any supported format:
-; HOWL, NQuads, JSON.
-;
-; We use a hub-and-spoke model with the block map representation in the middle,
-; then provide methods for each conversion:
-;
-; - HOWL string to block
-; - block to HOWL string
-; - NQuad to block
-; - block to NQuad
-; - JSON string to block
-; - block to JSON string
-;
-; We also have blocks to blocks transformations,
-; such as normalization and sorting.
+(def block-grammar
+  (str
+"<BLOCK> = WHITESPACE
+          (COMMENT_BLOCK
+           / PREFIXES_BLOCK
+           / LABELS_BLOCK
+           / BASE_BLOCK
+           / GRAPH_BLOCK
+           / SUBJECT_BLOCK
+           / STATEMENT_BLOCK)
+          WHITESPACE
+
+COMMENT_BLOCK = #'#+\\s*' #'.*'
+PREFIXES_BLOCK = 'PREFIXES' (INDENTATION PREFIX_LINE)+
+PREFIX_LINE = PREFIX COLON IRIREF
+LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
+LABEL_LINE = LABEL DATATYPE COLON IRI
+BASE_BLOCK = 'BASE' SPACES IRIREF
+GRAPH_BLOCK = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?
+SUBJECT_BLOCK = NAME_OR_BLANK
+STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
+
+WHITESPACE  = #'(\\r|\\n|\\s)*'
+INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
+COLON       = #' *' ':'  #' +'
+ARROWS   = #'>*' #'\\s*'"
+   link/link-grammar))
+
+(def block-parser (insta/parser block-grammar))
+
+(defn parse-block
+  [block]
+  (let [result (block-parser block)]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "Parse failure")))
+    (->> result
+         (insta/transform link/link-transformations)
+         vec)))
 
 
 ; To turn a string into a
@@ -36,7 +56,7 @@
 
 (defmulti parse->block
   "Given an environment and a map with :parse-tree and :block-type keys,
-   return the updated environment and block map."
+   return a block map."
   (fn [env block] (:block-type block)))
 
 (defmethod parse->block :default
@@ -44,21 +64,23 @@
   (println block)
   (throw (Exception. "Parse error")))
 
-; TODO: block->string
+(defmulti block->parse
+  "Given a block, return a new :parse-tree."
+  :block-type)
 
+; TODO: remove this
+(defmethod block->parse :default
+  [block]
+  [:DEFAULT "DEFAULT"])
 
-
-; Sometimes we want to reformat or normalize a block.
-; By default, we do nothing.
-
-(defmulti normalize-block
-  "Given an environment and a block map,
-   return the normalized block map."
-  (fn [env block] (:block-type block)))
-
-(defmethod normalize-block :default
-  [env block]
-  block)
+(defn block->howl-string
+  [{:keys [leading-whitespace parse-tree trailing-whitespace]
+    :or {leading-whitespace "LEAD"
+         parse-tree [:ERROR "PARSE_TREE"]
+         trailing-whitespace "TRAIL"}}]
+  (str leading-whitespace
+       (->> parse-tree flatten (filter string?) (apply str))
+       trailing-whitespace))
 
 
 
@@ -69,17 +91,17 @@
 ; The line is ignored by most processing,
 ; and does not have an NQuads representation.
 
-(def comment-block-grammar "COMMENT_BLOCK = #'#+\\s*' #'.*'")
-
 (defmethod parse->block :COMMENT_BLOCK
   [env {:keys [parse-tree] :as block}]
   [env
    (assoc
     block
     :hash    (second parse-tree)
-    :comment (nth parse-tree 2))])
+    :comment (last parse-tree))])
 
-
+(defmethod block->parse :COMMENT_BLOCK
+  [{:keys [hash comment] :as block}]
+  [:COMMENT_BLOCK hash comment])
 
 
 ;; ## PREFIXES_BLOCK
@@ -92,10 +114,6 @@
 ; followed by one or or more PREFIX_LINES
 ; each containing a PREFIX and and IRI.
 ; The PREFIXES_BLOCK does not have an NQuad representation.
-
-(def prefixes-block-grammar
-  "PREFIXES_BLOCK = 'PREFIXES' (INDENTATION PREFIX_LINE)+
-PREFIX_LINE = PREFIX COLON IRIREF")
 
 (defn extract-prefixes
   "Given a parse tree for PREFIXES_BLOCK,
@@ -123,10 +141,6 @@ PREFIX_LINE = PREFIX COLON IRIREF")
 ; Label mappings are stored in the environment
 ; as forward- and reverse- maps.
 ; The DATATYPE definition is the same as STATEMENT_BLOCK below.
-
-(def labels-block-grammar
-"LABELS_BLOCK = 'LABELS' (INDENTATION LABEL_LINE)+
-LABEL_LINE = LABEL DATATYPE COLON IRI")
 
 (defn extract-label
   [env datatype id]
@@ -166,8 +180,6 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 ; The base block sets the base IRI
 ; use to resolve relate IRIs.
 
-(def base-block-grammar "BASE_BLOCK = 'BASE' SPACES IRIREF")
-
 (defmethod parse->block :BASE_BLOCK
   [env {:keys [parse-tree] :as block}]
   (let [base-iri (link/check-iri (get-in parse-tree [3 2]))]
@@ -184,8 +196,6 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 ; Processing starts with the (unnamed) default graph.
 ; Graph blocks can either be 'GRAPH NAME'
 ; or 'DEFAULT GRAPH'.
-
-(def graph-block-grammar "GRAPH_BLOCK = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?")
 
 (defmethod parse->block :GRAPH_BLOCK
   [env {:keys [parse-tree] :as block}]
@@ -204,8 +214,6 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 ; The subject block declares the subject of all statements
 ; until the next subject block.
 
-(def subject-block-grammar "SUBJECT_BLOCK = NAME_OR_BLANK")
-
 (defmethod parse->block :SUBJECT_BLOCK
   [env {:keys [parse-tree] :as block}]
   (let [subject     (second parse-tree)
@@ -220,10 +228,6 @@ LABEL_LINE = LABEL DATATYPE COLON IRI")
 
 
 ;; ## STATEMENT_BLOCK
-
-(def statement-block-grammar
-  "STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
-ARROWS   = #'>*' #'\\s*'")
 
 (defmulti content->parse
   "Given an environment,
@@ -268,48 +272,6 @@ ARROWS   = #'>*' #'\\s*'")
       :object object
       :datatype-iri datatype-iri)]))
 
-
-(def block-grammar-partial "
-<BLOCK> = WHITESPACE
-          (COMMENT_BLOCK
-           / PREFIXES_BLOCK
-           / LABELS_BLOCK
-           / BASE_BLOCK
-           / GRAPH_BLOCK
-           / SUBJECT_BLOCK
-           / STATEMENT_BLOCK)
-          WHITESPACE
-
-COLON       = #' *' ':'  #' +'
-WHITESPACE  = #'(\\r|\\n|\\s)*'
-INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
-")
-
-
-(def block-grammar
-  (string/join
-   \newline
-   [block-grammar-partial
-    comment-block-grammar
-    prefixes-block-grammar
-    labels-block-grammar
-    base-block-grammar
-    graph-block-grammar
-    subject-block-grammar
-    statement-block-grammar
-    link/link-grammar]))
-
-(def block-parser (insta/parser block-grammar))
-
-(defn parse-block
-  [block]
-  (let [result (block-parser block)]
-    (when (insta/failure? result)
-      (println result)
-      (throw (Exception. "Parse failure")))
-    (->> result
-         (insta/transform link/link-transformations)
-         vec)))
 
 (defn group-lines
   "Given a sequence of lines, returns a lazy sequence of grouped lines"
