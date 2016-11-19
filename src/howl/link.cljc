@@ -65,11 +65,11 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
   (str (url iri)))
 
 (defn resolve-iri
-  [{:keys [base-iri] :or {base-iri "file:///howl-unspecified-base/"}} iri]
+  [{:keys [base] :or {base "file:///howl-unspecified-base/"}} iri]
   (try
    (check-iri iri)
    (catch Exception e
-     (str (url base-iri iri)))))
+     (str (url base iri)))))
 
 (defn iriref->iri
   [env [_ _ iri _]]
