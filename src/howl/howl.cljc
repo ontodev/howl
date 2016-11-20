@@ -45,6 +45,18 @@ ARROWS      = #'>*' #'\\s*'"
    return a block map for this block type."
   first)
 
+(defmulti normalize-whitespace
+  :block-type)
+
+(defmethod normalize-whitespace :default
+  [block]
+  (assoc
+   block
+   :leading-whitespace ""
+   :trailing-whitespace "\n"))
+
+
+
 
 (defmethod block->parse :COMMENT_BLOCK
   [{:keys [comment] :as block}]
@@ -101,8 +113,8 @@ ARROWS      = #'>*' #'\\s*'"
   {:base iri})
 
 
-(defmethod parse->block :GRAPH_BLOCK
-  [env {:keys [graph-name] :as block}]
+(defmethod block->parse :GRAPH_BLOCK
+  [{:keys [graph-name] :as block}]
   (if graph-name
     [:GRAPH_BLOCK "GRAPH" [:SPACES " "] graph-name]
     [:GRAPH_BLOCK "DEFAULT GRAPH"]))
@@ -111,26 +123,50 @@ ARROWS      = #'>*' #'\\s*'"
   [[_ _ _ name]]
   {:graph-name name})
 
+(defmethod normalize-whitespace :GRAPH_BLOCK
+  [block]
+  (assoc
+   block
+   :leading-whitespace "\n"
+   :trailing-whitespace "\n"))
 
-(defmethod parse->block :SUBJECT_BLOCK
-  [env {:keys [subject-name] :as block}]
+
+(defmethod block->parse :SUBJECT_BLOCK
+  [{:keys [subject-name] :as block}]
   [:SUBJECT_BLOCK subject-name])
 
 (defmethod parse->block :SUBJECT_BLOCK
   [[_ name]]
   {:subject-name name})
 
+(defmethod normalize-whitespace :SUBJECT_BLOCK
+  [block]
+  (assoc
+   block
+   :leading-whitespace "\n"
+   :trailing-whitespace "\n"))
 
-(defmethod parse->block :STATEMENT_BLOCK
-  [env {:keys [arrows predicate-name datatype-name content] :as block}]
+
+(defn indent
+  [content]
+  (let [lines (string/split-lines content)]
+       (->> (rest lines)
+            (map #(if (string/blank? %) % (str "  " %)))
+            (concat [(first lines)])
+            (string/join \newline))))
+
+(defmethod block->parse :STATEMENT_BLOCK
+  [{:keys [arrows predicate-name datatype-name content] :as block}]
   [:STATEMENT_BLOCK
    (if (string/blank? arrows)
      [:ARROWS "" ""]
      [:ARROWS arrows " "])
    predicate-name
-   [:DATATYPE " [" datatype-name "]"]
-   [:COLON " " ":" " "]
-   content])
+   (if datatype-name
+     [:DATATYPE " [" datatype-name "]"]
+     [:DATATYPE])
+   [:COLON "" ":" " "]
+   (if (= "LINK" datatype-name) content (indent content))])
 
 (defmethod parse->block :STATEMENT_BLOCK
   [[_ [_ arrows _] predicate-name [_ _ datatype-name _] _ content]]
@@ -139,6 +175,38 @@ ARROWS      = #'>*' #'\\s*'"
    :datatype-name datatype-name
    :content content})
 
+
+;; ## Content
+
+(defmulti content->parse
+  "Given an environment,
+   a datatype IRI string (or nil when the object is an IRI),
+   and a content string,
+   return the object and the parse tree for the content."
+  (fn [env datatype content] datatype))
+
+; The default behaviour is to remove indentation.
+
+(defmethod content->parse :default
+  [env datatype content]
+  (let [unindented (string/replace content #"(?m)^  |^ " "")]
+    [unindented unindented]))
+
+(defmethod content->parse "LINK"
+  [env datatype content]
+  (let [result (link/parse-link content)]
+    [(link/name->iri env result) result]))
+
+(defn update-content
+  [env {:keys [parse-tree datatype content] :as block}]
+  (if content
+    (let [[object content] (content->parse env datatype content)]
+      (assoc
+       block
+       :parse-tree (assoc parse-tree 5 content) ; splice content into parse-tree
+       :content content
+       :object object))
+    block))
 
 
 (def block-parser (insta/parser block-grammar))
@@ -178,7 +246,8 @@ ARROWS      = #'>*' #'\\s*'"
            :parse-tree parse-tree
            :leading-whitespace lws
            :trailing-whitespace tws})
-         (core/names->iris env))))
+         (core/names->iris env)
+         (update-content env))))
 
 (defn lines->blocks
   "Given a sequence of lines,
@@ -194,12 +263,17 @@ ARROWS      = #'>*' #'\\s*'"
    (assoc env :source source :line 1)
    (group-lines lines)))
 
+(defn update-parse-tree
+  [block]
+  (assoc block :parse-tree (block->parse block)))
+
+(defn update-whitespace
+  [blocks]
+  (let [blocks (map normalize-whitespace blocks)]
+    (assoc-in (vec blocks) [0 :leading-whitespace] "")))
 
 (defn block->howl-string
-  [{:keys [leading-whitespace parse-tree trailing-whitespace]
-    :or {leading-whitespace "LEAD"
-         parse-tree [:ERROR "PARSE_TREE"]
-         trailing-whitespace "TRAIL"}}]
+  [{:keys [leading-whitespace parse-tree trailing-whitespace]}]
   (str leading-whitespace
        (->> parse-tree flatten (filter string?) (apply str))
        trailing-whitespace))

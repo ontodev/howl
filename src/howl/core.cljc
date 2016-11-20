@@ -47,27 +47,6 @@
   (assoc env :subject subject))
 
 
-;; ## Content
-
-(defmulti content->parse
-  "Given an environment,
-   a datatype IRI string (or nil when the object is an IRI),
-   and a content string,
-   return the object and the parse tree for the content."
-  (fn [env datatype content] datatype))
-
-; The default behaviour is to remove indentation.
-
-(defmethod content->parse :default
-  [env datatype content]
-  (let [unindented (string/replace content #"(?m)^  |^ " "")]
-    [unindented unindented]))
-
-(defmethod content->parse "LINK"
-  [env datatype content]
-  (let [result (link/parse-link content)]
-    [(link/name->iri env result) result]))
-
 
 ;; ## Blocks
 
@@ -77,9 +56,21 @@
    and return the updated block."
   (fn [env block] (:block-type block)))
 
+(defmulti iris->names
+  "Given an environment and a block,
+   find names for all the iris,
+   and return the updated block."
+  (fn [env block] (:block-type block)))
+
+
 (defmethod names->iris :default
   [env block]
   block)
+
+(defmethod iris->names :default
+  [env block]
+  block)
+
 
 (defmethod names->iris :LABEL_BLOCK
   [env {:keys [datatype-name target-name] :as block}]
@@ -88,29 +79,49 @@
    :datatype (link/unpack-datatype env datatype-name)
    :iri (link/id->iri env target-name)))
 
+(defmethod iris->names :LABEL_BLOCK
+  [env {:keys [datatype iri] :as block}]
+  (assoc
+   block
+   :datatype-name (link/iri->name env datatype)
+   :target-name (link/iri->name env iri)))
+
+
 (defmethod names->iris :GRAPH_BLOCK
   [env {:keys [graph-name] :as block}]
   (assoc block :graph (when graph-name (link/name->iri env graph-name))))
+
+(defmethod iris->names :GRAPH_BLOCK
+  [env {:keys [graph] :as block}]
+  (assoc block :graph-name (when graph (link/iri->name env graph))))
+
 
 (defmethod names->iris :SUBJECT_BLOCK
   [env {:keys [subject-name] :as block}]
   (assoc block :subject (link/name->iri env subject-name)))
 
+(defmethod iris->names :SUBJECT_BLOCK
+  [env {:keys [subject] :as block}]
+  (assoc block :subject-name (link/iri->name env subject)))
+
+
 (defmethod names->iris :STATEMENT_BLOCK
   [{:keys [graph subject] :as env}
-   {:keys [parse-tree predicate-name datatype-name content] :as block}]
-  (let [predicate-label (link/name->label predicate-name)
-        datatype
-        (or (when datatype-name (link/unpack-datatype env datatype-name))
-            (when predicate-label
-              (get-in env [:labels predicate-label :datatype])))
-        [object content] (content->parse env datatype content)]
+   {:keys [parse-tree predicate-name datatype-name] :as block}]
+  (let [predicate-label (link/name->label predicate-name)]
     (assoc
      block
-     :parse-tree (assoc parse-tree 5 content) ; splice content into parse-tree
-     :content content
      :graph graph
      :subject subject ; TODO: handle missing subject
      :predicate (link/name->iri env predicate-name)
-     :object object
-     :datatype datatype)))
+     :datatype
+     (or (when datatype-name (link/unpack-datatype env datatype-name))
+         (when predicate-label
+           (get-in env [:labels predicate-label :datatype]))))))
+
+(defmethod iris->names :STATEMENT_BLOCK
+  [env {:keys [predicate datatype] :as block}]
+  (assoc
+   block
+   :predicate-name (link/iri->name env predicate)
+   :datatype-name (link/iri->name env datatype)))

@@ -21,6 +21,17 @@
    {}
    howl-strings))
 
+(defn parse-nquads-strings
+  "Given one or more NQuads strings,
+   return an environment with a :blocks sequence."
+  [& nquads-strings]
+  (reduce
+   (fn [env nquads-string]
+     (->> (string/split-lines nquads-string)
+          (nquads/lines->blocks (core/reset-environment env))))
+   {}
+   nquads-strings))
+
 (defn ^:export howl-to-nquads
   "Given an input string in HOWL format,
    return a string of N-Quads."
@@ -31,3 +42,14 @@
        (map nquads/nquad->nquad-string)
        (string/join \newline)
        append-newline))
+
+(defn ^:export nquads-to-howl
+  "Given an input string in NQuads format,
+   return a string of HOWL syntax."
+  [& nquads-strings]
+  (->> (apply parse-nquads-strings nquads-strings)
+       :blocks
+       (map howl/update-parse-tree)
+       howl/update-whitespace
+       (map howl/block->howl-string)
+       (string/join "")))

@@ -2,7 +2,8 @@
   "Tools for working with IRIs, prefixed names, labels, and datatypes."
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [cemerick.url :refer [url]]))
+            [cemerick.url :refer [url]]
+            [howl.util :as util]))
 
 ;; ## Links
 ;
@@ -111,6 +112,35 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
    or nil if the name is not a label."
   [parse]
   (when (= :LABEL (first parse)) (second parse)))
+
+(defn find-prefix
+  "Given an environment with a :iri-prefix map,
+   return the [prefix-iri prefix] pair
+   for which the given iri starts with the prefix-iri,
+   and prefix-iri is the longest available."
+  [env iri]
+  (->> env
+       :iri-prefix
+       (sort-by (comp count first) >)
+       (filter
+        (fn [[prefix-iri prefix]]
+          (util/starts-with? iri prefix-iri)))
+       first))
+
+(defn iri->name
+  "Given an environment and an IRI,
+   return the best available name parse:
+   LINK, language, label, prefixed name, or IRIREF."
+  [env iri]
+  (cond
+   (= "PLAIN" iri) nil
+   (= "LINK" iri) "LINK"
+   (util/starts-with? iri "@") [:LANGUAGE_TAG "@" (subs iri 1)]
+   (get-in env [:iri-label iri]) [:LABEL (get-in env [:iri-label iri])]
+   (find-prefix env iri)
+   (let [[prefix-iri prefix] (find-prefix env iri)]
+     [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
+   :else [:IRIREF "<" iri ">"]))
 
 (defn unpack-datatype
   [env datatype]

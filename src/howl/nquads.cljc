@@ -11,7 +11,7 @@
 ; NQuads is a line-based concrete syntax for RDF.
 ; Each line consists of a subject, predicate, object, and optional graph.
 ; The predicate and graph are always absolute IRIs.
-; The subject is an absolute IRI or blank node.
+;<http://example.com/subject> <http://www.w3.org/2000/01/rdf-schema#label> "This is a label." <http://example.com/graph> . The subject is an absolute IRI or blank node.
 ; The object can be: an IRI, a blank node, or a literal.
 ; Literals are quoted strings with an optional language tag or type IRI.
 ;
@@ -44,18 +44,28 @@
 (defn nquad->blocks
   "Given an environment and an nquad vector,
    return the updated environment and zero or more block maps."
-  [{:keys [current-graph current-subject iri-labels] :as env}
-   [graph subject predicate object datatype]]
-  (remove
-   nil?
-   [; many new graph
-    ; maybe new subject
-    [{:block-type :STATEMENT_BLOCK
-      :graph graph
-      :subject subject
-      :predicate predicate
-      :object object
-      :datatype datatype}]]))
+  [{:keys [graph subject] :as env}
+   [new-graph new-subject predicate object datatype]]
+  (->> [(when-not (= graph new-graph)
+          {:block-type :GRAPH_BLOCK
+           :graph new-graph})
+          (when-not (= subject new-subject)
+            {:block-type :SUBJECT_BLOCK
+             :subject new-subject})
+          {:block-type :STATEMENT_BLOCK
+           :graph new-graph
+           :subject new-subject
+           :predicate predicate
+           :object object
+           :content
+           (if (= "LINK" datatype)
+             [:IRIREF "<" object ">"]
+             (-> object
+                 (string/replace "\\n" "\n")
+                 (string/replace "\\\"" "\"")))
+           :datatype datatype}]
+         (remove nil?)
+         (map (partial core/iris->names env))))
 
 
 
@@ -147,3 +157,17 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   [nquad]
   )
 
+(defn lines->blocks
+  "Given a sequence of lines,
+   and return a lazy sequence of block maps."
+  [{:keys [source] :or {source "interactive"} :as env} lines]
+  (reduce
+   (fn [env nquad]
+     (let [blocks (nquad->blocks env nquad)]
+       (-> env
+           (assoc :graph (:graph (last blocks)))
+           (assoc :subject (:subject (last blocks)))
+           (update-in [:blocks] (fnil concat []) blocks)
+           (update-in [:line] inc))))
+   (assoc env :source source :line 1)
+   (map nquad-string->nquad lines)))
