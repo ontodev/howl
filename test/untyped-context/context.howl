@@ -5,4 +5,4 @@ LABEL label: rdfs:label
 LABEL comment: rdfs:comment
 LABEL integer: xsd:integer
 LABEL count: ex:count
-BASE <http://example.com/>
+BASE <http://base.example.com/>

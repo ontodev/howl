@@ -59,7 +59,7 @@
            :object object
            :content
            (if (= "LINK" datatype)
-             [:IRIREF "<" object ">"]
+             (link/iri->name env object)
              (-> object
                  (string/replace "\\n" "\n")
                  (string/replace "\\\"" "\"")))

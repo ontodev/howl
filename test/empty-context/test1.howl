@@ -6,4 +6,4 @@ GRAPH <http://example.com/graph>
 
   contains newlines and "quotation marks".
 <http://example.com/count> [<http://www.w3.org/2001/XMLSchema#integer>]: 1234
-<http://example.com/link> [LINK]: <http://example.com/object>
+<http://example.com/link> [LINK]: <http://base.example.com/object>

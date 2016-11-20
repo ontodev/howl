@@ -10,33 +10,58 @@
   (str s \newline))
 
 (defn parse-howl-strings
-  "Given one or more HOWL strings,
+  "Given one or more environment maps or HOWL strings,
    return an environment with a :blocks sequence."
-  [& howl-strings]
+  [& args]
   (reduce
-   (fn [env howl-string]
-     (->> (string/split-lines howl-string)
-          (map append-newline)
-          (howl/lines->blocks (core/reset-environment env))))
+   (fn [env arg]
+     (cond
+      (map? arg)
+      (core/merge-environments env arg)
+
+      (string? arg)
+      (->> (string/split-lines arg)
+           (map append-newline)
+           (howl/lines->blocks (core/reset-environment env)))
+
+      ; TODO: Throw exception?
+      :else env))
    {}
-   howl-strings))
+   args))
 
 (defn parse-nquads-strings
-  "Given one or more NQuads strings,
+  "Given one or more environment maps or NQuads strings,
    return an environment with a :blocks sequence."
-  [& nquads-strings]
+  [& args]
   (reduce
-   (fn [env nquads-string]
-     (->> (string/split-lines nquads-string)
-          (nquads/lines->blocks (core/reset-environment env))))
+   (fn [env arg]
+     (cond
+      (map? arg)
+      (core/merge-environments env arg)
+
+      (string? arg)
+      (->> (string/split-lines arg)
+           (nquads/lines->blocks (core/reset-environment env)))
+
+      ; TODO: Throw exception?
+      :else env))
    {}
-   nquads-strings))
+   args))
+
+(defn ^:export howl-to-environment
+  "Given one or more environment maps or
+   input strings in HOWL format,
+   return an environment map."
+  [& args]
+  (dissoc
+   (apply parse-howl-strings args)
+   :blocks))
 
 (defn ^:export howl-to-nquads
-  "Given an input string in HOWL format,
+  "Given one or more environments or HOWL strings,
    return a string of N-Quads."
-  [& howl-strings]
-  (->> (apply parse-howl-strings howl-strings)
+  [& args]
+  (->> (apply parse-howl-strings args)
        :blocks
        (mapcat nquads/block->nquads)
        (map nquads/nquad->nquad-string)
@@ -44,10 +69,10 @@
        append-newline))
 
 (defn ^:export nquads-to-howl
-  "Given an input string in NQuads format,
-   return a string of HOWL syntax."
-  [& nquads-strings]
-  (->> (apply parse-nquads-strings nquads-strings)
+  "Given one or more environments or NQuads strings,
+   return a string of N-Quads."
+  [& args]
+  (->> (apply parse-nquads-strings args)
        :blocks
        (map howl/update-parse-tree)
        howl/update-whitespace

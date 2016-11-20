@@ -10,6 +10,11 @@
   [env]
   (dissoc env :current-graph-iri :current-subject-iri))
 
+(defn merge-environments
+  [& envs]
+  ; TODO: Do this properly!
+  (apply merge-with merge envs))
+
 (defmulti update-environment
   "Given an environment and a block,
    use the block to update the environment,

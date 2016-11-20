@@ -130,16 +130,25 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
 (defn iri->name
   "Given an environment and an IRI,
    return the best available name parse:
-   LINK, language, label, prefixed name, or IRIREF."
-  [env iri]
+   LINK, language, label, prefixed name, relative IRI,
+   or the (absolute) that was given IRI."
+  [{:keys [base] :as env} iri]
   (cond
    (= "PLAIN" iri) nil
+
    (= "LINK" iri) "LINK"
+
    (util/starts-with? iri "@") [:LANGUAGE_TAG "@" (subs iri 1)]
+
    (get-in env [:iri-label iri]) [:LABEL (get-in env [:iri-label iri])]
+
    (find-prefix env iri)
    (let [[prefix-iri prefix] (find-prefix env iri)]
      [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
+
+   (and base (string? base) (util/starts-with? iri base))
+   [:IRIREF "<" (subs iri (count base)) ">"]
+
    :else [:IRIREF "<" iri ">"]))
 
 (defn unpack-datatype

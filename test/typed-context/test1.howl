@@ -6,4 +6,4 @@ comment: This English comment
 
   contains newlines and "quotation marks".
 count: 1234
-ex:link [LINK]: ex:object
+ex:link [LINK]: <object>
