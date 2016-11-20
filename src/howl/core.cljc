@@ -129,4 +129,8 @@
   (assoc
    block
    :predicate-name (link/iri->name env predicate)
-   :datatype-name (link/iri->name env datatype)))
+   :datatype-name ; compare to predicate's default datatype
+   (let [label   (get-in env [:iri-label predicate])
+         default (get-in env [:labels label :datatype])]
+     (when-not (= datatype default)
+       (link/iri->name env datatype)))))
