@@ -30,15 +30,42 @@
   [block]
   [])
 
-(defmethod block->nquads :STATEMENT_BLOCK
-  [{:keys [graph subject predicate object datatype]}]
-  [[graph
+(defn format-object
+  [object-string]
+  (-> object-string
+      (string/replace "\n" "\\n")
+      (string/replace "\"" "\\\"")))
+
+(defn annotation-nquads
+  "Given a subject (blank node label) and a vector for the annotation target,
+   return four NQuads representing the OWL annotation axiom."
+  [subject [source property target target-datatype]]
+  [[nil
     subject
-    predicate
-    (-> object
-        (string/replace "\n" "\\n")
-        (string/replace "\"" "\\\""))
-    datatype]])
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+    "http://www.w3.org/2002/07/owl#Axiom"
+    "LINK"]
+   [nil
+    subject
+    "http://www.w3.org/2002/07/owl#annotatedSource"
+    source
+    "LINK"]
+   [nil
+    subject
+    "http://www.w3.org/2002/07/owl#annotatedProperty"
+    property
+    "LINK"]
+   [nil
+    subject
+    "http://www.w3.org/2002/07/owl#annotatedTarget"
+    (format-object target)
+    target-datatype]])
+
+(defmethod block->nquads :STATEMENT_BLOCK
+  [{:keys [annotation-target graph subject predicate object datatype]}]
+  (conj
+   (when annotation-target (annotation-nquads subject annotation-target))
+   [graph subject predicate (format-object object) datatype]))
 
 (defn nquad->blocks
   "Given an environment and an nquad vector,
@@ -128,7 +155,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 
 (defn subject->string
   [subject]
-  (if (util/starts-with? subject "_")
+  (if (util/starts-with? subject "_:")
     subject
     (str "<" subject ">")))
 
@@ -136,7 +163,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   [object datatype]
   (cond
     (or (nil? datatype) (= "PLAIN" datatype)) (str "\"" object "\"")
-    (= "LINK" datatype) (str "<" object ">")
+    (= "LINK" datatype) (subject->string object)
     (util/starts-with? datatype "@") (str "\"" object "\"" datatype)
     :else (str "\"" object "\"^^<" datatype ">")))
 

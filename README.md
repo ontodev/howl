@@ -673,22 +673,33 @@ This literal block:
 
 is parsed into this JSON object:
 
-    TODO
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "string": "> comment: A comment on a comment.\n"
-     "block-type": "LITERAL_BLOCK",
-     "parse": ["LITERAL_BLOCK"
-               ["ARROWS" ">" " "]
-               ["PREDICATE" ["LABEL" "comment"]]
-               ["COLON" "" ":" " "]
-               ["LITERAL"
-                "A comment on a comment."]
-               ["EOL" "\n"]],
+    {"block-type": "STATEMENT_BLOCK",
+     "source": "example.howl",
+     "line": 1,
+     "string": "> comment: A comment on a comment.\n",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", ">", " "],
+      ["LABEL", "comment"],
+      ["DATATYPE"],
+      ["COLON", "", ":", " "],
+      "A comment on a comment."],
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n",
      "arrows": ">",
-     "predicate": ["LABEL" "comment"],
+     "predicate-name": ["LABEL", "comment"],
+     "datatype-name": null,
      "content": "A comment on a comment.",
-     "eol": "\n"}
+     "annotation-target":
+     ["http://example.com/current-subject",
+      "http://example.com/previous-predicate",
+      "http://example.com/previous-object",
+      "http://example.com/previous-datatype"],
+     "graph": "http://example.com/current-graph",
+     "subject": "_:b1",
+     "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
+     "object": "A comment on a comment.",
+     "datatype": null}
 
 So these HOWL blocks:
 

@@ -61,6 +61,12 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
          (insta/transform link-transformations)
          second)))
 
+(def blank-node-counter (atom 0))
+
+(defn new-blank-node
+  []
+  (str "_:b" (swap! blank-node-counter inc)))
+
 (defn check-iri
   [iri]
   (str (url iri)))

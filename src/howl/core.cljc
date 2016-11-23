@@ -50,6 +50,15 @@
   [env {:keys [subject] :as block}]
   (assoc env :subject subject))
 
+(defmethod update-environment :STATEMENT_BLOCK
+  [{:keys [statement-stack] :as env}
+   {:keys [arrows subject predicate object datatype] :as block}]
+  (assoc
+   env
+   :statement-stack
+   (conj (vec (take (count arrows) statement-stack))
+         [subject predicate object datatype])))
+
 ;; ## Blocks
 
 (defmulti names->iris

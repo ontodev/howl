@@ -2,6 +2,7 @@
   "Integration tests against API."
   (:require [clojure.test :refer :all]
             [clojure.string :as string]
+            [howl.link :as link]
             [howl.api :refer :all]))
 
 ;(println (nquads-to-howl (slurp "test/nquads/test1.nq")))
@@ -9,6 +10,10 @@
 ; (nquads-to-howl
 ;  (howl-to-environment (slurp "test/typed-context/context.howl"))
 ;  (slurp "test/nquads/test1.nq")))
+;(println
+; (howl-to-nquads
+;  (slurp "test/untyped-context/context.howl")
+;  (slurp "test/untyped-context/annotations1.howl")))
 
 (defn compare-howl-nquads
   [context-path howl-path nquads-path]
@@ -51,3 +56,11 @@
   (round-trip
    "test/typed-context/context.howl"
    "test/typed-context/test1.howl"))
+
+(deftest test-more-howl-to-nquads
+  (reset! link/blank-node-counter 0)
+  (testing "Render some HOWL to N-Quads"
+    (is (= (slurp "test/nquads/annotations1.nq")
+           (howl-to-nquads
+            (slurp "test/untyped-context/context.howl")
+            (slurp "test/untyped-context/annotations1.howl"))))))

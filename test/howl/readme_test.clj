@@ -1,6 +1,7 @@
 (ns howl.readme-test
   (:require [clojure.test :refer :all]
             [clojure.string :as string]
+            [howl.link :as link]
             [howl.howl :as howl]
             [howl.json :as json]))
 
@@ -24,7 +25,12 @@
     {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
      :datatype "LINK"}}
    :graph "http://example.com/current-graph"
-   :subject "http://example.com/current-subject"})
+   :subject "http://example.com/current-subject"
+   :statement-stack
+   [["http://example.com/current-subject"
+     "http://example.com/previous-predicate"
+     "http://example.com/previous-object"
+     "http://example.com/previous-datatype"]]})
 
 (defn run-test
   "Given a block map, process the :block value,
@@ -32,6 +38,7 @@
   [block]
   (try
     (testing block
+      (reset! link/blank-node-counter 0)
       (is (= (howl/process-block env (:string block))
              block)))
     (catch Exception e

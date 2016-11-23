@@ -197,6 +197,18 @@ ARROWS      = #'>*' #'\\s*'"
        :object object))
     block))
 
+(defn update-annotation
+  "Given an environment with an :statement-stack and a block with :arrows,
+   return the block with an :annotation-target value (maybe nil)."
+  [{:keys [statement-stack] :as env} {:keys [arrows] :as block}]
+  (if (string/blank? arrows)
+    block
+    (assoc
+     block
+     :subject (link/new-blank-node)
+     :annotation-target
+     (get statement-stack (dec (count arrows))))))
+
 (def block-parser (insta/parser block-grammar))
 
 (defn parse-block
@@ -235,7 +247,8 @@ ARROWS      = #'>*' #'\\s*'"
            :leading-whitespace lws
            :trailing-whitespace tws})
          (core/names->iris env)
-         (update-content env))))
+         (update-content env)
+         (update-annotation env))))
 
 (defn lines->blocks
   "Given a sequence of lines,

@@ -1,0 +1,8 @@
+ex:subject
+ex:predicate [LINK]: ex:object
+> comment: A
+>> comment: AB
+>>> comment: ABC
+>> comment: AD
+>>> comment: ADE
+> comment: F
