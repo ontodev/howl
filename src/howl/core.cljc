@@ -7,7 +7,7 @@
 
 (defn reset-environment
   [env]
-  (dissoc env :current-graph-iri :current-subject-iri))
+  (dissoc env :graph :subject))
 
 (defn merge-environments
   [& envs]
