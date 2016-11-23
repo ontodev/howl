@@ -6,7 +6,7 @@
        [[goog.string]
         [goog.string.format]]))
   #?(:clj
-     (:refer-clojure :exclude [format])))
+      (:refer-clojure :exclude [format])))
 
 (def format
   #?(:clj #'clojure.core/format

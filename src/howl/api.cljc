@@ -16,16 +16,16 @@
   (reduce
    (fn [env arg]
      (cond
-      (map? arg)
-      (core/merge-environments env arg)
+       (map? arg)
+       (core/merge-environments env arg)
 
-      (string? arg)
-      (->> (string/split-lines arg)
-           (map append-newline)
-           (howl/lines->blocks (core/reset-environment env)))
+       (string? arg)
+       (->> (string/split-lines arg)
+            (map append-newline)
+            (howl/lines->blocks (core/reset-environment env)))
 
       ; TODO: Throw exception?
-      :else env))
+       :else env))
    {}
    args))
 
@@ -36,15 +36,15 @@
   (reduce
    (fn [env arg]
      (cond
-      (map? arg)
-      (core/merge-environments env arg)
+       (map? arg)
+       (core/merge-environments env arg)
 
-      (string? arg)
-      (->> (string/split-lines arg)
-           (nquads/lines->blocks (core/reset-environment env)))
+       (string? arg)
+       (->> (string/split-lines arg)
+            (nquads/lines->blocks (core/reset-environment env)))
 
       ; TODO: Throw exception?
-      :else env))
+       :else env))
    {}
    args))
 

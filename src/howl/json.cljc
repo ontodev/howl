@@ -9,12 +9,10 @@
 ; The only trick is converting certain JSON strings to Clojure keywords.
 
 (defn block->json-string
-  [block]
-  )
+  [block])
 
 (defn json-string->block
-  [json]
-  )
+  [json])
 
 (defn keywordize-child-maps
   "Given a map where the values are maps,
@@ -43,8 +41,8 @@
     "block-type" (keyword value)
     "labels"     (keywordize-child-maps value)
     ("parse-tree" "graph-name" "subject-name"
-     "predicate-name" "datatype-name" "target-name"
-     "content")
+                  "predicate-name" "datatype-name" "target-name"
+                  "content")
     (json->parse value)
     value))
 

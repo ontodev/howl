@@ -30,7 +30,6 @@
   [block]
   [])
 
-
 (defmethod block->nquads :STATEMENT_BLOCK
   [{:keys [graph subject predicate object datatype]}]
   [[graph
@@ -49,25 +48,23 @@
   (->> [(when-not (= graph new-graph)
           {:block-type :GRAPH_BLOCK
            :graph new-graph})
-          (when-not (= subject new-subject)
-            {:block-type :SUBJECT_BLOCK
-             :subject new-subject})
-          {:block-type :STATEMENT_BLOCK
-           :graph new-graph
-           :subject new-subject
-           :predicate predicate
-           :object object
-           :content
-           (if (= "LINK" datatype)
-             (link/iri->name env object)
-             (-> object
-                 (string/replace "\\n" "\n")
-                 (string/replace "\\\"" "\"")))
-           :datatype datatype}]
-         (remove nil?)
-         (map (partial core/iris->names env))))
-
-
+        (when-not (= subject new-subject)
+          {:block-type :SUBJECT_BLOCK
+           :subject new-subject})
+        {:block-type :STATEMENT_BLOCK
+         :graph new-graph
+         :subject new-subject
+         :predicate predicate
+         :object object
+         :content
+         (if (= "LINK" datatype)
+           (link/iri->name env object)
+           (-> object
+               (string/replace "\\n" "\n")
+               (string/replace "\\\"" "\"")))
+         :datatype datatype}]
+       (remove nil?)
+       (map (partial core/iris->names env))))
 
 ; TODO: Fix lexical value
 (def nquad-grammar-partial "
@@ -138,10 +135,10 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 (defn object->string
   [object datatype]
   (cond
-   (or (nil? datatype) (= "PLAIN" datatype)) (str "\"" object "\"")
-   (= "LINK" datatype) (str "<" object ">")
-   (util/starts-with? datatype "@") (str "\"" object "\"" datatype)
-   :else (str "\"" object "\"^^<" datatype ">")))
+    (or (nil? datatype) (= "PLAIN" datatype)) (str "\"" object "\"")
+    (= "LINK" datatype) (str "<" object ">")
+    (util/starts-with? datatype "@") (str "\"" object "\"" datatype)
+    :else (str "\"" object "\"^^<" datatype ">")))
 
 (defn nquad->nquad-string
   [[graph subject predicate object datatype]]
@@ -154,8 +151,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        (string/join " ")))
 
 (defn nquad->ntriple-string
-  [nquad]
-  )
+  [nquad])
 
 (defn lines->blocks
   "Given a sequence of lines,

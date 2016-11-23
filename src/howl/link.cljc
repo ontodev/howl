@@ -68,9 +68,9 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
 (defn resolve-iri
   [{:keys [base] :or {base "file:///howl-unspecified-base/"}} iri]
   (try
-   (check-iri iri)
-   (catch Exception e
-     (str (url base iri)))))
+    (check-iri iri)
+    (catch Exception e
+      (str (url base iri)))))
 
 (defn iriref->iri
   [env [_ _ iri _]]
@@ -94,18 +94,18 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
   [env parse]
   (case (first parse)
     :IRIREF        (iriref->iri env parse)
-    :PREFIXED_NAME (prefixed-name->iri env parse)
+    :PREFIXED_NAME (prefixed-name->iri env parse)))
     ; TODO: catch error
-    ))
+
 
 (defn name->iri
   [env parse]
   (case (first parse)
     :IRIREF        (iriref->iri env parse)
     :PREFIXED_NAME (prefixed-name->iri env parse)
-    :LABEL         (label->iri env parse)
+    :LABEL         (label->iri env parse)))
     ; TODO: catch error
-    ))
+
 
 (defn name->label
   "Given a name parse, return a label string
@@ -134,28 +134,28 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
    or the (absolute) that was given IRI."
   [{:keys [base] :as env} iri]
   (cond
-   (= "PLAIN" iri) nil
+    (= "PLAIN" iri) nil
 
-   (= "LINK" iri) "LINK"
+    (= "LINK" iri) "LINK"
 
-   (util/starts-with? iri "@") [:LANGUAGE_TAG "@" (subs iri 1)]
+    (util/starts-with? iri "@") [:LANGUAGE_TAG "@" (subs iri 1)]
 
-   (get-in env [:iri-label iri]) [:LABEL (get-in env [:iri-label iri])]
+    (get-in env [:iri-label iri]) [:LABEL (get-in env [:iri-label iri])]
 
-   (find-prefix env iri)
-   (let [[prefix-iri prefix] (find-prefix env iri)]
-     [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
+    (find-prefix env iri)
+    (let [[prefix-iri prefix] (find-prefix env iri)]
+      [:PREFIXED_NAME prefix ":" (subs iri (count prefix-iri))])
 
-   (and base (string? base) (util/starts-with? iri base))
-   [:IRIREF "<" (subs iri (count base)) ">"]
+    (and base (string? base) (util/starts-with? iri base))
+    [:IRIREF "<" (subs iri (count base)) ">"]
 
-   :else [:IRIREF "<" iri ">"]))
+    :else [:IRIREF "<" iri ">"]))
 
 (defn unpack-datatype
   [env datatype]
   (cond
-   (nil? datatype) nil
-   (= "PLAIN" datatype) "PLAIN"
-   (= "LINK" datatype) "LINK"
-   (= :LANGUAGE_TAG (first datatype)) (str "@" (last datatype))
-   :else (name->iri env datatype)))
+    (nil? datatype) nil
+    (= "PLAIN" datatype) "PLAIN"
+    (= "LINK" datatype) "LINK"
+    (= :LANGUAGE_TAG (first datatype)) (str "@" (last datatype))
+    :else (name->iri env datatype)))

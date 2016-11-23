@@ -3,7 +3,6 @@
   (:require [clojure.string :as string]
             [howl.link :as link]))
 
-
 ;; ## Environment
 
 (defn reset-environment
@@ -51,8 +50,6 @@
   [env {:keys [subject] :as block}]
   (assoc env :subject subject))
 
-
-
 ;; ## Blocks
 
 (defmulti names->iris
@@ -67,7 +64,6 @@
    and return the updated block."
   (fn [env block] (:block-type block)))
 
-
 (defmethod names->iris :default
   [env block]
   block)
@@ -75,7 +71,6 @@
 (defmethod iris->names :default
   [env block]
   block)
-
 
 (defmethod names->iris :LABEL_BLOCK
   [env {:keys [datatype-name target-name] :as block}]
@@ -91,7 +86,6 @@
    :datatype-name (link/iri->name env datatype)
    :target-name (link/iri->name env iri)))
 
-
 (defmethod names->iris :GRAPH_BLOCK
   [env {:keys [graph-name] :as block}]
   (assoc block :graph (when graph-name (link/name->iri env graph-name))))
@@ -100,7 +94,6 @@
   [env {:keys [graph] :as block}]
   (assoc block :graph-name (when graph (link/iri->name env graph))))
 
-
 (defmethod names->iris :SUBJECT_BLOCK
   [env {:keys [subject-name] :as block}]
   (assoc block :subject (link/name->iri env subject-name)))
@@ -108,7 +101,6 @@
 (defmethod iris->names :SUBJECT_BLOCK
   [env {:keys [subject] :as block}]
   (assoc block :subject-name (link/iri->name env subject)))
-
 
 (defmethod names->iris :STATEMENT_BLOCK
   [{:keys [graph subject] :as env}

@@ -10,8 +10,8 @@
             [howl.util :as util]))
 
 (def block-grammar
-  (str
-"<BLOCK> = WHITESPACE
+  (str "
+<BLOCK> = WHITESPACE
           (COMMENT_BLOCK
            / PREFIX_BLOCK
            / LABEL_BLOCK
@@ -33,8 +33,7 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'
 INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
 COLON       = #' *' ':'  #' +'
 ARROWS      = #'>*' #'\\s*'"
-   link/link-grammar))
-
+       link/link-grammar))
 
 (defmulti block->parse
   "Given a block, return a new parse-tree."
@@ -55,9 +54,6 @@ ARROWS      = #'>*' #'\\s*'"
    :leading-whitespace ""
    :trailing-whitespace "\n"))
 
-
-
-
 (defmethod block->parse :COMMENT_BLOCK
   [{:keys [comment] :as block}]
   [:COMMENT_BLOCK comment])
@@ -65,7 +61,6 @@ ARROWS      = #'>*' #'\\s*'"
 (defmethod parse->block :COMMENT_BLOCK
   [[_ comment]]
   {:comment comment})
-
 
 (defmethod block->parse :PREFIX_BLOCK
   [{:keys [prefix iri] :as block}]
@@ -80,7 +75,6 @@ ARROWS      = #'>*' #'\\s*'"
   [[_ _ _ [_ prefix] _ [_ _ iri _]]]
   (link/check-iri iri)
   {:prefix prefix :iri iri})
-
 
 (defmethod block->parse :LABEL_BLOCK
   [{:keys [label datatype-name target-name] :as block}]
@@ -100,7 +94,6 @@ ARROWS      = #'>*' #'\\s*'"
    :datatype-name datatype-name
    :target-name target})
 
-
 (defmethod block->parse :BASE_BLOCK
   [{:keys [base] :as block}]
   [:BASE_BLOCK
@@ -111,7 +104,6 @@ ARROWS      = #'>*' #'\\s*'"
 (defmethod parse->block :BASE_BLOCK
   [[_ _ _ [_ _ iri _]]]
   {:base iri})
-
 
 (defmethod block->parse :GRAPH_BLOCK
   [{:keys [graph-name] :as block}]
@@ -130,7 +122,6 @@ ARROWS      = #'>*' #'\\s*'"
    :leading-whitespace "\n"
    :trailing-whitespace "\n"))
 
-
 (defmethod block->parse :SUBJECT_BLOCK
   [{:keys [subject-name] :as block}]
   [:SUBJECT_BLOCK subject-name])
@@ -146,14 +137,13 @@ ARROWS      = #'>*' #'\\s*'"
    :leading-whitespace "\n"
    :trailing-whitespace "\n"))
 
-
 (defn indent
   [content]
   (let [lines (string/split-lines content)]
-       (->> (rest lines)
-            (map #(if (string/blank? %) % (str "  " %)))
-            (concat [(first lines)])
-            (string/join \newline))))
+    (->> (rest lines)
+         (map #(if (string/blank? %) % (str "  " %)))
+         (concat [(first lines)])
+         (string/join \newline))))
 
 (defmethod block->parse :STATEMENT_BLOCK
   [{:keys [arrows predicate-name datatype-name content] :as block}]
@@ -174,7 +164,6 @@ ARROWS      = #'>*' #'\\s*'"
    :predicate-name predicate-name
    :datatype-name datatype-name
    :content content})
-
 
 ;; ## Content
 
@@ -207,7 +196,6 @@ ARROWS      = #'>*' #'\\s*'"
        :content content
        :object object))
     block))
-
 
 (def block-parser (insta/parser block-grammar))
 
@@ -277,4 +265,3 @@ ARROWS      = #'>*' #'\\s*'"
   (str leading-whitespace
        (->> parse-tree flatten (filter string?) (apply str))
        trailing-whitespace))
-
