@@ -73,7 +73,6 @@
    return a string of N-Quads."
   [& args]
   (->> (apply parse-nquads-strings args)
-       :blocks
        (map howl/update-parse-tree)
        howl/update-whitespace
        (map howl/block->howl-string)

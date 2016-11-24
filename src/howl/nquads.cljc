@@ -7,200 +7,21 @@
             [howl.link :as link]
             [howl.util :as util]))
 
-(def rdf:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-(def owl:Axiom "http://www.w3.org/2002/07/owl#Axiom")
-(def annSource "http://www.w3.org/2002/07/owl#annotatedSource")
-(def annProperty "http://www.w3.org/2002/07/owl#annotatedProperty")
-(def annTarget "http://www.w3.org/2002/07/owl#annotatedTarget")
-(def annPredicates #{rdf:type annSource annProperty annTarget})
-
-;; ## NQUADS
+;; ## NQuads
 ;
 ; NQuads is a line-based concrete syntax for RDF.
 ; Each line consists of a subject, predicate, object, and optional graph.
+; The subject is an absolute IRI or blank node.
 ; The predicate and graph are always absolute IRIs.
-;<http://example.com/subject> <http://www.w3.org/2000/01/rdf-schema#label> "This is a label." <http://example.com/graph> . The subject is an absolute IRI or blank node.
 ; The object can be: an IRI, a blank node, or a literal.
 ; Literals are quoted strings with an optional language tag or type IRI.
+; The graph is optional, and comes in the final position of the string.
+;
+; Example:
+; <http://example.com/subject> <http://www.w3.org/2000/01/rdf-schema#label> "This is a label." <http://example.com/graph> .
 ;
 ; We represent NQuads as vectors of strings:
 ; [graph subject predicate object datatype]
-
-; When converting blocks to NQuads
-; Be default, do nothing.
-
-(defmulti block->nquads
-  "Given a (fully expanded) block,
-   return a sequence of zero or more NQuad vectors."
-  :block-type)
-
-(defmethod block->nquads :default
-  [block]
-  [])
-
-(defn format-object
-  [object-string]
-  (-> object-string
-      (string/replace "\n" "\\n")
-      (string/replace "\"" "\\\"")))
-
-(defn annotation-nquads
-  "Given a subject (blank node label) and a vector for the annotation target,
-   return four NQuads representing the OWL annotation axiom."
-  [subject [source property target target-datatype]]
-  [[nil subject rdf:type owl:Axiom "LINK"]
-   [nil subject annSource source "LINK"]
-   [nil subject annProperty property "LINK"]
-   [nil subject annTarget (format-object target) target-datatype]])
-
-(defmethod block->nquads :STATEMENT_BLOCK
-  [{:keys [annotation-target graph subject predicate object datatype]}]
-  (conj
-   (when annotation-target (annotation-nquads subject annotation-target))
-   [graph subject predicate (format-object object) datatype]))
-
-(defn insert-annotations
-  [depth annotation-map {:keys [subject predicate object datatype] :as block}]
-  (let [annotations (get annotation-map [subject predicate object datatype])]
-    (concat
-     [(assoc block :arrows (apply str (repeat depth ">")))]
-     (->> annotations
-          (sort-by :object)
-          (mapcat (partial insert-annotations (inc depth) annotation-map))))))
-
-(defn nquad->blocks
-  "Given an environment and an nquad vector,
-   return the updated environment and zero or more block maps."
-  [{:keys [graph subject] :as env}
-   annotation-map
-   [new-graph new-subject predicate object datatype]]
-  (insert-annotations
-   0
-   annotation-map
-   {:block-type :STATEMENT_BLOCK
-    :graph new-graph
-    :subject new-subject
-    :predicate predicate
-    :object object
-    :content
-    (if (= "LINK" datatype)
-      (link/iri->name env object)
-      (-> object
-          (string/replace "\\n" "\n")
-          (string/replace "\\\"" "\"")))
-    :datatype datatype}))
-
-; We do not collapse annotations
-; if the subject is used as an object
-; that's not also an annotation.
-
-(defn annotation-spoilers
-  "Given a sequence of NQuads for a graph,
-   return a set of blank node labels
-   that are not valid subjects for OWL annoations."
-  [nquads]
-  (->> nquads
-       (remove #(= annSource (nth % 2)))
-       (map #(nth % 3))
-       (filter #(util/starts-with? % "_:"))
-       set))
-
-; A collapsible annotation:
-; - subject is not a spoiler
-; - has a blank node as subject
-; - has exactly five nquads
-; - rdf:type is owl:Axiom
-; - contains these three predicates: annotatedSource, annotatedProperty, annotatedTarget
-
-(defn is-collapsible-annotation?
-  [spoilers subject nquads]
-  (and
-   (not (contains? spoilers subject))
-   (util/starts-with? subject "_:")
-   (= 5 (count nquads))
-   (->> nquads
-        (map (fn [[g s p o d]] (= [rdf:type owl:Axiom] [p o])))
-        first)
-   (->> nquads
-        (map #(nth % 2))
-        set
-        (clojure.set/subset? annPredicates))))
-
-(defn process-annotation
-  [env nquads]
-  (let [coll
-        (reduce (fn [c [g s p o d]] (assoc-in c [p] [o d])) {} nquads)
-        [graph subject predicate object datatype]
-        (->> nquads
-             (remove #(contains? annPredicates (nth % 2)))
-             first)]
-    {:block-type :STATEMENT_BLOCK
-     :arrows nil
-     :annotation-target
-     [(get-in coll [annSource 0])
-      (get-in coll [annProperty 0])
-      (get-in coll [annTarget 0])
-      (get-in coll [annTarget 1])]
-     :graph graph
-     :subject subject
-     :predicate predicate
-     :object object
-     :content object
-     :datatype datatype}))
-
-(defn process-annotations
-  "Given stuff
-   return a map from quads to sets of annotation blocks for that quad
-   plus a :subjects key for remaining subjects?
-   plus a :quads sequence of remaining keys?"
-  [env nquads]
-  (let [spoilers (annotation-spoilers nquads)]
-    (->> nquads
-         (group-by second)
-         (filter (partial apply is-collapsible-annotation? spoilers))
-         (map #(process-annotation env (second %))))))
-
-(defn process-subject
-  [env annotation-map subject nquads]
-  (concat
-   [{:block-type :SUBJECT_BLOCK
-     :subject subject}]
-   (->> nquads
-        (mapcat (partial nquad->blocks env annotation-map))
-        (remove nil?))))
-
-; Given a sequence of nquads for a graph
-; first generate annotations
-; then normal subjects
-
-(defn process-graph
-  [env graph nquads]
-  ;(println "TREE" (tree nquads))
-  (let [annotations (process-annotations env nquads)
-        annotation-subjects (set (map :subject annotations))
-        annotation-map
-        (->> annotations
-             (map (juxt :annotation-target identity))
-             (reduce (fn [c [t b]] (update-in c [t] (fnil conj #{}) b)) {}))]
-    (concat
-     (when graph
-       [{:block-type :GRAPH_BLOCK
-         :graph graph}])
-     (->> nquads
-          (remove #(contains? annotation-subjects (second %)))
-          (group-by second)
-          (mapcat (partial apply process-subject env annotation-map))))))
-
-(defn process-graphs
-  "Given a sequence of nquads,
-   process each graph
-   and return a sequence of blocks."
-  [env nquads]
-  (->> nquads
-       (group-by first)
-       (mapcat (partial apply process-graph env))
-       (remove nil?)
-       (map (partial core/iris->names env))))
 
 ; TODO: Fix lexical value
 (def nquad-grammar-partial "
@@ -262,6 +83,11 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        :LANGUAGE_LITERAL (str "@" (get-in result [5 1 4 2]))
        :PLAIN_LITERAL    "PLAIN")]))
 
+; ## NQuads to Strings
+;
+; To convert an Nquad vector back to an NQuad string,
+; set just have to wrap IRIs and literals properly.
+
 (defn subject->string
   [subject]
   (if (util/starts-with? subject "_:")
@@ -289,13 +115,280 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 (defn nquad->ntriple-string
   [nquad])
 
+; ## Blocks to NQuads
+;
+; Converting blocks to NQuads is straightforward.
+; We're only interested in HOWL statement blocks.
+; If the statement is an annotation,
+; then we generate five nquad vectors.
+; Otherwise we just generate one nquad vector.
+
+(defn format-object
+  [object-string]
+  (-> object-string
+      (string/replace "\n" "\\n")
+      (string/replace "\"" "\\\"")))
+
+(def rdf:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+(def owl:Axiom "http://www.w3.org/2002/07/owl#Axiom")
+(def annSource "http://www.w3.org/2002/07/owl#annotatedSource")
+(def annProperty "http://www.w3.org/2002/07/owl#annotatedProperty")
+(def annTarget "http://www.w3.org/2002/07/owl#annotatedTarget")
+(def annPredicates #{rdf:type annSource annProperty annTarget})
+
+(defn annotation-nquads
+  "Given a subject (blank node label) and a vector for the annotation target,
+   return four NQuads representing the OWL annotation axiom
+   without its content."
+  [subject [source property target target-datatype]]
+  [[nil subject rdf:type owl:Axiom "LINK"]
+   [nil subject annSource source "LINK"]
+   [nil subject annProperty property "LINK"]
+   [nil subject annTarget (format-object target) target-datatype]])
+
+(defmulti block->nquads
+  "Given a (fully expanded) block,
+   return a sequence of zero or more NQuad vectors."
+  :block-type)
+
+(defmethod block->nquads :default
+  [block]
+  [])
+
+(defmethod block->nquads :STATEMENT_BLOCK
+  [{:keys [annotation-target graph subject predicate object datatype]}]
+  (conj
+   (when annotation-target (annotation-nquads subject annotation-target))
+   [graph subject predicate (format-object object) datatype]))
+
+; ## Nquads to Blocks
+;
+; The Nquads to Block conversion is a little trickier.
+; One NQuad more-or-less corresponds to one HOWL statement block.
+; We also have to make sure to add graph and subject blocks.
+; The hardest part is handling OWL annotations.
+
+(defn nquad->block
+  "Given an NQuad, return a HOWL statement block."
+  [[graph subject predicate object datatype]]
+  {:block-type :STATEMENT_BLOCK
+   :graph graph
+   :subject subject
+   :predicate predicate
+   :object object
+   :datatype datatype})
+
+; ### Annotations
+;
+; The hardest part of NQuads to HOWL conversion is handling OWL Annotations.
+; An OWL annotation has a blank node as subject and five nquads:
+;
+; - the rdf:type is owl:Axiom
+; - the owl:annotatedSource is the subject of the annotated NQuad
+; - the owl:annotatedProperty is the predicate of the annotated NQuad
+; - the owl:annotatedTarget is the object (with datatype) of the annotated NQuad
+; - then there's one normal NQuad that is the content of the annotation.
+;
+; We can't assume that these NQuads occur in any particular order,
+; so we end up collecting all the NQuads into a nested data structure
+; (see below).
+;
+; We try to collapse the five NQuads into a single HOWL STATEMENT_BLOCK
+; that we insert after the target statement.
+; We don't collapse annotations that are referred to by non-annotations.
+; We call these "spoilers", and collect a set of potential spoiler IRI strings.
+
+(defn annotation-spoilers
+  "Given a sequence of NQuads for a graph,
+   return a set of blank node labels
+   that are not valid subjects for OWL annotations."
+  [subject-map]
+  (reduce-kv
+   (fn [spoilers subject predicate-map]
+     (->> (dissoc predicate-map annSource)
+          vals
+          (apply concat)
+          (map :object)
+          (filter #(util/starts-with? % "_:"))
+          set
+          (clojure.set/union spoilers)))
+   #{}
+   subject-map))
+
+; Once we know the possible spoilers,
+; we apply all these rules to determine
+; whether we will collapse the annotation into a single HOWL statement:
+;
+; - subject is a blank node
+; - subject is not a spoiler (i.e. not the object of another non-annotation statement)
+; - subject has exactly five NQuads
+; - the rdf:type is owl:Axiom
+; - three predicates are present: annotatedSource, annotatedProperty, annotatedTarget
+; - the annotatedSource is a subject in this graph
+;
+; Otherwise we treat the annotation as a normal subject
+; with a HOWL subject block
+; and five HOWL statement blocks for its five NQuads.
+
+(defn is-collapsible-annotation?
+  "Given a set of subjects IRI in this graph,
+   a set of potential spoilter IRIs,
+   a subject name and its predicate map,
+   return true only if we can safely collapse this annotation
+   into a single HOWL statement block."
+  [subjects spoilers subject predicate-map]
+  (and
+   (util/starts-with? subject "_:")
+   (not (contains? spoilers subject))
+   (= 5 (count predicate-map))
+   (->> predicate-map vals (apply concat) count (= 5))
+   (= owl:Axiom (get-in predicate-map [rdf:type 0 :object]))
+   (clojure.set/subset? annPredicates (set (keys predicate-map)))
+   (contains? subjects (get-in predicate-map [annSource 0 :object]))))
+
+(defn process-annotation
+  "Given a graph IRI, a subject IRI, and a predicate map,
+   return a HOWL annotation statement block."
+  [graph subject predicate-map]
+  (let [predicate
+        (-> predicate-map
+            (dissoc rdf:type annSource annProperty annTarget)
+            keys
+            first)
+        {:keys [object datatype]} (get-in predicate-map [predicate 0])]
+    (assoc
+     (nquad->block [graph subject predicate object datatype])
+     :annotation-target
+     [(get-in predicate-map [annSource   0 :object])
+      (get-in predicate-map [annProperty 0 :object])
+      (get-in predicate-map [annTarget   0 :object])
+      (get-in predicate-map [annTarget   0 :datatype])])))
+
+(defn process-annotations
+  "Given a set of subject IRIs, a graph IRI, and a subject map,
+   return sequence of HOWL annotation statement blocks."
+  [subjects graph subject-map]
+  (let [spoilers (annotation-spoilers subject-map)]
+    (->> subject-map
+         (filter (partial apply is-collapsible-annotation? subjects spoilers))
+         (map (partial apply process-annotation graph)))))
+
+(defn insert-annotations
+  "Given depth integer, the annotation-map, and a block,
+   return a sequence starting with
+   the block with the :arrows key updated for the depth,
+   and recursively including any annotations on that block."
+  [depth annotation-map {:keys [subject predicate object datatype] :as block}]
+  (let [annotations (get annotation-map [subject predicate object datatype])]
+    (concat
+     [(assoc block :arrows (apply str (repeat depth ">")))]
+     (->> annotations
+          (sort-by :object)
+          (mapcat (partial insert-annotations (inc depth) annotation-map))))))
+
+; ### Processing NQuads
+;
+; Now that annotations are out of the way,
+; converting NQUads to HOWL is pretty straightforward.
+; We start by reducing the sequence of NQuad strings
+; to a nested map:
+;
+; 1. a graph-map maps graph IRI strings to subject-maps
+; 2. a subject-map maps subject IRI strings to predicate-maps
+; 3. a predicate-map maps predicate-IRIs to object-lists
+; 4. an object-list is a sequence of object-maps
+; 5. an object-map contains :object and :datatype IRI strings,
+;    and other information about the source, line, string, etc.
+;
+; Then we iterate over graphs, subjects, predicates, and objects,
+; generating a concatenated sequence of HOWL blocks.
+
+(defn make-graph-map
+  "Given a source file name and a sequence of NQuad lines,
+   parse the lines and return a nest map:
+   graph, subject, predicate, to sequence of object maps
+   with line and source information."
+  [source lines]
+  (reduce-kv
+   (fn [coll line string]
+     (let [[graph subject predicate object datatype] (nquad-string->nquad string)]
+       (update-in
+        coll
+        [graph subject predicate]
+        (fnil conj [])
+        {:object object
+         :datatype datatype
+         :source source
+         :line line
+         :string string})))
+   (sorted-map)
+   lines))
+
+(defn nquad->blocks
+  "Given the annotation-map and an nquad vector,
+   return a sequence of HOWL statement blocks."
+  [annotation-map nquad]
+  (insert-annotations 0 annotation-map (nquad->block nquad)))
+
+(defn process-object
+  [annotation-map graph subject predicate {:keys [object datatype]}]
+  (nquad->blocks annotation-map [graph subject predicate object datatype]))
+
+(defn process-predicate
+  [annotation-map graph subject predicate objects]
+  (mapcat
+   (partial process-object annotation-map graph subject predicate)
+   objects))
+
+(defn process-subject
+  [annotation-map graph subject predicate-map]
+  (concat
+   [{:block-type :SUBJECT_BLOCK
+     :subject subject}]
+   (->> predicate-map
+        (mapcat
+         (partial apply process-predicate annotation-map graph subject))
+        (remove nil?))))
+
+(defn process-graph
+  [graph subject-map]
+  (let [subjects (set (keys subject-map))
+        annotations (process-annotations subjects graph subject-map)
+        annotation-subjects (set (map :subject annotations))
+        annotation-map
+        (->> annotations
+             (map (juxt :annotation-target identity))
+             (reduce (fn [c [t b]] (update-in c [t] (fnil conj #{}) b)) {}))]
+    (concat
+     (when graph
+       [{:block-type :GRAPH_BLOCK
+         :graph graph}])
+     (->> subject-map
+          (remove #(contains? annotation-subjects (key %)))
+          (mapcat (partial apply process-subject annotation-map graph))))))
+
+(defn update-content
+  "Given an environment and a block,
+   if the block has a :datatype and :object,
+   update it with :content."
+  [env {:keys [datatype object] :as block}]
+  (if (and datatype object)
+    (assoc
+     block
+     :content
+     (if (= "LINK" datatype)
+       (link/iri->name env object)
+       (-> object
+           (string/replace "\\n" "\n")
+           (string/replace "\\\"" "\""))))
+    block))
+
 (defn lines->blocks
-  "Given a sequence of lines,
-   and return a lazy sequence of block maps."
+  "Given an environment and a sequence of lines,
+   return a sequence of HOWL block maps."
   [{:keys [source] :or {source "interactive"} :as env} lines]
-  (assoc
-   env
-   :blocks
-   (process-graphs
-    (assoc env :source source :line 1)
-    (map nquad-string->nquad lines))))
+  (->> lines
+       (make-graph-map source)
+       (mapcat (partial apply process-graph))
+       (map (partial update-content env))
+       (map (partial core/iris->names env))))
