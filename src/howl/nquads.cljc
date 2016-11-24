@@ -367,16 +367,28 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
           (remove #(contains? annotation-subjects (key %)))
           (mapcat (partial apply process-subject annotation-map graph))))))
 
+(defn update-format
+  "Given an environment and a block,
+   try to update the :format."
+  [env {:keys [block-type predicate datatype] :as block}]
+  (if (= :STATEMENT_BLOCK block-type)
+    (assoc
+     block
+     :format
+     (or (get-in env [:labels (get-in env [:iri-label predicate]) :format])
+         (when (= "LINK" datatype) "LINK")))
+    block))
+
 (defn update-content
   "Given an environment and a block,
-   if the block has a :datatype and :object,
+   if the block has a :format and :object,
    update it with :content."
-  [env {:keys [datatype object] :as block}]
-  (if (and datatype object)
+  [env {:keys [block-type format object] :as block}]
+  (if (= :STATEMENT_BLOCK block-type)
     (assoc
      block
      :content
-     (if (= "LINK" datatype)
+     (if (= "LINK" format)
        (link/iri->name env object)
        (-> object
            (string/replace "\\n" "\n")
@@ -390,5 +402,6 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   (->> lines
        (make-graph-map source)
        (mapcat (partial apply process-graph))
-       (map (partial update-content env))
-       (map (partial core/iris->names env))))
+       (map (partial update-format env))
+       (map (partial core/iris->names env))
+       (map (partial update-content env))))

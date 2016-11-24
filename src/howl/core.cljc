@@ -35,12 +35,16 @@
   (assoc env :base base))
 
 (defmethod update-environment :LABEL_BLOCK
-  [env {:keys [label iri datatype] :as block}]
-  (-> (if datatype
-        (assoc-in env [:labels label :datatype] datatype)
-        env)
-      (assoc-in [:labels label :iri] iri)
-      (assoc-in [:iri-label iri] label)))
+  [env {:keys [label iri datatype format] :as block}]
+  (-> env
+      (assoc-in [:iri-label iri] label)
+      (assoc-in
+       [:labels label]
+       (merge
+        {:iri iri}
+        (when datatype {:datatype datatype})
+        (when (= "LINK" datatype) {:format "LINK"})
+        (when format {:format format})))))
 
 (defmethod update-environment :GRAPH_BLOCK
   [env {:keys [graph] :as block}]
@@ -82,10 +86,11 @@
   block)
 
 (defmethod names->iris :LABEL_BLOCK
-  [env {:keys [datatype-name target-name] :as block}]
+  [env {:keys [datatype-name format-name target-name] :as block}]
   (assoc
    block
    :datatype (link/unpack-datatype env datatype-name)
+   :format (link/unpack-format env format-name)
    :iri (link/id->iri env target-name)))
 
 (defmethod iris->names :LABEL_BLOCK
@@ -113,7 +118,7 @@
 
 (defmethod names->iris :STATEMENT_BLOCK
   [{:keys [graph subject] :as env}
-   {:keys [parse-tree predicate-name datatype-name] :as block}]
+   {:keys [parse-tree predicate-name datatype-name format-name] :as block}]
   (let [predicate-label (link/name->label predicate-name)]
     (assoc
      block
@@ -123,15 +128,24 @@
      :datatype
      (or (when datatype-name (link/unpack-datatype env datatype-name))
          (when predicate-label
-           (get-in env [:labels predicate-label :datatype]))))))
+           (get-in env [:labels predicate-label :datatype])))
+     :format
+     (or (when format-name (link/unpack-format env format-name))
+         (when predicate-label
+           (get-in env [:labels predicate-label :format]))
+         (when (= "LINK" datatype-name) "LINK")))))
 
 (defmethod iris->names :STATEMENT_BLOCK
-  [env {:keys [predicate datatype] :as block}]
-  (assoc
-   block
-   :predicate-name (link/iri->name env predicate)
-   :datatype-name ; compare to predicate's default datatype
-   (let [label   (get-in env [:iri-label predicate])
-         default (get-in env [:labels label :datatype])]
-     (when-not (= datatype default)
-       (link/iri->name env datatype)))))
+  [env {:keys [predicate datatype format] :as block}]
+  (let [predicate-label (get-in env [:iri-label predicate])]
+    (assoc
+     block
+     :predicate-name (link/iri->name env predicate)
+     :datatype-name
+     (let [default (get-in env [:labels predicate-label :datatype])]
+       (when (not= datatype default)
+         (link/iri->name env datatype)))
+     :format-name
+     (let [default (get-in env [:labels predicate-label :format])]
+       (when (and (not= format default) (not= "LINK" datatype format))
+         (link/iri->name env format))))))

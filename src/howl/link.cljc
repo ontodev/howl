@@ -34,10 +34,13 @@ PREFIX        = #'(\\w|-)+'
 
 LABEL   = !(KEYWORD | '<' | '>' | '[' | ']' | '#') (WORD SPACES?)* WORD
 KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT' | 'LINK' | 'PLAIN'
-<WORD>  = #'[^\\s]*[^:\\]\\s]'
+<WORD>  = #'[^|\\s]*[^|:\\]\\s]'
 SPACES  = #' +'
 
-DATATYPE        = '' | #' +\\[' ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME) ']'
+DATATYPE        = '' | #' +\\['
+                  ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME)
+                  ('|' ('PLAIN' | 'LINK' | NAME) )?
+                  ']'
 LANGUAGE_TAG    = '@' LANGUAGE_CODE
 <LANGUAGE_CODE> = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 
@@ -165,3 +168,11 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     (= "LINK" datatype) "LINK"
     (= :LANGUAGE_TAG (first datatype)) (str "@" (last datatype))
     :else (name->iri env datatype)))
+
+(defn unpack-format
+  [env format]
+  (cond
+    (nil? format) nil
+    (= "PLAIN" format) "PLAIN"
+    (= "LINK" format) "LINK"
+    :else (name->iri env format)))

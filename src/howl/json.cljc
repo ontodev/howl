@@ -40,8 +40,8 @@
   (case key
     "block-type" (keyword value)
     "labels"     (keywordize-child-maps value)
-    ("parse-tree" "graph-name" "subject-name"
-                  "predicate-name" "datatype-name" "target-name"
+    ("parse-tree" "graph-name" "subject-name" "predicate-name"
+                  "datatype-name" "format-name" "target-name"
                   "content")
     (json->parse value)
     value))

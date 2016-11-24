@@ -76,22 +76,31 @@ ARROWS      = #'>*' #'\\s*'"
   (link/check-iri iri)
   {:prefix prefix :iri iri})
 
+(defn datatype-format->parse
+  [datatype-name format-name]
+  (cond
+    (and datatype-name format-name)
+    [:DATATYPE " [" datatype-name "|" format-name "]"]
+    datatype-name
+    [:DATATYPE " [" datatype-name "]"]
+    :else
+    [:DATATYPE]))
+
 (defmethod block->parse :LABEL_BLOCK
-  [{:keys [label datatype-name target-name] :as block}]
+  [{:keys [label datatype-name format-name target-name] :as block}]
   [:LABEL_BLOCK
    "LABEL"
    [:SPACES " "]
    [:LABEL "type"]
-   (if datatype-name
-     [:DATATYPE " [" datatype-name "]"]
-     [:DATATYPE])
+   (datatype-format->parse datatype-name format-name)
    [:COLON "" ":" " "]
    target-name])
 
 (defmethod parse->block :LABEL_BLOCK
-  [[_ _ _ [_ label] [_ _ datatype-name _] _ target]]
+  [[_ _ _ [_ label] [_ _ datatype-name _ format-name _] _ target]]
   {:label label
    :datatype-name datatype-name
+   :format-name format-name
    :target-name target})
 
 (defmethod block->parse :BASE_BLOCK
@@ -146,50 +155,49 @@ ARROWS      = #'>*' #'\\s*'"
          (string/join \newline))))
 
 (defmethod block->parse :STATEMENT_BLOCK
-  [{:keys [arrows predicate-name datatype-name content] :as block}]
+  [{:keys [arrows predicate-name datatype-name format-name content] :as block}]
   [:STATEMENT_BLOCK
    (if (string/blank? arrows)
      [:ARROWS "" ""]
      [:ARROWS arrows " "])
    predicate-name
-   (if datatype-name
-     [:DATATYPE " [" datatype-name "]"]
-     [:DATATYPE])
+   (datatype-format->parse datatype-name format-name)
    [:COLON "" ":" " "]
    (if (= "LINK" datatype-name) content (indent content))])
 
 (defmethod parse->block :STATEMENT_BLOCK
-  [[_ [_ arrows _] predicate-name [_ _ datatype-name _] _ content]]
+  [[_ [_ arrows _] predicate-name [_ _ datatype-name _ format-name _] _ content]]
   {:arrows arrows
    :predicate-name predicate-name
    :datatype-name datatype-name
+   :format-name format-name
    :content content})
 
 ;; ## Content
 
 (defmulti content->parse
   "Given an environment,
-   a datatype IRI string (or nil when the object is an IRI),
+   a format IRI string (nil when the object is a literal)
    and a content string,
    return the object and the parse tree for the content."
-  (fn [env datatype content] datatype))
+  (fn [env format content] format))
 
 ; The default behaviour is to remove indentation.
 
 (defmethod content->parse :default
-  [env datatype content]
+  [env format content]
   (let [unindented (string/replace content #"(?m)^  |^ " "")]
     [unindented unindented]))
 
 (defmethod content->parse "LINK"
-  [env datatype content]
+  [env format content]
   (let [result (link/parse-link content)]
     [(link/name->iri env result) result]))
 
 (defn update-content
-  [env {:keys [parse-tree datatype content] :as block}]
+  [env {:keys [parse-tree format content] :as block}]
   (if content
-    (let [[object content] (content->parse env datatype content)]
+    (let [[object content] (content->parse env format content)]
       (assoc
        block
        :parse-tree (assoc parse-tree 5 content) ; splice content into parse-tree

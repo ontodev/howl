@@ -21,10 +21,10 @@ The first part of the example is a *context* which can be stored in a separate f
     PREFIX ex: <http://example.com/>
     LABEL label: rdfs:label
     LABEL comment [xsd:string]: rdfs:comment
-    LABEL type [IRI]: rdf:type
+    LABEL type [LINK]: rdf:type
     LABEL has part: obo:BFO_0000051
-    LABEL Manchester Syntax: <http://www.w3.org/TR/owl2-manchester-syntax/>
-    LABEL subclass of [Manchester Syntax]: rdfs:subClassOf
+    LABEL Manchester: <http://www.w3.org/TR/owl2-manchester-syntax/>
+    LABEL subclass of [LINK|Manchester]: rdfs:subClassOf
 
     ex:ontology
     label: Example Ontology
@@ -270,9 +270,11 @@ is parsed into this JSON object:
      "trailing-whitespace": "\n",
      "label": "comment",
      "datatype-name": null,
+     "format-name": null,
      "target-name": ["PREFIXED_NAME", "rdfs", ":", "comment"],
      "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-     "datatype": null}
+     "datatype": null,
+     "format": null}
 
 This label block:
 
@@ -296,9 +298,39 @@ is parsed into this JSON object:
      "trailing-whitespace": "\n",
      "label": "comment",
      "datatype-name": ["LANGUAGE_TAG", "@", "en"],
+     "format-name": null,
      "target-name": ["PREFIXED_NAME", "rdfs", ":", "comment"],
      "iri": "http://www.w3.org/2000/01/rdf-schema#comment",
-     "datatype": "@en"}
+     "datatype": "@en",
+     "format": null}
+
+This label block:
+
+    LABEL subclass of [LINK|Manchester]: rdfs:subClassOf
+
+is parsed into this JSON object:
+
+    {"block-type": "LABEL_BLOCK",
+     "source": "example.howl",
+     "line": 1,
+     "string": "LABEL subclass of [LINK|Manchester]: rdfs:subClassOf\n",
+     "parse-tree":
+     ["LABEL_BLOCK",
+      "LABEL",
+      ["SPACES", " "],
+      ["LABEL", "subclass of"],
+      ["DATATYPE", " [", "LINK", "|", ["LABEL", "Manchester"], "]"],
+      ["COLON", "", ":" " "],
+      ["PREFIXED_NAME", "rdfs", ":", "subClassOf"]],
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n",
+     "label": "subclass of",
+     "datatype-name": "LINK",
+     "format-name": ["LABEL", "Manchester"],
+     "target-name": ["PREFIXED_NAME", "rdfs", ":", "subClassOf"],
+     "iri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+     "datatype": "LINK",
+     "format": "http://www.w3.org/TR/owl2-manchester-syntax/"}
 
 
 ### BASE
@@ -422,12 +454,14 @@ is parsed into this JSON object:
      "arrows": "",
      "predicate-name": ["LABEL", "comment"],
      "datatype-name": null,
+     "format-name": null,
      "content": "This is an RDFS comment.",
      "graph": "http://example.com/current-graph",
      "subject": "http://example.com/current-subject",
      "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "This is an RDFS comment.",
-     "datatype": null}
+     "datatype": null,
+     "format": null}
 
 This literal block:
 
@@ -451,12 +485,14 @@ is parsed into this JSON object:
      "arrows": "",
      "predicate-name": ["LABEL", "comment"],
      "datatype-name": ["LANGUAGE_TAG", "@", "en"],
+     "format-name": null,
      "content": "This is an English comment.",
      "graph": "http://example.com/current-graph",
      "subject": "http://example.com/current-subject",
      "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "This is an English comment.",
-     "datatype": "@en"}
+     "datatype": "@en",
+     "format": null}
 
 This literal block:
 
@@ -480,12 +516,14 @@ is parsed into this JSON object:
      "arrows": "",
      "predicate-name": ["LABEL", "comment"],
      "datatype-name": ["PREFIXED_NAME", "xsd", ":", "string"],
+     "format-name": null,
      "content": "This comment has a datatype.",
      "graph": "http://example.com/current-graph",
      "subject": "http://example.com/current-subject",
      "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "This comment has a datatype.",
-     "datatype": "http://www.w3.org/2001/XMLSchema#string"}
+     "datatype": "http://www.w3.org/2001/XMLSchema#string",
+     "format": null}
 
 So these HOWL blocks:
 
@@ -535,12 +573,14 @@ is parsed into this JSON object:
      "arrows": "",
      "predicate-name": ["PREFIXED_NAME", "rdf", ":", "type"],
      "datatype-name": "LINK",
+     "format-name": null,
      "content": ["PREFIXED_NAME", "owl", ":", "Class"],
      "graph": "http://example.com/current-graph",
      "subject": "http://example.com/current-subject",
      "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
      "object": "http://www.w3.org/2002/07/owl#Class",
-     "datatype": "LINK"}
+     "datatype": "LINK",
+     "format": "LINK"}
 
 We can assign default datatypes to labels. When that label is used as a predicate, and no datatype is specified, the default datatype will apply. We have assigned the special type "LINK" to the label "type":
 
@@ -563,13 +603,15 @@ is parsed into this JSON object:
      "trailing-whitespace": "\n",
      "arrows": "",
      "predicate-name": ["LABEL", "type"],
+     "format-name": null,
      "datatype-name": null,
      "content": ["PREFIXED_NAME", "owl", ":", "Class"],
      "graph": "http://example.com/current-graph",
      "subject": "http://example.com/current-subject",
      "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
      "object": "http://www.w3.org/2002/07/owl#Class",
-     "datatype": "LINK"}
+     "datatype": "LINK",
+     "format": "LINK"}
 
 So these HOWL blocks:
 
@@ -689,6 +731,7 @@ is parsed into this JSON object:
      "arrows": ">",
      "predicate-name": ["LABEL", "comment"],
      "datatype-name": null,
+     "format-name": null,
      "content": "A comment on a comment.",
      "annotation-target":
      ["http://example.com/current-subject",
@@ -699,7 +742,8 @@ is parsed into this JSON object:
      "subject": "_:b1",
      "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "A comment on a comment.",
-     "datatype": null}
+     "datatype": null,
+     "format": null}
 
 So these HOWL blocks:
 
