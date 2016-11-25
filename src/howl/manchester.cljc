@@ -1,83 +1,59 @@
-(ns howl.expression
-  "Parse and process HOWL expression blocks"
+(ns howl.manchester
+  "Parse and process Manchester syntax."
   (:require [clojure.string :as string]
+            [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
+            [howl.core :as core]
+            [howl.howl :as howl]
             [howl.util :as util :refer [<> owl> rdf>]]))
 
-(def manchester-parser
-  (insta/parser
-   "CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')' SPACE?
-      | DISJUNCTION
-      | CONJUNCTION
-      | NEGATION
-      | RESTRICTION
-      | NAME
+; LABELs that contain spaces must be single-quoted
 
-    DISJUNCTION = CLASS_EXPRESSION SPACE 'or'  SPACE CLASS_EXPRESSION
-    CONJUNCTION = CLASS_EXPRESSION SPACE 'and' SPACE CLASS_EXPRESSION
-    NEGATION = 'not' SPACE (RESTRICTION | NAME)
+(def manchester-grammar "
+CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')' SPACE?
+                 | DISJUNCTION
+                 | CONJUNCTION
+                 | NEGATION
+                 | RESTRICTION
+                 | LABEL
 
-    <RESTRICTION> = SOME | ONLY
-    SOME = OBJECT_PROPERTY_EXPRESSION SPACE 'some' SPACE CLASS_EXPRESSION
-    ONLY = OBJECT_PROPERTY_EXPRESSION SPACE 'only' SPACE CLASS_EXPRESSION
+DISJUNCTION = CLASS_EXPRESSION SPACE 'or'  SPACE CLASS_EXPRESSION
+CONJUNCTION = CLASS_EXPRESSION SPACE 'and' SPACE CLASS_EXPRESSION
+NEGATION = 'not' SPACE (RESTRICTION | LABEL)
 
-    OBJECT_PROPERTY_EXPRESSION = 'inverse' SPACE NAME | NAME
+<RESTRICTION> = SOME | ONLY
+SOME = OBJECT_PROPERTY_EXPRESSION SPACE 'some' SPACE CLASS_EXPRESSION
+ONLY = OBJECT_PROPERTY_EXPRESSION SPACE 'only' SPACE CLASS_EXPRESSION
 
-    NAME = QUOTED_LABEL | LABEL
-    QUOTED_LABEL = \"'\" #\"[^']+\" \"'\"
-    LABEL = #'\\w+'
-    SPACE = #'\\s+'"))
+OBJECT_PROPERTY_EXPRESSION = 'inverse' SPACE LABEL | LABEL
+
+LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
+<SPACE> = #'\\s+'")
+
+(def manchester-parser (insta/parser manchester-grammar))
+
+(defn parse-manchester
+  [content]
+  (let [result (manchester-parser content)]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "Manchester parser failure")))
+    result))
 
 (defn manchester-format
-  "Given a parsed Manchester expression tree (without leading expression type tag),
-   returns the stringified version of that tree."
+  "Given a parsed Manchester expression tree,
+   return the string representation."
   [mn-tree]
-  (if (string? mn-tree)
-    mn-tree
-    (case (first mn-tree)
-      (:CLASS_EXPRESSION
-       :DISJUNCTION :CONJUNCTION :NEGATION
-       :SOME :ONLY
-       :OBJECT_PROPERTY_EXPRESSION) (apply str (map manchester-format (rest mn-tree)))
-
-      :NAME (manchester-format (second mn-tree))
-      (:SPACE :LABEL) (second mn-tree)
-      :QUOTED_LABEL (apply str (rest mn-tree)))))
-
-(defn parse-to-string
-  "Given a parsed expression tree (with the leading expression type tag),
-   emits the stringified version of that tree. The intent is for this tree
-   to be character-equivalent to the input expression that generated the
-   parse tree to begin with.
-
-   At the moment, deals only with Manchester expression trees, but will
-   shortly be able to emit other syntax trees depending on the leading tag."
-  [[exp-type parse-tree]]
-  (manchester-format parse-tree))
-
-(defn string-to-parse
-  "Given a string representing an unparsed expression, returns the parsed
-   expression tree. Currently always returns Manchester expression trees,
-   but will eventually try multiple syntaxes, only defaulting to Manchester."
-  [string]
-  [:MANCHESTER_EXPRESSION (manchester-parser string)])
-
-(defn parse-expression-block
-  "Given an unparsed expression tree, parse the given expression string
-   into a parse tree. The parser tries a number of expression syntaxes
-   before defaulting to Manchester syntax."
-  [[_ exp]]
-  (string-to-parse exp))
+  (->> mn-tree flatten (filter string?) (apply str)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; to NQuads
 
 (defn nquad-relevant-elems
   "Takes an expression tree and returns a sequence of sub-expressions relevant to
-   nqud-generation. In particular, this means skipping :SPACE sub-trees and some
-   inline literals."
+   nqud-generation. In particular, this means skipping whitespace and literals."
   [exp]
-  (filter #(and (vector? %) (not= :SPACE (first %))) exp))
+  (filter vector? exp))
 
 (defn ->obj
   [subtree]
@@ -166,9 +142,8 @@
   [id env exp]
   (->exp
    (case (first exp)
-     (:MANCHESTER_EXPRESSION :NAME :OBJECT_PROPERTY_EXPRESSION) (convert-expression id env (second exp))
-     :LABEL (subexp->name env (second exp))
-     :QUOTED_LABEL (subexp->name env (get exp 2))
+     (:MANCHESTER_EXPRESSION :OBJECT_PROPERTY_EXPRESSION) (convert-expression id env (second exp))
+     :LABEL (subexp->name env (get exp 2))
      :CLASS_EXPRESSION (mapcat #(convert-expression id env %) (nquad-relevant-elems exp))
      :SOME (restriction->nquads id env exp (owl> "someValuesFrom"))
      :ONLY (restriction->nquads id env exp (owl> "allValuesFrom"))
