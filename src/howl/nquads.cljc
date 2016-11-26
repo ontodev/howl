@@ -441,5 +441,4 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        (mapcat (partial apply process-graph))
        (map (partial update-format env))
        (map (partial core/block-iris->names env))
-       (map (partial update-content env))
        (map (partial update-content env))))
