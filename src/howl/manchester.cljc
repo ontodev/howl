@@ -3,11 +3,15 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
+            [howl.util :as util :refer [<> owl> rdf>]]
+            [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
-            [howl.util :as util :refer [<> owl> rdf>]]))
+            [howl.nquads :as nquads]))
 
 ; LABELs that contain spaces must be single-quoted
+
+(def manchester-iri "http://www.w3.org/TR/owl2-manchester-syntax/")
 
 (def manchester-grammar "
 CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')' SPACE?
@@ -46,14 +50,27 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [mn-tree]
   (->> mn-tree flatten (filter string?) (apply str)))
 
+(defmethod howl/parse-content manchester-iri
+  [env format unparsed]
+  [:MANCHESTER_EXPRESSION (parse-manchester unparsed)])
+
+; Walk the tree, replacing LABELs with IRIs, and removing other strings.
+
+(defmethod core/content-names->iris manchester-iri
+  [env format content]
+  (postwalk
+   (fn [item]
+     (cond
+       (and (vector? item) (= :LABEL (first item)))
+       [:IRI (link/name->iri env [:LABEL (nth item 2)])]
+       (vector? item)
+       (remove string? item)
+       :else
+       item))
+   content))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; to NQuads
-
-(defn nquad-relevant-elems
-  "Takes an expression tree and returns a sequence of sub-expressions relevant to
-   nqud-generation. In particular, this means skipping whitespace and literals."
-  [exp]
-  (filter vector? exp))
 
 (defn ->obj
   [subtree]
@@ -63,95 +80,72 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 (declare convert-expression)
 
 (defn restriction->nquads
-  "Takes an id, an environment a restriction expression and a predicate.
+  "Takes a restriction expression and a predicate.
    Returns an nquad sequence that represents the input. That nquad sequence
    uses the given predicate to reference the restriction."
-  [id env exp pred]
-  (let [g (env :graph)
-        b (util/fresh-blank! id)
-        subs (nquad-relevant-elems exp)
-        left (convert-expression id env (first subs))
-        right (convert-expression id env (second subs))]
+  [[_ left right] pred]
+  (let [b (link/random-blank-node)
+        left (convert-expression left)
+        right (convert-expression right)]
     (concat
-     [[g b (rdf> "type") (owl> "Restriction")]
-      [g b (owl> "onProperty") (->obj left)]
-      [g b pred (->obj right)]]
+     [[b (rdf> "type") (owl> "Restriction")]
+      [b (owl> "onProperty") (->obj left)]
+      [b pred (->obj right)]]
      left
      right)))
 
 (defn combination->nquads
-  "Takes an id, an environment a combination expression and a predicate.
+  "Takes a combination expression and a predicate.
    Returns an nquad sequence that represents the input. That nquad sequence
    uses the given predicate to reference the combination."
-  [id env exp pred]
-  (let [g (env :graph)
-        b1 (util/fresh-blank! id)
-        b2 (util/fresh-blank! id)
-        b3 (util/fresh-blank! id)
-        subs (nquad-relevant-elems exp)
-        left (convert-expression id env (first subs))
-        right (convert-expression id env (second subs))]
+  [[_ left right] pred]
+  (let [b1 (link/random-blank-node)
+        b2 (link/random-blank-node)
+        b3 (link/random-blank-node)
+        left (convert-expression left)
+        right (convert-expression right)]
     (concat
-     [[g b1 (rdf> "type") (owl> "Class")]
-      [g b1 pred b2]
-      [g b2 (rdf> "first") (->obj left)]
-      [g b2 (rdf> "rest") b3]
-      [g b3 (rdf> "first") (->obj right)]
-      [g b3 (rdf> "rest") (rdf> "nil")]]
+     [[b1 (rdf> "type") (owl> "Class")]
+      [b1 pred b2]
+      [b2 (rdf> "first") (->obj left)]
+      [b2 (rdf> "rest") b3]
+      [b3 (rdf> "first") (->obj right)]
+      [b3 (rdf> "rest") (rdf> "nil")]]
      left
      right)))
 
 (defn negation->nquads
-  "Takes an id, an environment and a negation expression. Returns an nquad
+  "Takes a negation expression. Returns an nquad
    sequence that represents the input. Unlike combination and restriction
    expressions, there is only one possible negation expression predicate, so
    there is no need for the additional argument."
-  [id env exp]
-  (let [g (env :graph)
-        b (util/fresh-blank! id)
-        target (convert-expression id env (first (nquad-relevant-elems exp)))]
+  [[_ target]]
+  (let [b (link/random-blank-node)
+        target (convert-expression target)]
     (concat
-     [[g b (rdf> "type") (owl> "Class")]
-      [g b (owl> "complementOf") (->obj target)]]
+     [[b (rdf> "type") (owl> "Class")]
+      [b (owl> "complementOf") (->obj target)]]
      target)))
 
-(defn subexp->name
-  "Takes an environment and a name.
-   Either returns the value associated with that name in that environment, or
-   throws an error."
-  [env name]
-  (or (get-in env [:labels name])
-      (util/throw-exception
-       "NO SUCH NAME IN ENV."
-       "Name:" name
-       "Env:" (str env))))
-
-(defn ->exp
-  "Takes a subtree, and returns an expression suitable for stitching into an nquads result.
-   This is either a wrapped answer (in the case of a string)
-   or identity (in the case of a sequence or vector)"
-  [subtree]
-  (if (string? subtree)
-    [[subtree]]
-    subtree))
-
 (defn convert-expression
-  "Takes an id atom, an environment and an expression parse tree.
-   Returns a sequence of nquads representing that expression in that environment
-   with blank nodes generated from that atom."
-  [id env exp]
-  (->exp
-   (case (first exp)
-     (:MANCHESTER_EXPRESSION :OBJECT_PROPERTY_EXPRESSION) (convert-expression id env (second exp))
-     :LABEL (subexp->name env (get exp 2))
-     :CLASS_EXPRESSION (mapcat #(convert-expression id env %) (nquad-relevant-elems exp))
-     :SOME (restriction->nquads id env exp (owl> "someValuesFrom"))
-     :ONLY (restriction->nquads id env exp (owl> "allValuesFrom"))
-     :CONJUNCTION (combination->nquads id env exp (rdf> "intersectionOf"))
-     :DISJUNCTION (combination->nquads id env exp (rdf> "unionOf"))
-     :NEGATION (negation->nquads id env exp)
-     (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp))))
+  "Takes an expression parse tree.
+   Returns a sequence of nquads representing that expression."
+  [exp]
+  (case (first exp)
+    (:MANCHESTER_EXPRESSION :OBJECT_PROPERTY_EXPRESSION) (convert-expression (second exp))
+    :IRI [exp]
+    :CLASS_EXPRESSION (mapcat convert-expression (rest exp))
+    :SOME (restriction->nquads exp (owl> "someValuesFrom"))
+    :ONLY (restriction->nquads exp (owl> "allValuesFrom"))
+    :CONJUNCTION (combination->nquads exp (rdf> "intersectionOf"))
+    :DISJUNCTION (combination->nquads exp (rdf> "unionOf"))
+    :NEGATION (negation->nquads exp)
+    (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp)))
 
-(defn expression->nquads
-  [id env exp]
-  (filter #(= 4 (count %)) (convert-expression id env exp)))
+(defmethod nquads/object->nquads manchester-iri
+  [graph format object]
+  (->> object
+       convert-expression
+       (filter #(= 3 (count %)))
+       (map #(concat [graph] % ["LINK"]))
+       ((fn [xs] [(second (first xs)) xs]))))

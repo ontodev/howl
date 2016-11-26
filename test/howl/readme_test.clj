@@ -21,8 +21,16 @@
    :labels
    {"comment"
     {:iri "http://www.w3.org/2000/01/rdf-schema#comment"}
+    "foo"
+    {:iri "http://example.com/foo"}
+    "has part"
+    {:iri "http://purl.obolibrary.org/obo/BFO_0000050"}
     "Manchester"
     {:iri "http://www.w3.org/TR/owl2-manchester-syntax/"}
+    "subclass of"
+    {:iri "http://www.w3.org/2000/01/rdf-schema#subClassOf"
+     :datatype "LINK"
+     :format "http://www.w3.org/TR/owl2-manchester-syntax/"}
     "type"
     {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
      :datatype "LINK"

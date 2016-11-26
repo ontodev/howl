@@ -639,39 +639,56 @@ HOWL files can also contain OWL class expressions in the version of Manchester s
 
 This expression block:
 
-    rdfs:subClassOf:>> 'has part' some foo
+    subclass of: 'has part' some foo
 
 is parsed into this JSON object:
 
-    TODO
-    {"file-name": "example.howl",
-     "line-number": 1,
-     "string": "rdfs:subClassOf:>> 'has part' some foo\n",
-     "block-type": "EXPRESSION_BLOCK",
-     "parse": ["EXPRESSION_BLOCK"
-               ["PREDICATE" ["PREFIXED_NAME" "rdfs" ":" "subClassOf"]]
-               ["COLON_ARROWS" "" ":>>" " "]
-               ["MN_CLASS_EXPRESSION"
-                ["MN_SOME"
-                 ["MN_OBJECT_PROPERTY_EXPRESSION"
-                  ["MN_NAME" ["MN_QUOTED_LABEL" "'" "has part" "'"]]]
-                 ["MN_SPACE" " "]
-                 "some"
-                 ["MN_SPACE" " "]
-                 ["MN_CLASS_EXPRESSION"
-                  ["MN_NAME" ["MN_LABEL" "foo"]]]]]
-               ["EOL" "\n"]],
-     "predicate": ["PREFIXED_NAME" "rdfs" ":" "subClassOf"],
-     "expression": ["MN_CLASS_EXPRESSION"
-                    ["MN_SOME"
-                     ["MN_OBJECT_PROPERTY_EXPRESSION"
-                      ["MN_NAME" ["MN_QUOTED_LABEL" "'" "has part" "'"]]]
-                     ["MN_SPACE" " "]
-                     "some"
-                     ["MN_SPACE" " "]
-                     ["MN_CLASS_EXPRESSION"
-                      ["MN_NAME" ["MN_LABEL" "foo"]]]]],
-     "eol": "\n"}
+    {"block-type": "STATEMENT_BLOCK",
+     "source": "example.howl",
+     "line": 1,
+     "string": "subclass of: 'has part' some foo\n",
+     "parse-tree":
+     ["STATEMENT_BLOCK",
+      ["ARROWS", "", ""],
+      ["LABEL", "subclass of"]
+      ["DATATYPE"],
+      ["COLON", "", ":", " "],
+      ["MANCHESTER_EXPRESSION",
+       ["CLASS_EXPRESSION",
+        ["SOME",
+         ["OBJECT_PROPERTY_EXPRESSION",
+          ["LABEL", "'", "has part", "'"]],
+         " ", "some", " ",
+         ["CLASS_EXPRESSION",
+          ["LABEL", "", "foo", ""]]]]]],
+     "leading-whitespace": "",
+     "trailing-whitespace": "\n",
+     "arrows": "",
+     "predicate-name": ["LABEL", "subclass of"],
+     "format-name": null,
+     "datatype-name": null,
+     "content":
+     ["MANCHESTER_EXPRESSION",
+      ["CLASS_EXPRESSION",
+       ["SOME",
+        ["OBJECT_PROPERTY_EXPRESSION",
+         ["LABEL", "'", "has part", "'"]],
+        " ", "some", " ",
+        ["CLASS_EXPRESSION",
+         ["LABEL", "", "foo", ""]]]]],
+     "graph": "http://example.com/current-graph",
+     "subject": "http://example.com/current-subject",
+     "predicate": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+     "object":
+     ["MANCHESTER_EXPRESSION",
+      ["CLASS_EXPRESSION",
+       ["SOME",
+        ["OBJECT_PROPERTY_EXPRESSION",
+         ["IRI", "http://purl.obolibrary.org/obo/BFO_0000050"]],
+        ["CLASS_EXPRESSION",
+         ["IRI", "http://example.com/foo"]]]]],
+     "datatype": "LINK",
+     "format": "http://www.w3.org/TR/owl2-manchester-syntax/"}
 
 So these HOWL blocks:
 
