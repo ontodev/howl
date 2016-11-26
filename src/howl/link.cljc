@@ -78,6 +78,7 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
   [{:keys [base] :or {base "file:///howl-unspecified-base/"}} iri]
   (try
     (check-iri iri)
+    iri
     (catch Exception e
       (str (url base iri)))))
 
