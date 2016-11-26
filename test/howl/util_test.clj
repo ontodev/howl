@@ -54,28 +54,3 @@
     (is (not (util/absolute-uri-string? "/foo/bar")))
     (is (not (util/absolute-uri-string? "baz")))
     (is (not (util/absolute-uri-string? "../blarg")))))
-
-(defspec fresh-blank!-returns-a-blank-name
-  (prop/for-all
-   [init gen/int]
-   (util/blank-name? (util/fresh-blank! (atom init)))))
-
-(defspec fresh-blank!-doesnt-return-the-same-name-twice
-  (prop/for-all
-   [init gen/int]
-   (let [atm (atom init)
-         size 10
-         blanks (take size (repeatedly #(util/fresh-blank! atm)))]
-     (= (count blanks) (count (set blanks))))))
-
-(deftest test-fresh-blank!
-  (testing "fresh-blank! increments the given atomic counter"
-    (is (let [init 0
-              atm (atom init)]
-          (util/fresh-blank! atm)
-          (= @atm (inc init))))))
-
-(defspec blank-name?-returns-true-for-strings-starting-with-underscore-colon
-  (prop/for-all
-   [base gen/string]
-   (util/blank-name? (str "_:" base))))

@@ -6,7 +6,7 @@
        [[goog.string]
         [goog.string.format]]))
   #?(:clj
-      (:refer-clojure :exclude [format])))
+     (:refer-clojure :exclude [format])))
 
 (def format
   #?(:clj #'clojure.core/format
@@ -41,19 +41,9 @@
    and returns true if it represents an absolute uri (false otherwise)"
   (not (not (re-find #"(?i)^(?:[a-z]+:)?//" s))))
 
-(defn fresh-blank! [atom]
-  (swap! atom inc)
-  (str "_:b" @atom))
-
-(defn blank-name?
-  "Given a string, returns true if it represents a blank name in RDF syntax."
-  [str]
-  (starts-with? str "_:"))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; General formatting shortcuts
 (defn <> [s] (str "<" s ">"))
-(defn <>> [s] (if (blank-name? s) s (<> s)))
 
 (def owl "http://www.w3.org/2002/07/owl#")
 (defn owl? [iri] (starts-with? owl iri))
