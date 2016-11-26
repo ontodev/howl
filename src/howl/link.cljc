@@ -2,7 +2,6 @@
   "Tools for working with IRIs, prefixed names, labels, and datatypes."
   (:require [clojure.string :as string]
             [instaparse.core :as insta]
-            [cemerick.url :refer [url]]
             [howl.util :as util]))
 
 ;; ## Links
@@ -97,17 +96,11 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
         [(assoc coll iri b) b]))
     [coll iri]))
 
-(defn check-iri
-  [iri]
-  (str (url iri)))
-
 (defn resolve-iri
   [{:keys [base] :or {base "file:///howl-unspecified-base/"}} iri]
-  (try
-    (check-iri iri)
+  (if (util/absolute-uri-string? iri)
     iri
-    (catch Exception e
-      (str (url base iri)))))
+    (str base iri)))
 
 (defn iriref->iri
   [env [_ _ iri _]]

@@ -73,7 +73,6 @@ ARROWS      = #'>*' #'\\s*'"
 
 (defmethod parse->block :PREFIX_BLOCK
   [[_ _ _ [_ prefix] _ [_ _ iri _]]]
-  (link/check-iri iri)
   {:prefix prefix :iri iri})
 
 (defn datatype-format->parse
