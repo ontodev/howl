@@ -16,7 +16,7 @@
                  [org.clojure/test.check "0.9.0"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]
-            [lein-cljfmt "0.5.3"]]
+            [lein-cljfmt "0.5.6"]]
   :main howl.cli
   :aot [howl.cli]
   :manifest {"Implementation-Version" ~project-version}
