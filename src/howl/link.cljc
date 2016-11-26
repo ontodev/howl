@@ -104,18 +104,16 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
   [env parse]
   (case (first parse)
     :IRIREF        (iriref->iri env parse)
-    :PREFIXED_NAME (prefixed-name->iri env parse)))
-    ; TODO: catch error
-
+    :PREFIXED_NAME (prefixed-name->iri env parse)
+    (util/throw-exception "problem with id->iri:" parse)))
 
 (defn name->iri
   [env parse]
   (case (first parse)
     :IRIREF        (iriref->iri env parse)
     :PREFIXED_NAME (prefixed-name->iri env parse)
-    :LABEL         (label->iri env parse)))
-    ; TODO: catch error
-
+    :LABEL         (label->iri env parse)
+    (util/throw-exception "problem with name->iri:" parse)))
 
 (defn name->label
   "Given a name parse, return a label string
