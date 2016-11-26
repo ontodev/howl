@@ -83,6 +83,26 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        :LANGUAGE_LITERAL (str "@" (get-in result [5 1 4 2]))
        :PLAIN_LITERAL    "PLAIN")]))
 
+; ## Blank Nodes
+;
+; HOWL uses random blank nodes,
+; but sometimes we want them to be predictable.
+
+(defn sequential-blank-nodes
+  "Given a sequence of NQuads,
+   return a sequence of NQuads with sequential blank nodes."
+  [nquads]
+  (let [counter (atom 0)]
+    (->> nquads
+         (reduce
+          (fn [coll [g s p o d]]
+            (let [[coll s] (link/replace-blank coll s "LINK")
+                  [coll o] (link/replace-blank coll o d)]
+              (update-in coll [:nquads] conj [g s p o d])))
+          {:counter counter
+           :nquads []})
+         :nquads)))
+
 ; ## NQuads to Strings
 ;
 ; To convert an Nquad vector back to an NQuad string,
@@ -90,7 +110,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 
 (defn subject->string
   [subject]
-  (if (util/starts-with? subject "_:")
+  (if (link/blank? subject)
     subject
     (str "<" subject ">")))
 
@@ -226,7 +246,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
           vals
           (apply concat)
           (map :object)
-          (filter #(util/starts-with? % "_:"))
+          (filter link/blank?)
           set
           (clojure.set/union spoilers)))
    #{}
@@ -255,7 +275,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
    into a single HOWL statement block."
   [subjects spoilers subject predicate-map]
   (and
-   (util/starts-with? subject "_:")
+   (link/blank? subject)
    (not (contains? spoilers subject))
    (= 5 (count predicate-map))
    (->> predicate-map vals (apply concat) count (= 5))
@@ -421,4 +441,5 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        (mapcat (partial apply process-graph))
        (map (partial update-format env))
        (map (partial core/block-iris->names env))
+       (map (partial update-content env))
        (map (partial update-content env))))

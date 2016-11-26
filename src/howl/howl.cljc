@@ -214,7 +214,7 @@ ARROWS      = #'>*' #'\\s*'"
     block
     (assoc
      block
-     :subject (link/new-blank-node)
+     :subject (link/random-blank-node)
      :annotation-target
      (get statement-stack (dec (count arrows))))))
 

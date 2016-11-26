@@ -17,13 +17,13 @@
 
 (defn compare-howl-nquads
   [context-path howl-path nquads-path]
-  (reset! link/blank-node-counter 0)
   (testing (string/join " " [context-path howl-path nquads-path])
-    (let [context (when context-path (slurp context-path))
+    (let [env     {:options {:sequential-blank-nodes true}}
+          context (when context-path (slurp context-path))
           howl    (slurp howl-path)
           nquads  (slurp nquads-path)]
-      (is (= nquads (howl-to-nquads context howl)))
-      (is (= howl (nquads-to-howl (howl-to-environment context) nquads))))))
+      (is (= nquads (howl-to-nquads env context howl)))
+      (is (= howl (nquads-to-howl env (howl-to-environment context) nquads))))))
 
 (deftest test-howl-to-nquads
   (compare-howl-nquads
@@ -45,7 +45,6 @@
 
 (defn round-trip
   [context-path howl-path]
-  (reset! link/blank-node-counter 0)
   (testing (string/join " " [context-path howl-path])
     (let [context (when context-path (slurp context-path))
           howl    (slurp howl-path)

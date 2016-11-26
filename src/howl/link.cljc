@@ -64,11 +64,38 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
          (insta/transform link-transformations)
          second)))
 
-(def blank-node-counter (atom 0))
+(defn blank?
+  [iri]
+  (and (string? iri)
+       (util/starts-with? iri "_:")))
 
-(defn new-blank-node
+(defn random-blank-node
   []
-  (str "_:b" (swap! blank-node-counter inc)))
+  (str
+   "_:"
+   #?(:clj (java.util.UUID/randomUUID)
+      :cljs (random-uuid))))
+
+; ## Blank Nodes
+;
+; HOWL uses random blank nodes,
+; but sometimes we want them to be predictable.
+; This function maps blank nodes IRIs to new sequential nodes.
+
+(defn replace-blank
+  "Given a map from blank-node-before to blank-node-after
+   with a :counter atom,
+   and an IRI and datatype,
+   if the IRI is a blank node then try to map it,
+   creating a mapping to a new sequential blank node if required.
+   Return an updated mapping and the replaced IRI."
+  [{:keys [counter] :as coll} iri datatype]
+  (if (and (= "LINK" datatype) (blank? iri))
+    (if (find coll iri)
+      [coll (get coll iri)]
+      (let [b (str "_:b" (swap! counter inc))]
+        [(assoc coll iri b) b]))
+    [coll iri]))
 
 (defn check-iri
   [iri]

@@ -19,3 +19,11 @@
       "<s> <p> \"o\"^^<d> <g> ." ["g" "s" "p" "o" "d"]
       "_:s <p> \"o\"@en <g> ."   ["g" "_:s" "p" "o" "@en"]
       "<s> <p> _:o <g> ."        ["g" "s" "p" "_:o" "LINK"])))
+
+(deftest test-sequential-blank-nodes
+  (testing "sequential"
+    (is (= (sequential-blank-nodes
+            [["g" "_:bar" "p" "_:b1" "LINK"]
+             ["g" "_:bar" "p" "_:literal" "PLAIN"]])
+           [["g" "_:b1" "p" "_:b2" "LINK"]
+            ["g" "_:b1" "p" "_:literal" "PLAIN"]]))))

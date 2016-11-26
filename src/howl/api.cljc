@@ -61,12 +61,14 @@
   "Given one or more environments or HOWL strings,
    return a string of N-Quads."
   [& args]
-  (->> (apply parse-howl-strings args)
-       :blocks
-       (mapcat nquads/block->nquads)
-       (map nquads/nquad->nquad-string)
-       (string/join \newline)
-       append-newline))
+  (let [env (apply parse-howl-strings args)
+        nquads (mapcat nquads/block->nquads (:blocks env))]
+    (->> (if (get-in env [:options :sequential-blank-nodes])
+           (nquads/sequential-blank-nodes nquads)
+           nquads)
+         (map nquads/nquad->nquad-string)
+         (string/join \newline)
+         append-newline)))
 
 (defn ^:export nquads-to-howl
   "Given one or more environments or NQuads strings,

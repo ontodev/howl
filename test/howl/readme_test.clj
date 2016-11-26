@@ -35,14 +35,20 @@
      "http://example.com/previous-object"
      "http://example.com/previous-datatype"]]})
 
+(defn fix
+  "Fix a block to make it read for comparison."
+  [{:keys [subject] :as block}]
+  (if (link/blank? subject)
+    (assoc block :subject "_:b1")
+    block))
+
 (defn run-test
   "Given a block map, process the :block value,
    and check that the result is the same as the original block."
   [block]
   (try
     (testing block
-      (reset! link/blank-node-counter 0)
-      (is (= (howl/process-block env (:string block))
+      (is (= (fix (howl/process-block env (:string block)))
              block)))
     (catch Exception e
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
