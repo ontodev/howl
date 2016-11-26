@@ -146,6 +146,20 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
    [nil subject annProperty property "LINK"]
    [nil subject annTarget (format-object target) target-datatype]])
 
+(defmulti object->nquads
+  "Given a format IRI and the :object of a block,
+   return the pair of the object for this NQuad
+   and a sequence of zero or more NQuad vectors."
+  (fn [graph format object] format))
+
+(defmethod object->nquads :default
+  [graph format object]
+  [(format-object object) []])
+
+(defmethod object->nquads "LINK"
+  [graph format object]
+  [object []])
+
 (defmulti block->nquads
   "Given a (fully expanded) block,
    return a sequence of zero or more NQuad vectors."
@@ -156,10 +170,13 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   [])
 
 (defmethod block->nquads :STATEMENT_BLOCK
-  [{:keys [annotation-target graph subject predicate object datatype]}]
-  (conj
-   (when annotation-target (annotation-nquads subject annotation-target))
-   [graph subject predicate (format-object object) datatype]))
+  [{:keys [annotation-target graph subject predicate object datatype format]}]
+  (let [[object nquads] (object->nquads graph format object)]
+    (vec
+     (concat
+      (when annotation-target (annotation-nquads subject annotation-target))
+      [[graph subject predicate object datatype]]
+      nquads))))
 
 ; ## Nquads to Blocks
 ;
@@ -403,5 +420,5 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        (make-graph-map source)
        (mapcat (partial apply process-graph))
        (map (partial update-format env))
-       (map (partial core/iris->names env))
+       (map (partial core/block-iris->names env))
        (map (partial update-content env))))

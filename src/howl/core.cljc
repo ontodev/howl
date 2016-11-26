@@ -63,29 +63,55 @@
    (conj (vec (take (count arrows) statement-stack))
          [subject predicate object datatype])))
 
+;; ## Content
+
+(defmulti content-names->iris
+  ""
+  (fn [env format content] format))
+
+(defmethod content-names->iris :default
+  [env format content]
+  content)
+
+(defmethod content-names->iris "LINK"
+  [env format content]
+  (link/name->iri env content))
+
+(defmulti content-iris->names
+  ""
+  (fn [env format object] format))
+
+(defmethod content-iris->names :default
+  [env format object]
+  object)
+
+(defmethod content-iris->names "LINK"
+  [env format object]
+  (link/iri->name env object))
+
 ;; ## Blocks
 
-(defmulti names->iris
+(defmulti block-names->iris
   "Given an environment and a block,
    find IRIs for all the names,
    and return the updated block."
   (fn [env block] (:block-type block)))
 
-(defmulti iris->names
+(defmulti block-iris->names
   "Given an environment and a block,
    find names for all the iris,
    and return the updated block."
   (fn [env block] (:block-type block)))
 
-(defmethod names->iris :default
+(defmethod block-names->iris :default
   [env block]
   block)
 
-(defmethod iris->names :default
+(defmethod block-iris->names :default
   [env block]
   block)
 
-(defmethod names->iris :LABEL_BLOCK
+(defmethod block-names->iris :LABEL_BLOCK
   [env {:keys [datatype-name format-name target-name] :as block}]
   (assoc
    block
@@ -93,50 +119,54 @@
    :format (link/unpack-format env format-name)
    :iri (link/id->iri env target-name)))
 
-(defmethod iris->names :LABEL_BLOCK
+(defmethod block-iris->names :LABEL_BLOCK
   [env {:keys [datatype iri] :as block}]
   (assoc
    block
    :datatype-name (link/iri->name env datatype)
    :target-name (link/iri->name env iri)))
 
-(defmethod names->iris :GRAPH_BLOCK
+(defmethod block-names->iris :GRAPH_BLOCK
   [env {:keys [graph-name] :as block}]
   (assoc block :graph (when graph-name (link/name->iri env graph-name))))
 
-(defmethod iris->names :GRAPH_BLOCK
+(defmethod block-iris->names :GRAPH_BLOCK
   [env {:keys [graph] :as block}]
   (assoc block :graph-name (when graph (link/iri->name env graph))))
 
-(defmethod names->iris :SUBJECT_BLOCK
+(defmethod block-names->iris :SUBJECT_BLOCK
   [env {:keys [subject-name] :as block}]
   (assoc block :subject (link/name->iri env subject-name)))
 
-(defmethod iris->names :SUBJECT_BLOCK
+(defmethod block-iris->names :SUBJECT_BLOCK
   [env {:keys [subject] :as block}]
   (assoc block :subject-name (link/iri->name env subject)))
 
-(defmethod names->iris :STATEMENT_BLOCK
+(defmethod block-names->iris :STATEMENT_BLOCK
   [{:keys [graph subject] :as env}
-   {:keys [parse-tree predicate-name datatype-name format-name] :as block}]
-  (let [predicate-label (link/name->label predicate-name)]
+   {:keys [predicate-name datatype-name format-name content]
+    :as block}]
+  (let [predicate-label (link/name->label predicate-name)
+        datatype
+        (or (when datatype-name (link/unpack-datatype env datatype-name))
+            (when predicate-label
+              (get-in env [:labels predicate-label :datatype])))
+        format
+        (or (when format-name (link/unpack-format env format-name))
+            (when predicate-label
+              (get-in env [:labels predicate-label :format]))
+            (when (= "LINK" datatype) "LINK"))]
     (assoc
      block
      :graph graph
      :subject subject ; TODO: handle missing subject
      :predicate (link/name->iri env predicate-name)
-     :datatype
-     (or (when datatype-name (link/unpack-datatype env datatype-name))
-         (when predicate-label
-           (get-in env [:labels predicate-label :datatype])))
-     :format
-     (or (when format-name (link/unpack-format env format-name))
-         (when predicate-label
-           (get-in env [:labels predicate-label :format]))
-         (when (= "LINK" datatype-name) "LINK")))))
+     :datatype datatype
+     :format format
+     :object (when content (content-names->iris env format content)))))
 
-(defmethod iris->names :STATEMENT_BLOCK
-  [env {:keys [predicate datatype format] :as block}]
+(defmethod block-iris->names :STATEMENT_BLOCK
+  [env {:keys [predicate datatype format object] :as block}]
   (let [predicate-label (get-in env [:iri-label predicate])]
     (assoc
      block
@@ -148,4 +178,5 @@
      :format-name
      (let [default (get-in env [:labels predicate-label :format])]
        (when (and (not= format default) (not= "LINK" datatype format))
-         (link/iri->name env format))))))
+         (link/iri->name env format)))
+     :content (when object (content-iris->names env format object)))))

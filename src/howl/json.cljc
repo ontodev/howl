@@ -42,7 +42,7 @@
     "labels"     (keywordize-child-maps value)
     ("parse-tree" "graph-name" "subject-name" "predicate-name"
                   "datatype-name" "format-name" "target-name"
-                  "content")
+                  "content" "object")
     (json->parse value)
     value))
 

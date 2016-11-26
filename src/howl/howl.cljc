@@ -171,38 +171,39 @@ ARROWS      = #'>*' #'\\s*'"
    :predicate-name predicate-name
    :datatype-name datatype-name
    :format-name format-name
-   :content content})
+   :unparsed-content content})
 
 ;; ## Content
 
-(defmulti content->parse
+(defmulti parse-content
   "Given an environment,
    a format IRI string (nil when the object is a literal)
-   and a content string,
-   return the object and the parse tree for the content."
-  (fn [env format content] format))
+   and an unparsed content string,
+   return the content as a parse tree."
+  (fn [env format unparsed] format))
 
 ; The default behaviour is to remove indentation.
 
-(defmethod content->parse :default
-  [env format content]
-  (let [unindented (string/replace content #"(?m)^  |^ " "")]
-    [unindented unindented]))
+(defmethod parse-content :default
+  [env format unparsed]
+  (string/replace unparsed #"(?m)^  |^ " ""))
 
-(defmethod content->parse "LINK"
-  [env format content]
-  (let [result (link/parse-link content)]
-    [(link/name->iri env result) result]))
+(defmethod parse-content "LINK"
+  [env format unparsed]
+  (link/parse-link unparsed))
 
 (defn update-content
-  [env {:keys [parse-tree format content] :as block}]
-  (if content
-    (let [[object content] (content->parse env format content)]
+  "Given an environment and a block with resolved :format IRI,
+   replace :unparsed-content with parsed :content and :object,
+   and updated :parse-tree."
+  [env {:keys [parse-tree format unparsed-content] :as block}]
+  (if unparsed-content
+    (let [content (parse-content env format unparsed-content)]
       (assoc
-       block
+       (dissoc block :unparsed-content)
        :parse-tree (assoc parse-tree 5 content) ; splice content into parse-tree
        :content content
-       :object object))
+       :object (core/content-names->iris env format content)))
     block))
 
 (defn update-annotation
@@ -254,7 +255,7 @@ ARROWS      = #'>*' #'\\s*'"
            :parse-tree parse-tree
            :leading-whitespace lws
            :trailing-whitespace tws})
-         (core/names->iris env)
+         (core/block-names->iris env)
          (update-content env)
          (update-annotation env))))
 
