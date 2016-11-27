@@ -40,10 +40,11 @@
   (case key
     "block-type" (keyword value)
     "labels"     (keywordize-child-maps value)
-    ("parse-tree" "graph-name" "subject-name" "predicate-name"
-                  "datatype-name" "format-name" "target-name"
+    ("parse-tree" "graph-name" "subject-name" "predicate-name" "target-name"
                   "content" "object")
     (json->parse value)
+    "datatype-names"
+    (vec (map json->parse value))
     value))
 
 (defn json->block

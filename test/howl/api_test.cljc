@@ -5,6 +5,7 @@
             [howl.link :as link]
             [howl.api :refer :all]))
 
+;(println (howl-to-nquads (slurp "test/empty-context/test1.howl")))
 ;(println (nquads-to-howl (slurp "test/nquads/test1.nq")))
 ;(println
 ; (nquads-to-howl

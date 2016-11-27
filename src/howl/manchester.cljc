@@ -50,14 +50,14 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [mn-tree]
   (->> mn-tree flatten (filter string?) (apply str)))
 
-(defmethod howl/parse-content manchester-iri
-  [env format unparsed]
+(defmethod howl/parse-content ["LINK" manchester-iri]
+  [env datatypes unparsed]
   [:MANCHESTER_EXPRESSION (parse-manchester unparsed)])
 
 ; Walk the tree, replacing LABELs with IRIs, and removing other strings.
 
-(defmethod core/content-names->iris manchester-iri
-  [env format content]
+(defmethod core/content-names->iris ["LINK" manchester-iri]
+  [env datatypes content]
   (postwalk
    (fn [item]
      (cond
@@ -142,8 +142,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     :NEGATION (negation->nquads exp)
     (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp)))
 
-(defmethod nquads/object->nquads manchester-iri
-  [graph format object]
+(defmethod nquads/object->nquads ["LINK" manchester-iri]
+  [graph datatypes object]
   (->> object
        convert-expression
        (filter #(= 3 (count %)))

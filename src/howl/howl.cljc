@@ -23,11 +23,11 @@
 
 COMMENT_BLOCK   = #'#+.*'
 PREFIX_BLOCK    = 'PREFIX' SPACES PREFIX COLON IRIREF
-LABEL_BLOCK     = 'LABEL' SPACES LABEL DATATYPE COLON IRI
+LABEL_BLOCK     = 'LABEL' SPACES LABEL DATATYPES COLON IRI
 BASE_BLOCK      = 'BASE' SPACES IRIREF
 GRAPH_BLOCK     = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?
 SUBJECT_BLOCK   = NAME_OR_BLANK
-STATEMENT_BLOCK = ARROWS NAME DATATYPE COLON #'(\n|.)*.+'
+STATEMENT_BLOCK = ARROWS NAME DATATYPES COLON #'(\n|.)*.+'
 
 WHITESPACE  = #'(\\r|\\n|\\s)*'
 INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
@@ -75,31 +75,20 @@ ARROWS      = #'>*' #'\\s*'"
   [[_ _ _ [_ prefix] _ [_ _ iri _]]]
   {:prefix prefix :iri iri})
 
-(defn datatype-format->parse
-  [datatype-name format-name]
-  (cond
-    (and datatype-name format-name)
-    [:DATATYPE " [" datatype-name "|" format-name "]"]
-    datatype-name
-    [:DATATYPE " [" datatype-name "]"]
-    :else
-    [:DATATYPE]))
-
 (defmethod block->parse :LABEL_BLOCK
-  [{:keys [label datatype-name format-name target-name] :as block}]
+  [{:keys [label datatype-names target-name] :as block}]
   [:LABEL_BLOCK
    "LABEL"
    [:SPACES " "]
    [:LABEL "type"]
-   (datatype-format->parse datatype-name format-name)
+   (link/datatype-names->parse datatype-names)
    [:COLON "" ":" " "]
    target-name])
 
 (defmethod parse->block :LABEL_BLOCK
-  [[_ _ _ [_ label] [_ _ datatype-name _ format-name _] _ target]]
+  [[_ _ _ [_ label] datatype-parse _ target]]
   {:label label
-   :datatype-name datatype-name
-   :format-name format-name
+   :datatype-names (link/parse->datatype-names datatype-parse)
    :target-name target})
 
 (defmethod block->parse :BASE_BLOCK
@@ -154,55 +143,67 @@ ARROWS      = #'>*' #'\\s*'"
          (string/join \newline))))
 
 (defmethod block->parse :STATEMENT_BLOCK
-  [{:keys [arrows predicate-name datatype-name format-name content] :as block}]
+  [{:keys [arrows predicate-name use-default-datatypes datatype-names content]
+    :as block}]
   [:STATEMENT_BLOCK
    (if (string/blank? arrows)
      [:ARROWS "" ""]
      [:ARROWS arrows " "])
    predicate-name
-   (datatype-format->parse datatype-name format-name)
+   (if use-default-datatypes
+     [:DATATYPES]
+     (link/datatype-names->parse datatype-names))
    [:COLON "" ":" " "]
-   (if (= "LINK" datatype-name) content (indent content))])
+   (if (= "LINK" (first datatype-names)) content (indent content))])
 
 (defmethod parse->block :STATEMENT_BLOCK
-  [[_ [_ arrows _] predicate-name [_ _ datatype-name _ format-name _] _ content]]
+  [[_ [_ arrows _] predicate-name datatype-parse _ content]]
   {:arrows arrows
    :predicate-name predicate-name
-   :datatype-name datatype-name
-   :format-name format-name
+   :use-default-datatypes (= datatype-parse [:DATATYPES])
+   :datatype-names (link/parse->datatype-names datatype-parse)
    :unparsed-content content})
 
 ;; ## Content
 
 (defmulti parse-content
   "Given an environment,
-   a format IRI string (nil when the object is a literal)
+   a sequence of datatypes (or empty when the object is a literal),
    and an unparsed content string,
    return the content as a parse tree."
-  (fn [env format unparsed] format))
+  (fn [env datatypes unparsed] (vec (take 2 datatypes))))
 
 ; The default behaviour is to remove indentation.
 
 (defmethod parse-content :default
-  [env format unparsed]
+  [env datatypes unparsed]
   (string/replace unparsed #"(?m)^  |^ " ""))
 
-(defmethod parse-content "LINK"
-  [env format unparsed]
+(defmethod parse-content ["LINK"]
+  [env datatypes unparsed]
   (link/parse-link unparsed))
 
 (defn update-content
-  "Given an environment and a block with resolved :format IRI,
-   replace :unparsed-content with parsed :content and :object,
-   and updated :parse-tree."
-  [env {:keys [parse-tree format unparsed-content] :as block}]
+  "Given an environment and a block with resolved :datatypes,
+   decide whether to use the default datatypes or not,
+   then update the block."
+  [env
+   {:keys [parse-tree predicate-name unparsed-content
+           use-default-datatypes datatypes]
+    :as block}]
   (if unparsed-content
-    (let [content (parse-content env format unparsed-content)]
+    (let [predicate-label (link/name->label predicate-name)
+          predicate-datatypes
+          (get-in env [:labels predicate-label :datatypes] ["PLAIN"])
+          datatypes (if use-default-datatypes predicate-datatypes datatypes)
+          content (parse-content env datatypes unparsed-content)]
       (assoc
        (dissoc block :unparsed-content)
+       :datatypes datatypes
+       :datatype-names (->> datatypes (map (partial link/iri->name env)) vec)
        :parse-tree (assoc parse-tree 5 content) ; splice content into parse-tree
        :content content
-       :object (core/content-names->iris env format content)))
+       :object (core/content-names->iris env datatypes content)))
     block))
 
 (defn update-annotation

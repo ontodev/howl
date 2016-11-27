@@ -3,7 +3,8 @@
             [clojure.string :as string]
             [howl.link :as link]
             [howl.howl :as howl]
-            [howl.json :as json]))
+            [howl.json :as json]
+            howl.manchester))
 
 ;; Parse the README.md file
 ;; looking for JSON blocks,
@@ -29,12 +30,14 @@
     {:iri "http://www.w3.org/TR/owl2-manchester-syntax/"}
     "subclass of"
     {:iri "http://www.w3.org/2000/01/rdf-schema#subClassOf"
-     :datatype "LINK"
-     :format "http://www.w3.org/TR/owl2-manchester-syntax/"}
+     :datatypes ["LINK" "http://www.w3.org/TR/owl2-manchester-syntax/"]}
     "type"
     {:iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-     :datatype "LINK"
-     :format "LINK"}}
+     :datatypes ["LINK"]}}
+   :iri-label
+   {"http://www.w3.org/TR/owl2-manchester-syntax/" "Manchester"}
+   :iri-prefix
+   {"http://www.w3.org/2001/XMLSchema#" "xsd"}
    :graph "http://example.com/current-graph"
    :subject "http://example.com/current-subject"
    :statement-stack
@@ -72,7 +75,7 @@
        (map (fn [lines] (map #(string/replace % #"^    " "") lines)))
        (map (fn [lines] (str (string/join "\n" lines) "\n")))
        (filter #(.startsWith % "{"))
-       ;(take 2)
+       ;(take 5)
        (map json/json->block)
        (map run-test)
        doall

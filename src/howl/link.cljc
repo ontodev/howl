@@ -36,10 +36,9 @@ KEYWORD = 'BASE' | 'GRAPH' | 'PREFIX' | 'LABEL' | 'DEFAULT' | 'LINK' | 'PLAIN'
 <WORD>  = #'[^|\\s]*[^|:\\]\\s]'
 SPACES  = #' +'
 
-DATATYPE        = '' | #' +\\['
-                  ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME)
-                  ('|' ('PLAIN' | 'LINK' | NAME) )?
-                  ']'
+LINK_OR_DATATYPES = LINK | DATATYPES
+DATATYPES = '' | #' +\\[ *' DATATYPE (#' +/ +' DATATYPE)* #' *]'
+<DATATYPE> = ('PLAIN' | 'LINK' | LANGUAGE_TAG | NAME)
 LANGUAGE_TAG    = '@' LANGUAGE_CODE
 <LANGUAGE_CODE> = #'[a-zA-Z]+(-[a-zA-Z0-9]+)*'")
 
@@ -54,14 +53,34 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
 (def link-parser (insta/parser link-grammar))
 
 (defn parse-link
-  [content]
-  (let [result (link-parser content)]
+  [content & options]
+  (let [result (apply link-parser content options)]
     (when (insta/failure? result)
       (println result)
       (throw (Exception. "Link parser failure")))
     (->> result
          (insta/transform link-transformations)
          second)))
+
+(defn datatype-names->parse
+  "Given some datatype-names, return a parse vector."
+  [datatype-names]
+  (cond
+    (nil? (seq datatype-names))
+    [:DATATYPES]
+    :else
+    (concat
+     [:DATATYPES " [" (first datatype-names)]
+     (mapcat (fn [dt] [" / " dt]) (rest datatype-names))
+     ["]"])))
+
+(defn parse->datatype-names
+  "Given a datatype parse vector, return just the datatype-names."
+  [parse]
+  (->> parse
+       rest
+       (remove #(and (string? %) (re-matches #"( |\[|\]|/)*" %)))
+       vec))
 
 (defn blank?
   [iri]
@@ -162,7 +181,7 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
    or the (absolute) that was given IRI."
   [{:keys [base] :as env} iri]
   (cond
-    (= "PLAIN" iri) nil
+    (= "PLAIN" iri) "PLAIN"
 
     (= "LINK" iri) "LINK"
 
@@ -196,4 +215,5 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     (nil? format) nil
     (= "PLAIN" format) "PLAIN"
     (= "LINK" format) "LINK"
+    :else (name->iri env format)
     :else (name->iri env format)))

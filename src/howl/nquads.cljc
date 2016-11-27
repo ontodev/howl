@@ -170,14 +170,14 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   "Given a format IRI and the :object of a block,
    return the pair of the object for this NQuad
    and a sequence of zero or more NQuad vectors."
-  (fn [graph format object] format))
+  (fn [graph datatypes object] (vec (take 2 datatypes))))
 
 (defmethod object->nquads :default
-  [graph format object]
+  [graph datatypes object]
   [(format-object object) []])
 
-(defmethod object->nquads "LINK"
-  [graph format object]
+(defmethod object->nquads ["LINK"]
+  [graph datatypes object]
   [object []])
 
 (defmulti block->nquads
@@ -190,8 +190,9 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   [])
 
 (defmethod block->nquads :STATEMENT_BLOCK
-  [{:keys [annotation-target graph subject predicate object datatype format]}]
-  (let [[object nquads] (object->nquads graph format object)]
+  [{:keys [annotation-target graph subject predicate object datatypes]}]
+  (let [datatype (first datatypes)
+        [object nquads] (object->nquads graph datatypes object)]
     (vec
      (concat
       (when annotation-target (annotation-nquads subject annotation-target))
@@ -213,7 +214,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
    :subject subject
    :predicate predicate
    :object object
-   :datatype datatype})
+   :datatypes [datatype]})
 
 ; ### Annotations
 ;
@@ -315,8 +316,8 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
    return a sequence starting with
    the block with the :arrows key updated for the depth,
    and recursively including any annotations on that block."
-  [depth annotation-map {:keys [subject predicate object datatype] :as block}]
-  (let [annotations (get annotation-map [subject predicate object datatype])]
+  [depth annotation-map {:keys [subject predicate object datatypes] :as block}]
+  (let [annotations (get annotation-map [subject predicate object (first datatypes)])]
     (concat
      [(assoc block :arrows (apply str (repeat depth ">")))]
      (->> annotations
@@ -404,28 +405,30 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
           (remove #(contains? annotation-subjects (key %)))
           (mapcat (partial apply process-subject annotation-map graph))))))
 
-(defn update-format
+(defn update-datatypes
   "Given an environment and a block,
    try to update the :format."
-  [env {:keys [block-type predicate datatype] :as block}]
+  [env {:keys [block-type predicate datatypes] :as block}]
   (if (= :STATEMENT_BLOCK block-type)
-    (assoc
-     block
-     :format
-     (or (get-in env [:labels (get-in env [:iri-label predicate]) :format])
-         (when (= "LINK" datatype) "LINK")))
+    (let [predicate-label (get-in env [:iri-label predicate])
+          predicate-datatypes (get-in env [:labels predicate-label :datatypes] ["PLAIN"])
+          use-default-datatypes (= (first datatypes) (first predicate-datatypes))]
+      (assoc
+       block
+       :use-default-datatypes use-default-datatypes
+       :datatypes (if use-default-datatypes predicate-datatypes datatypes)))
     block))
 
 (defn update-content
   "Given an environment and a block,
-   if the block has a :format and :object,
+   if the block has a :datatypes and :object,
    update it with :content."
-  [env {:keys [block-type format object] :as block}]
+  [env {:keys [block-type datatypes object] :as block}]
   (if (= :STATEMENT_BLOCK block-type)
     (assoc
      block
      :content
-     (if (= "LINK" format)
+     (if (= "LINK" (first datatypes))
        (link/iri->name env object)
        (-> object
            (string/replace "\\n" "\n")
@@ -439,6 +442,6 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   (->> lines
        (make-graph-map source)
        (mapcat (partial apply process-graph))
-       (map (partial update-format env))
+       (map (partial update-datatypes env))
        (map (partial core/block-iris->names env))
        (map (partial update-content env))))
