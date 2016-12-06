@@ -1,6 +1,8 @@
-(ns howl.readme-test
+(ns howl.doc-test
   (:require [clojure.test :refer :all]
+            [clojure.java.io :as io]
             [clojure.string :as string]
+            [howl.util :as util]
             [howl.link :as link]
             [howl.howl :as howl]
             [howl.json :as json]
@@ -65,11 +67,11 @@
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
 
 ;; Find all indented JSON blocks in the README.
-(deftest test-readme-examples
-  (->> "README.md"
+(deftest test-design-examples
+  (->> "doc/design.md"
        slurp
        string/split-lines
-       (drop-while #(not (.startsWith % "## Syntax and Parsing")))
+       ;(drop-while #(not (.startsWith % "## Syntax and Parsing")))
        (partition-by #(.startsWith % "    "))
        (filter #(.startsWith (first %) "    ")) ; keep indented
        (map (fn [lines] (map #(string/replace % #"^    " "") lines)))
@@ -80,4 +82,17 @@
        (map run-test)
        doall
        ;(#(do (println "Running" (count %) "tests on README") %))
+       (apply = true)))
+
+(deftest test-happy-blocks
+  (->> "test/happy_blocks"
+       io/file
+       file-seq
+       (map #(.getPath %))
+       (filter string?)
+       (filter #(util/ends-with? % ".json"))
+       (map slurp)
+       (map json/json->block)
+       (map run-test)
+       doall
        (apply = true)))
