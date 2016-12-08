@@ -8,7 +8,7 @@
             [howl.json :as json]
             howl.manchester))
 
-;; Parse the README.md file
+;; Parse the doc/design.md file
 ;; looking for JSON blocks,
 ;; then test each block.
 
@@ -66,7 +66,7 @@
     (catch Exception e
       (throw (Exception. (str "Failed while parsing block: " (.getMessage e)))))))
 
-;; Find all indented JSON blocks in the README.
+;; Find all indented JSON blocks in the doc/design.md.
 (deftest test-design-examples
   (->> "doc/design.md"
        slurp
@@ -81,7 +81,6 @@
        (map json/json->block)
        (map run-test)
        doall
-       ;(#(do (println "Running" (count %) "tests on README") %))
        (apply = true)))
 
 (deftest test-happy-blocks

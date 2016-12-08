@@ -121,38 +121,32 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     iri
     (str base iri)))
 
-(defn iriref->iri
+(defmulti ->iri
+  "Given an environment and a parse tree,
+   returned the resolved, absolute IRI contained in it.
+   Only works on IRIREFs, PREFIXED_NAMEs and LABELs"
+  (fn [env parse-tree] (first parse-tree)))
+
+(defmethod ->iri :default
+  [env parse-tree]
+  (util/throw-exception "problem with ->iri:" parse-tree))
+
+(defmethod ->iri :IRIREF
   [env [_ _ iri _]]
   (resolve-iri env iri))
 
-(defn prefixed-name->iri
+(defmethod ->iri :PREFIXED_NAME
   [env [_ prefix _ local]]
   (when-not (get-in env [:prefix-iri prefix])
     (throw (Exception. (format "Could not find prefix '%s'." prefix))))
   (resolve-iri env (str (get-in env [:prefix-iri prefix]) local)))
 
-(defn label->iri
-  "Given a label, return an absolute IRI string."
+(defmethod ->iri :LABEL
   [env [_ label]]
   (when-not (get-in env [:labels label :iri])
     (throw (Exception. (format "Could not find label '%s'." label))))
   ; Should be absolute when assigned.
   (get-in env [:labels label :iri]))
-
-(defn id->iri
-  [env parse]
-  (case (first parse)
-    :IRIREF        (iriref->iri env parse)
-    :PREFIXED_NAME (prefixed-name->iri env parse)
-    (util/throw-exception "problem with id->iri:" parse)))
-
-(defn name->iri
-  [env parse]
-  (case (first parse)
-    :IRIREF        (iriref->iri env parse)
-    :PREFIXED_NAME (prefixed-name->iri env parse)
-    :LABEL         (label->iri env parse)
-    (util/throw-exception "problem with name->iri:" parse)))
 
 (defn name->label
   "Given a name parse, return a label string
@@ -207,7 +201,7 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     (= "PLAIN" datatype) "PLAIN"
     (= "LINK" datatype) "LINK"
     (= :LANGUAGE_TAG (first datatype)) (str "@" (last datatype))
-    :else (name->iri env datatype)))
+    :else (->iri env datatype)))
 
 (defn unpack-format
   [env format]
@@ -215,5 +209,4 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
     (nil? format) nil
     (= "PLAIN" format) "PLAIN"
     (= "LINK" format) "LINK"
-    :else (name->iri env format)
-    :else (name->iri env format)))
+    :else (->iri env format)))

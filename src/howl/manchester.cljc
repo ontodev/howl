@@ -62,7 +62,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
    (fn [item]
      (cond
        (and (vector? item) (= :LABEL (first item)))
-       [:IRI (link/name->iri env [:LABEL (nth item 2)])]
+       [:IRI (link/->iri env [:LABEL (nth item 2)])]
        (vector? item)
        (remove string? item)
        :else

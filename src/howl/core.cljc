@@ -75,7 +75,7 @@
 
 (defmethod content-names->iris ["LINK"]
   [env datatypes content]
-  (link/name->iri env content))
+  (link/->iri env content))
 
 (defmulti content-iris->names
   "Given an environment, a sequence of datatypes, and some object,
@@ -118,7 +118,7 @@
   (assoc
    block
    :datatypes (map (partial link/unpack-datatype env) datatype-names)
-   :iri (link/id->iri env target-name)))
+   :iri (link/->iri env target-name)))
 
 (defmethod block-iris->names :LABEL_BLOCK
   [env {:keys [datatypes iri] :as block}]
@@ -129,7 +129,7 @@
 
 (defmethod block-names->iris :GRAPH_BLOCK
   [env {:keys [graph-name] :as block}]
-  (assoc block :graph (when graph-name (link/name->iri env graph-name))))
+  (assoc block :graph (when graph-name (link/->iri env graph-name))))
 
 (defmethod block-iris->names :GRAPH_BLOCK
   [env {:keys [graph] :as block}]
@@ -137,7 +137,7 @@
 
 (defmethod block-names->iris :SUBJECT_BLOCK
   [env {:keys [subject-name] :as block}]
-  (assoc block :subject (link/name->iri env subject-name)))
+  (assoc block :subject (link/->iri env subject-name)))
 
 (defmethod block-iris->names :SUBJECT_BLOCK
   [env {:keys [subject] :as block}]
@@ -152,7 +152,7 @@
      block
      :graph graph
      :subject subject ; TODO: handle missing subject
-     :predicate (link/name->iri env predicate-name)
+     :predicate (link/->iri env predicate-name)
      :datatypes datatypes
      :object (when content (content-names->iris env datatypes content)))))
 
