@@ -138,13 +138,13 @@ LANGUAGE_TAG    = '@' LANGUAGE_CODE
 (defmethod ->iri :PREFIXED_NAME
   [env [_ prefix _ local]]
   (when-not (get-in env [:prefix-iri prefix])
-    (throw (Exception. (format "Could not find prefix '%s'." prefix))))
+    (util/throw-exception (format "Could not find prefix '%s'" prefix)))
   (resolve-iri env (str (get-in env [:prefix-iri prefix]) local)))
 
 (defmethod ->iri :LABEL
   [env [_ label]]
   (when-not (get-in env [:labels label :iri])
-    (throw (Exception. (format "Could not find label '%s'." label))))
+    (util/throw-exception (format "Could not find label '%s'." label)))
   ; Should be absolute when assigned.
   (get-in env [:labels label :iri]))
 
