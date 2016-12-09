@@ -5,6 +5,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [edn-ld.jena]
             [howl.core :as core]
+            [howl.howl :as howl]
             [howl.nquads :as nq])
   (:gen-class))
 
@@ -13,14 +14,14 @@
   (println msg)
   (System/exit status))
 
-;(defn parse-howl-file
-;  "Takes a filename, and optionally a starting environment, and parses that
-;   file under the given environment."
-;  ([filename] (parse-howl-file filename {}))
-;  ([filename env]
-;   (core/parse-lines
-;    (line-seq (clojure.java.io/reader filename))
-;    :starting-env env :source filename)))
+(defn parse-howl-file
+  "Takes a filename, and optionally a starting environment, and parses that
+  file under the given environment."
+  ([filename] (parse-howl-file filename {:source filename}))
+  ([filename env]
+   (howl/lines->blocks
+    (assoc env :source filename)
+    (line-seq (clojure.java.io/reader filename)))))
 
 ;(defn parse-rdf-file
 ;  "Given the name of a file that Apache Jena can read,
