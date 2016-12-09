@@ -1,30 +1,27 @@
-PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd:> <http://www.w4.org/2001/XMLSchema#>
-PREFIX owl:> <http://www.w3.org/2002/07/owl#>
-PREFIX obo:> <http://purl.obolibrary.org/obo/>
-PREFIX ex:> <http://example.com/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w4.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX ex: <http://example.com/>
 
-LABEL rdf:type: type
-LABEL rdfs:label: label
-LABEL rdfs:comment: comment
-LABEL rdfs:subClassOf: subclass of
-LABEL <http://www.w3.org/TR/owl2-manchester-syntax/>: OMN
-
-DEFAULT label LANGUAGE en
-DEFAULT comment TYPE xsd:string
+LABEL type: rdf:type
+LABEL label: rdfs:label
+LABEL comment: rdfs:comment
+LABEL subclass of: rdfs:subClassOf
+LABEL OMN: <http://www.w3.org/TR/owl2-manchester-syntax/>
 
 ex:ontology
 label: Example Ontology
-type:> owl:Ontology
+type: owl:Ontology
 
 ex:foo
 label: Foo
-type:> owl:Class
-comment LANGUAGE en: A comment on 'Foo'.
-> comment TYPE xsd:string: An annotation on a comment.
->> comment TYPE xsd:string: An annotation on an annotation.
-> rdfs:seeAlso:> ex:bat
+type: owl:Class
+comment [@en]: A comment on 'Foo'.
+# > comment TYPE xsd:string: An annotation on a comment.
+# >> comment TYPE xsd:string: An annotation on an annotation.
+# > rdfs:seeAlso:> ex:bat
 comment: Values can span multiple lines,
   and include blank lines...
 
@@ -53,13 +50,13 @@ label: evaluant role
 
 ex:bar
 label: Bar
-type:> owl:Class
-subclass of TYPE OMN:> 'has part' some Foo
-subclass of TYPE OMN:> has_specified_output some
-   ('information content entity'
-    and ('is about' some
-       ('material entity'
-        and ('has role' some 'evaluant role'))))
+type: owl:Class
+# subclass of TYPE OMN:> 'has part' some Foo
+# subclass of TYPE OMN:> has_specified_output some
+#    ('information content entity'
+#     and ('is about' some
+#        ('material entity'
+#         and ('has role' some 'evaluant role'))))
 
 GRAPH ex:graph
 label: Named Graph
