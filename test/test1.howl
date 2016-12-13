@@ -19,9 +19,9 @@ ex:foo
 label: Foo
 type: owl:Class
 comment [@en]: A comment on 'Foo'.
-# > comment TYPE xsd:string: An annotation on a comment.
-# >> comment TYPE xsd:string: An annotation on an annotation.
-# > rdfs:seeAlso:> ex:bat
+> comment [xsd:string]: An annotation on a comment.
+>> comment [xsd:string]: An annotation on an annotation.
+> rdfs:seeAlso: ex:bat
 comment: Values can span multiple lines,
   and include blank lines...
 
