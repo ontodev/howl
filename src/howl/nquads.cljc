@@ -133,7 +133,8 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        (string/join " ")))
 
 (defn nquad->ntriple-string
-  [nquad])
+  [[subject predicate object datatype]]
+  (nquad->nquad-string [nil subject predicate object datatype]))
 
 ; ## Blocks to NQuads
 ;
