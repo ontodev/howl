@@ -4,10 +4,15 @@
             [clojure.data.json :as json]
             [clojure.tools.cli :refer [parse-opts]]
             [edn-ld.jena]
+            [howl.util :as util]
             [howl.core :as core]
             [howl.howl :as howl]
             [howl.nquads :as nq])
   (:gen-class))
+
+(defn file-lines
+  [filename]
+  (line-seq (clojure.java.io/reader filename)))
 
 (defn exit
   [status msg]
@@ -17,49 +22,40 @@
 (defn parse-howl-file
   "Takes a filename, and optionally a starting environment, and parses that
   file under the given environment."
-  ([filename] (parse-howl-file filename {:source filename}))
-  ([filename env]
+  ([filename] (parse-howl-file {:source filename} filename))
+  ([env filename]
    (howl/lines->blocks
     (assoc env :source filename)
-    (line-seq (clojure.java.io/reader filename)))))
+    (file-lines filename))))
 
-;(defn parse-rdf-file
-;  "Given the name of a file that Apache Jena can read,
-;   and return a sequence of HOWL block maps."
-;  ([filename] (parse-rdf-file filename {}))
-;  ([filename env]
-;   (let [[prefixes quads] (edn-ld.jena/read-quads filename)]
-;     (if (seq quads)
-;       (nq/quads-to-howl quads env)
-;       (let [[prefixes triples] (edn-ld.jena/read-triples filename)]
-;         (if (seq triples)
-;           (nq/triples-to-howl triples env)
-;           (exit 1 (str "Could not find quads or triples in file: " filename))))))))
+(defn parse-rdf-file
+  "Takes a filename, and optionally a starting environment, and parses that
+   file as an NQuad sequence, returning an environment with :blocks being
+   a sequence of HOWL block maps"
+  ([filename] (parse-rdf-file {:source filename} filename))
+  ([env filename]
+   (let [e (assoc env :source filename)
+         blocks (nq/lines->blocks e (file-lines filename))]
+     (assoc e :blocks (vec blocks)))))
 
-;(defn parse-file
-;  "Given a file name,
-;   return a lazy sequence of HOWL block maps."
-;  ([filename] (parse-file filename {}))
-;  ([file-name env]
-;   (cond
-;     (.endsWith file-name "howl") (parse-howl-file file-name env)
-;                                        ; TODO: more formats
-;     :else (parse-rdf-file file-name env))))
+(defn parse-file
+  "Given a file name,
+   return an environment with the :blocks key set."
+  ([filename] (parse-file {:source filename} filename))
+  ([env filename]
+   (cond (util/ends-with? filename "howl") (parse-howl-file env filename)
+         :else (parse-rdf-file env filename))))
 
-;(defn parse-files
-;  "Given a sequence of file names,
-;   return a lazy sequence of parse results."
-;  [& filenames]
-;  ((fn rec [filenames env]
-;     (when (not (empty? filenames))
-;       (let [f (parse-file (first filenames) env)]
-;         (concat
-;          f
-;          (lazy-seq
-;           (rec
-;            (rest filenames)
-;            (or ((last f) :env) env)))))))
-;   filenames {}))
+(defn parse-files
+  "Given a sequence of filenames, and optionally a starting environment,
+   return a lazy sequence of parse results."
+  ([filenames] (parse-files {} filenames))
+  ([starting-env filenames]
+   ((fn rec [env filenames]
+      (when (not (empty? filenames))
+        (let [f (parse-file env (first filenames))]
+          (cons f (lazy-seq (rec (dissoc env :blocks) (rest filenames)))))))
+    starting-env filenames)))
 
 ;(defn print-parses
 ;  "Given a sequence of file names,

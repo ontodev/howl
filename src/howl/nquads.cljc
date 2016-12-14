@@ -361,7 +361,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
          :line line
          :string string})))
    (sorted-map)
-   lines))
+   (vec lines)))
 
 (defn nquad->blocks
   "Given the annotation-map and an nquad vector,
