@@ -16,8 +16,8 @@
 
 (def list-grammar
   (str "
-<ITEMS> = WHITESPACE ITEM+
-ITEM = '-' DATATYPES COLON #'.+' WHITESPACE
+<ITEMS> = ITEM+
+ITEM = WHITESPACE '-' DATATYPES COLON #'.+'
 COLON = #' *' ':'  #'(\n| )+'
 WHITESPACE  = #'(\\r|\\n|\\s)*'"
        link/link-grammar))
@@ -43,12 +43,132 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
        (filter #(= :ITEM (first %)))
        (map
         (fn [item]
-          (let [dt (get-in item [2 2])
+          (let [dt (get-in item [3 2])
                 dt (when dt (link/unpack-datatype env dt))
-                dt (or dt (get datatypes 2) "PLAIN")]
-            {:object (get item 4) :datatype dt})))
+                ddt (get datatypes 2 "PLAIN")]
+            {:object (get item 5)
+             :datatype (or dt ddt)
+             :use-default-datatypes (= [:DATATYPES] (get item 3))})))
        (concat [:RDF_LIST])
        vec))
+
+(defmethod core/content-iris->names ["LINK" rdf-list-iri]
+  [env datatypes objects]
+  (->> objects
+       (filter map?)
+       (map
+        (fn [{:keys [object datatype use-default-datatypes] :as item}]
+          [:ITEM
+           [:WHITESPACE "\n  "]
+           "-"
+           (if use-default-datatypes
+             [:DATATYPES]
+             (->> [datatype]
+                  (map (partial link/iri->name env))
+                  link/datatype-names->parse))
+           [:COLON "" ":" " "]
+           object]))
+       (concat [:RDF_LIST])
+       vec))
+
+;; From NQuads
+
+(defn list-item?
+  "Given a subject map and a subject to check,
+   return true only if it is a list item."
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and
+     (link/blank? subject)
+     (clojure.set/subset? #{rdf-first rdf-next} (set (keys predicate-map))))))
+
+(defn list-head?
+  "Given a subject map and a subject to check,
+   return true only if it is the head of a list
+   i.e. it is a list item that is not rdf:next for anything."
+  [subject-map subject]
+  (and
+   (list-item? subject-map subject)
+   (->> (get-in subject-map [:blank-object-uses subject])
+        (map second)
+        (remove #(= rdf-next %))
+        count
+        (not= 0))))
+
+(defn collapsible-list?
+  "Given a subject map and a subject to check,
+   return true only if we can safely collapse this RDF list
+   into a single HOWL statement block."
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and
+     (list-item? subject-map subject)
+     (= 2 (count predicate-map))
+     (->> predicate-map vals (apply concat) count (= 2))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          count
+          (= 1))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          (map first)
+          (map (partial collapsible-list? subject-map))
+          and))))
+
+(defn chase-list
+  "Given a subject map, a sequence of nodes in an RDF list,
+   and a node to chance,
+   return a sequence of subject-object-datatype triples."
+  [subject-map head]
+  (loop [subjects []
+         subject head]
+    (let [predicate-map (get subject-map subject)
+          object (get-in predicate-map [rdf-first 0 :object])
+          datatype (get-in predicate-map [rdf-first 0 :datatype])
+          result {:subject subject :object object :datatype datatype}
+          next (get-in predicate-map [rdf-next 0 :object])]
+      (if (= next rdf-nil)
+        (conj subjects result)
+        (recur (conj subjects result) next)))))
+
+(defn process-list
+  "Given a subject map and a subject that is the head of a list,
+   collapse the list and return the updated subject map."
+  [env subject-map head]
+  (let [[subject predicate] (get-in subject-map [:blank-object-uses head 0])
+        label (get-in env [:iri-label predicate])
+        datatypes (or (drop 2 (get-in env [:labels label :datatypes]))
+                      ["PLAIN"])
+        index (nquads/find-object subject-map subject predicate head "LINK")
+        results (chase-list subject-map head)]
+    (assoc-in
+     (apply dissoc subject-map (map :subject results))
+     [subject predicate index :processed-object]
+     (->> results
+          (map #(dissoc % :subject))
+          (map
+           (fn [{:keys [datatype] :as item}]
+             (if (= [datatype] datatypes)
+               (assoc item :use-default-datatypes true)
+               item)))
+          (concat [:RDF_LIST])))))
+
+(defn process-lists
+  "Given a graph IRI, and a subject map,
+   process each list and return the updated subject-map."
+  [env graph subject-map]
+  (->> subject-map
+       keys
+       (filter (partial list-head? subject-map))
+       (filter (partial collapsible-list? subject-map))
+       (reduce (partial process-list env) subject-map)
+       (conj [graph])))
+
+(defn handle-lists
+  [env graph-map]
+  (->> graph-map
+       (map (partial apply process-lists env))
+       (into {})))
+
+(nquads/register-handler handle-lists)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; to NQuads

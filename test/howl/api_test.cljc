@@ -18,8 +18,9 @@
 ;  (slurp "test/format-context/list1.howl")))
 ;(println
 ; (nquads-to-howl
+;  ;parse-nquads-strings
 ;  (howl-to-environment (slurp "test/format-context/context.howl"))
-;  (slurp "test/nquads/manchester1.nq")))
+;  (slurp "test/nquads/list1.nq")))
 
 (def options {:options {:sequential-blank-nodes true}})
 
@@ -32,14 +33,6 @@
       (is (= nquads (howl-to-nquads options context howl))))))
 
 (deftest test-howl->nquads
-  (compare-howl->nquads
-   "test/untyped-context/context.howl"
-   "test/untyped-context/list1.howl"
-   "test/nquads/list1.nq")
-  (compare-howl->nquads
-   "test/format-context/context.howl"
-   "test/format-context/list1.howl"
-   "test/nquads/list1.nq")
   (compare-howl->nquads
    "test/format-context/context.howl"
    "test/format-context/manchester1.howl"
@@ -74,7 +67,11 @@
   (compare-howl<->nquads
    "test/untyped-context/context.howl"
    "test/untyped-context/annotations1.howl"
-   "test/nquads/annotations1.nq"))
+   "test/nquads/annotations1.nq")
+  (compare-howl<->nquads
+   "test/format-context/context.howl"
+   "test/format-context/list1.howl"
+   "test/nquads/list1.nq"))
 
 (defn round-trip
   [context-path howl-path]
@@ -99,4 +96,10 @@
    "test/format-context/test1.howl")
   (round-trip
    "test/untyped-context/context.howl"
-   "test/untyped-context/annotations1.howl"))
+   "test/untyped-context/annotations1.howl")
+  (round-trip
+   "test/format-context/context.howl"
+   "test/format-context/test1.howl")
+  (round-trip
+   "test/format-context/context.howl"
+   "test/format-context/list1.howl"))

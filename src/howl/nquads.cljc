@@ -48,7 +48,11 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   (merge
    link/link-transformations
    {:LEXICAL_VALUE
-    (fn [& xs] [:LEXICAL_VALUE (apply str xs)])}))
+    (fn [& xs]
+      [:LEXICAL_VALUE
+       (-> (apply str xs)
+           (string/replace "\\n" "\n")
+           (string/replace "\\\"" "\""))])}))
 
 (defn parse-nquad
   [line]
@@ -314,6 +318,28 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
           (sort-by :object)
           (mapcat (partial insert-annotations (inc depth) annotation-map))))))
 
+; ### Expressions
+;
+; In addition to annotations, HOWL allows for other complex RDF constructs,
+; such as RDF lists and OWL class expressions.
+; Each of these is handled in a separate module.
+; Each of the modules registers a handler function
+; that is given the full graph map and must return a graph map.
+; The registered functions are stored in an atom.
+
+(def handlers (atom []))
+
+(defn register-handler
+  [f]
+  (swap! handlers conj f))
+
+(defn apply-handlers
+  [env graph-map]
+  (reduce
+   (fn [coll handler] (handler env coll))
+   graph-map
+   @handlers))
+
 ; ### Processing NQuads
 ;
 ; Now that annotations are out of the way,
@@ -361,6 +387,22 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
    (sorted-map)
    (vec lines)))
 
+(defn find-object
+  "Given a subject-map, a subject, a predicate, an object, and a datatype,
+   return the first index at which the object-datatype occur
+   in the object sequence,
+   or nil."
+  [subject-map subject predicate find-object find-datatype]
+  (->> (get-in subject-map [subject predicate])
+       (map-indexed vector)
+       (filter
+        (fn [[i {:keys [object datatype]}]]
+          (and
+           (= object find-object)
+           (= datatype find-datatype))))
+       first
+       first))
+
 (defn nquad->blocks
   "Given the annotation-map and an nquad vector,
    return a sequence of HOWL statement blocks."
@@ -368,8 +410,11 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
   (insert-annotations 0 annotation-map (nquad->block nquad)))
 
 (defn process-object
-  [annotation-map graph subject predicate {:keys [object datatype]}]
-  (nquad->blocks annotation-map [graph subject predicate object datatype]))
+  [annotation-map graph subject predicate {:keys [object datatype processed-object]}]
+  (let [blocks (nquad->blocks annotation-map [graph subject predicate object datatype])]
+    (if processed-object
+      (assoc-in (vec blocks) [(dec (count blocks)) :object] processed-object)
+      blocks)))
 
 (defn process-predicate
   [annotation-map graph subject predicate objects]
@@ -406,7 +451,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 
 (defn update-datatypes
   "Given an environment and a block,
-   try to update the :format."
+   try to update the :datatypes."
   [env {:keys [block-type predicate datatypes] :as block}]
   (if (= :STATEMENT_BLOCK block-type)
     (let [predicate-label (get-in env [:iri-label predicate])
@@ -418,29 +463,13 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        :datatypes (if use-default-datatypes predicate-datatypes datatypes)))
     block))
 
-(defn update-content
-  "Given an environment and a block,
-   if the block has a :datatypes and :object,
-   update it with :content."
-  [env {:keys [block-type datatypes object] :as block}]
-  (if (= :STATEMENT_BLOCK block-type)
-    (assoc
-     block
-     :content
-     (if (= "LINK" (first datatypes))
-       (link/iri->name env object)
-       (-> object
-           (string/replace "\\n" "\n")
-           (string/replace "\\\"" "\""))))
-    block))
-
 (defn lines->blocks
   "Given an environment and a sequence of lines,
    return a sequence of HOWL block maps."
   [{:keys [source] :or {source "interactive"} :as env} lines]
   (->> lines
        (make-graph-map source)
+       (apply-handlers env)
        (mapcat (partial apply process-graph))
        (map (partial update-datatypes env))
-       (map (partial core/block-iris->names env))
-       (map (partial update-content env))))
+       (map (partial core/block-iris->names env))))
