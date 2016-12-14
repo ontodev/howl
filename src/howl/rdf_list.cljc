@@ -135,8 +135,8 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
   [env subject-map head]
   (let [[subject predicate] (get-in subject-map [:blank-object-uses head 0])
         label (get-in env [:iri-label predicate])
-        datatypes (or (drop 2 (get-in env [:labels label :datatypes]))
-                      ["PLAIN"])
+        datatypes (drop 2 (get-in env [:labels label :datatypes]))
+        datatypes (if (seq datatypes) datatypes ["PLAIN"])
         index (nquads/find-object subject-map subject predicate head "LINK")
         results (chase-list subject-map head)]
     (assoc-in
