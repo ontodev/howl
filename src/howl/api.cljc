@@ -4,6 +4,7 @@
             [howl.core :as core]
             [howl.howl :as howl]
             [howl.nquads :as nquads]
+            [howl.rdf-list :as rdf-list]
             [howl.manchester :as manchester]))
 
 (defn append-newline

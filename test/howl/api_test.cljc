@@ -12,9 +12,10 @@
 ;  (howl-to-environment (slurp "test/typed-context/context.howl"))
 ;  (slurp "test/nquads/test1.nq")))
 ;(println
-; (howl-to-nquads
+; (;parse-howl-strings
+;  howl-to-nquads
 ;  (howl-to-environment (slurp "test/format-context/context.howl"))
-;  (slurp "test/format-context/manchester1.howl")))
+;  (slurp "test/format-context/list1.howl")))
 ;(println
 ; (nquads-to-howl
 ;  (howl-to-environment (slurp "test/format-context/context.howl"))
@@ -31,6 +32,14 @@
       (is (= nquads (howl-to-nquads options context howl))))))
 
 (deftest test-howl->nquads
+  (compare-howl->nquads
+   "test/untyped-context/context.howl"
+   "test/untyped-context/list1.howl"
+   "test/nquads/list1.nq")
+  (compare-howl->nquads
+   "test/format-context/context.howl"
+   "test/format-context/list1.howl"
+   "test/nquads/list1.nq")
   (compare-howl->nquads
    "test/format-context/context.howl"
    "test/format-context/manchester1.howl"

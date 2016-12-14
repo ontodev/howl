@@ -1,0 +1,18 @@
+<http://example.com/subject> <http://example.com/has-number-list> _:b1 .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b2 .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "2"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b3 .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "3"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b4 .
+_:b4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "4"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .
+<http://example.com/subject> <http://example.com/has-mixed-list> _:b5 .
+_:b5 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "5"^^<http://www.w3.org/2001/XMLSchema#integer> .
+_:b5 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b6 .
+_:b6 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "string literal"^^<http://www.w3.org/2001/XMLSchema#string> .
+_:b6 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b7 .
+_:b7 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "plain literal" .
+_:b7 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> _:b8 .
+_:b8 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "English literal"@en .
+_:b8 <http://www.w3.org/1999/02/22-rdf-syntax-ns#next> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .

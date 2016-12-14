@@ -42,7 +42,7 @@
        [:labels label]
        (merge
         {:iri iri}
-        (when (seq datatypes) {:datatypes datatypes})))))
+        (when (seq datatypes) {:datatypes (vec datatypes)})))))
 
 (defmethod update-environment :GRAPH_BLOCK
   [env {:keys [graph] :as block}]

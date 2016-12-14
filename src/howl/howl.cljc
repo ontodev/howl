@@ -30,8 +30,7 @@ SUBJECT_BLOCK   = NAME_OR_BLANK
 STATEMENT_BLOCK = ARROWS NAME DATATYPES COLON #'(\n|.)*.+'
 
 WHITESPACE  = #'(\\r|\\n|\\s)*'
-INDENTATION = #'(\\r|\\n|\\s)*  \\s*'
-COLON       = #' *' ':'  #' +'
+COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
