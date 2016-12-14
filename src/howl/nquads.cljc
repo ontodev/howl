@@ -235,61 +235,50 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 ; We try to collapse the five NQuads into a single HOWL STATEMENT_BLOCK
 ; that we insert after the target statement.
 ; We don't collapse annotations that are referred to by non-annotations.
-; We call these "spoilers", and collect a set of potential spoiler IRI strings.
-
-(defn annotation-spoilers
-  "Given a sequence of NQuads for a graph,
-   return a set of blank node labels
-   that are not valid subjects for OWL annotations."
-  [subject-map]
-  (reduce-kv
-   (fn [spoilers subject predicate-map]
-     (->> (dissoc predicate-map annSource)
-          vals
-          (apply concat)
-          (map :object)
-          (filter link/blank?)
-          set
-          (clojure.set/union spoilers)))
-   #{}
-   subject-map))
-
-; Once we know the possible spoilers,
 ; we apply all these rules to determine
 ; whether we will collapse the annotation into a single HOWL statement:
 ;
 ; - subject is a blank node
-; - subject is not a spoiler (i.e. not the object of another non-annotation statement)
+; - the annotatedSource is a subject in this graph
+; - subject only occurs as the object of other annotations
+; - all the annotations on this subject are collapsible (WARN: recursive)
 ; - subject has exactly five NQuads
 ; - the rdf:type is owl:Axiom
 ; - three predicates are present: annotatedSource, annotatedProperty, annotatedTarget
-; - the annotatedSource is a subject in this graph
 ;
 ; Otherwise we treat the annotation as a normal subject
 ; with a HOWL subject block
 ; and five HOWL statement blocks for its five NQuads.
 
 (defn is-collapsible-annotation?
-  "Given a set of subjects IRI in this graph,
-   a set of potential spoilter IRIs,
-   a subject name and its predicate map,
+  "Given a subject map and a subject to check,
    return true only if we can safely collapse this annotation
    into a single HOWL statement block."
-  [subjects spoilers subject predicate-map]
-  (and
-   (link/blank? subject)
-   (not (contains? spoilers subject))
-   (= 5 (count predicate-map))
-   (->> predicate-map vals (apply concat) count (= 5))
-   (= owl:Axiom (get-in predicate-map [rdf:type 0 :object]))
-   (clojure.set/subset? annPredicates (set (keys predicate-map)))
-   (contains? subjects (get-in predicate-map [annSource 0 :object]))))
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and
+     (link/blank? subject)
+     (contains? subject-map (get-in predicate-map [annSource 0 :object]))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          (map second)
+          (remove #(= annSource %))
+          count
+          (= 0))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          (map first)
+          (map (partial is-collapsible-annotation? subject-map))
+          and)
+     (= 5 (count predicate-map))
+     (->> predicate-map vals (apply concat) count (= 5))
+     (= owl:Axiom (get-in predicate-map [rdf:type 0 :object]))
+     (clojure.set/subset? annPredicates (set (keys predicate-map))))))
 
 (defn process-annotation
-  "Given a graph IRI, a subject IRI, and a predicate map,
+  "Given a graph IRI, a subject map, and a subject,
    return a HOWL annotation statement block."
-  [graph subject predicate-map]
-  (let [predicate
+  [graph subject-map subject]
+  (let [predicate-map (get subject-map subject)
+        predicate
         (-> predicate-map
             (dissoc rdf:type annSource annProperty annTarget)
             keys
@@ -304,13 +293,13 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
       (get-in predicate-map [annTarget   0 :datatype])])))
 
 (defn process-annotations
-  "Given a set of subject IRIs, a graph IRI, and a subject map,
+  "Given a graph IRI, and a subject map,
    return sequence of HOWL annotation statement blocks."
-  [subjects graph subject-map]
-  (let [spoilers (annotation-spoilers subject-map)]
-    (->> subject-map
-         (filter (partial apply is-collapsible-annotation? subjects spoilers))
-         (map (partial apply process-annotation graph)))))
+  [graph subject-map]
+  (->> subject-map
+       keys
+       (filter (partial is-collapsible-annotation? subject-map))
+       (map (partial process-annotation graph subject-map))))
 
 (defn insert-annotations
   "Given depth integer, the annotation-map, and a block,
@@ -344,15 +333,24 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 
 (defn make-graph-map
   "Given a source file name and a sequence of NQuad lines,
-   parse the lines and return a nest map:
+   parse the lines and return a nested map:
    graph, subject, predicate, to sequence of object maps
-   with line and source information."
+   with line and source information.
+   Each graph map will also have a special :blank-object-uses map
+   from blank nodes to lists of the subject-predicate pairs for which
+   that blank node occurs in object position."
   [source lines]
   (reduce-kv
    (fn [coll line string]
      (let [[graph subject predicate object datatype] (nquad-string->nquad string)]
        (update-in
-        coll
+        (if (link/blank? object)
+          (update-in
+           coll
+           [graph :blank-object-uses object]
+           (fnil conj [])
+           [subject predicate])
+          coll)
         [graph subject predicate]
         (fnil conj [])
         {:object object
@@ -391,8 +389,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
 
 (defn process-graph
   [graph subject-map]
-  (let [subjects (set (keys subject-map))
-        annotations (process-annotations subjects graph subject-map)
+  (let [annotations (process-annotations graph subject-map)
         annotation-subjects (set (map :subject annotations))
         annotation-map
         (->> annotations
@@ -403,6 +400,7 @@ LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
        [{:block-type :GRAPH_BLOCK
          :graph graph}])
      (->> subject-map
+          (remove #(keyword? (key %)))
           (remove #(contains? annotation-subjects (key %)))
           (mapcat (partial apply process-subject annotation-map graph))))))
 
