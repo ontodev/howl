@@ -87,14 +87,14 @@
        (map println)
        doall))
 
-;(defn print-triples
-;  "Given a map of options and a sequence of file names,
-;   print a sequence of N-Triples"
-;  [options file-names]
-;  (->> (apply parse-files file-names)
-;       core/blocks->nquads
-;       (map (fn [[a b c d]] [a b c]))
-;       core/print-nquads!))
+(defn print-triples
+  "Given a map of options and a sequence of file names,
+  print a sequence of N-Triples"
+  [options file-names]
+  (->> (parse-files {:options options} file-names)
+       (map api/howl-to-ntriples)
+       (map println)
+       doall))
 
 (def format-synonyms
   {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
@@ -144,9 +144,9 @@
       (:help options) (exit 0 (usage summary))
       (:version options) (exit 0 (version))
       errors (exit 1 (error-msg errors))
-      :else (case (-> options (get :output "nquads") string/lower-case format-map)
+      :else (case (-> options (get :output "ntriples") string/lower-case format-map)
               "parses"   (print-parses arguments)
               "howl"     (print-howl options arguments)
-              ; "ntriples" (print-triples options arguments)
+              "ntriples" (print-triples options arguments)
               "nquads"   (print-quads options arguments)
               (exit 1 (usage summary))))))

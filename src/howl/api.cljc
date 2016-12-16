@@ -59,18 +59,32 @@
    (apply parse-howl-strings args)
    :blocks))
 
-(defn ^:export howl-to-nquads
-  "Given one or more environments or HOWL strings,
-   return a string of N-Quads."
+(defn howl-to-nquad-vectors
   [& args]
   (let [env (apply parse-howl-strings args)
         nquads (mapcat nquads/block->nquads (:blocks env))]
     (->> (if (get-in env [:options :sequential-blank-nodes])
            (nquads/sequential-blank-nodes nquads)
-           nquads)
-         (map nquads/nquad->nquad-string)
-         (string/join \newline)
-         append-newline)))
+           nquads))))
+
+(defn ^:export howl-to-nquads
+  "Given one or more environments or HOWL strings,
+   return a string of N-Quads."
+  [& args]
+  (->> (apply howl-to-nquad-vectors args)
+       (map nquads/nquad->nquad-string)
+       (string/join \newline)
+       append-newline))
+
+(defn ^:export howl-to-ntriples
+  "Given one or more environments or HOWL strings,
+   return a string of N-Triples (dropping the graph
+   declaration if present)"
+  [& args]
+  (->> (apply howl-to-nquad-vectors args)
+       (map nquads/nquad->ntriple-string)
+       (string/join \newline)
+       append-newline))
 
 (defn ^:export nquads-to-howl
   "Given one or more environments or NQuads strings,
