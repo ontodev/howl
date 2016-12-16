@@ -9,7 +9,8 @@
 ; The only trick is converting certain JSON strings to Clojure keywords.
 
 (defn block->json-string
-  [block])
+  [block]
+  (json/write-str block))
 
 (defn json-string->block
   [json])

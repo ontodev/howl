@@ -1,13 +1,14 @@
 (ns howl.cli
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
-            [clojure.data.json :as json]
             [clojure.tools.cli :refer [parse-opts]]
             [edn-ld.jena]
             [howl.util :as util]
             [howl.core :as core]
             [howl.howl :as howl]
-            [howl.nquads :as nq])
+            [howl.json :as json]
+            [howl.nquads :as nq]
+            [howl.api :as api])
   (:gen-class))
 
 (defn file-lines
@@ -54,33 +55,37 @@
    ((fn rec [env filenames]
       (when (not (empty? filenames))
         (let [f (parse-file env (first filenames))]
-          (cons f (lazy-seq (rec (dissoc env :blocks) (rest filenames)))))))
+          (cons f (lazy-seq (rec (dissoc f :blocks) (rest filenames)))))))
     starting-env filenames)))
 
-;(defn print-parses
-;  "Given a sequence of file names,
-;   print a sequence of JSON parse maps."
-;  [file-names]
-;  (->> (apply parse-files file-names)
-;       (map json/write-str)
-;       (map println)
-;       doall))
+(defn print-parses
+ "Given a sequence of file names, print HOWL."
+  [options file-names]
+  (->> (parse-files {:options options} file-names)
+       (map :blocks)
+       (apply concat)
+       (map json/block->json-string)
+       (map println)
+       doall))
 
-;(defn print-howl
-;  "Given a sequence of file names, print HOWL."
-;  [options file-names]
-;  (->> (apply parse-files file-names)
-;       (map core/block->string)
-;       (map println)
-;       doall))
+(defn print-howl
+ "Given a sequence of file names, print HOWL."
+  [options file-names]
+  (->> (parse-files {:options options} file-names)
+       (map :blocks)
+       (apply concat)
+       (map howl/block->howl-string)
+       (map println)
+       doall))
 
-;(defn print-quads
-;  "Given a map of options and a sequence of file names
-;   print a sequence of N-Quads."
-;  [options file-names]
-;  (->> (apply parse-files file-names)
-;       core/blocks->nquads
-;       core/print-nquads!))
+(defn print-quads
+ "Given a map of options and a sequence of file names
+  print a sequence of N-Quads."
+ [options file-names]
+  (->> (parse-files {:options options} file-names)
+       (map api/howl-to-nquads)
+       (map println)
+       doall))
 
 ;(defn print-triples
 ;  "Given a map of options and a sequence of file names,
@@ -133,15 +138,15 @@
        (string/join \newline errors)))
 
 (defn -main [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]))
-    ;; Handle help and error conditions
-    ;(cond
-    ;  (:help options) (exit 0 (usage summary))
-    ;  (:version options) (exit 0 (version))
-    ;  errors (exit 1 (error-msg errors))
-    ;  :else (case (-> options (get :output "ntriples") string/lower-case format-map)
-    ;          "parses"   (print-parses arguments)
-    ;          "howl"     (print-howl options arguments)
-    ;          "ntriples" (print-triples options arguments)
-    ;          "nquads"   (print-quads options arguments)
-    ;          (exit 1 (usage summary)))))
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    ; Handle help and error conditions
+    (cond
+      (:help options) (exit 0 (usage summary))
+      (:version options) (exit 0 (version))
+      errors (exit 1 (error-msg errors))
+      :else (case (-> options (get :output "nquads") string/lower-case format-map)
+              "parses"   (print-parses arguments)
+              "howl"     (print-howl options arguments)
+              ; "ntriples" (print-triples options arguments)
+              "nquads"   (print-quads options arguments)
+              (exit 1 (usage summary))))))
