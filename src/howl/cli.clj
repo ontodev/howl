@@ -25,8 +25,8 @@
   file under the given environment."
   ([filename] (parse-howl-file {:source filename} filename))
   ([env filename]
-   (howl/lines->blocks
-    (assoc env :source filename)
+   (api/parse-howl-strings
+    (assoc (core/reset-environment env) :source filename)
     (file-lines filename))))
 
 (defn parse-rdf-file
@@ -35,9 +35,9 @@
    a sequence of HOWL block maps"
   ([filename] (parse-rdf-file {:source filename} filename))
   ([env filename]
-   (let [e (assoc env :source filename)
-         blocks (nq/lines->blocks e (file-lines filename))]
-     (assoc e :blocks (vec blocks)))))
+   (api/parse-nquads-strings
+    (assoc (core/reset-environment env) :source filename)
+    (file-lines filename))))
 
 (defn parse-file
   "Given a file name,
@@ -59,7 +59,7 @@
     starting-env filenames)))
 
 (defn print-parses
- "Given a sequence of file names, print HOWL."
+  "Given a sequence of file names, print HOWL."
   [options file-names]
   (->> (parse-files {:options options} file-names)
        (map :blocks)
@@ -69,7 +69,7 @@
        doall))
 
 (defn print-howl
- "Given a sequence of file names, print HOWL."
+  "Given a sequence of file names, print HOWL."
   [options file-names]
   (->> (parse-files {:options options} file-names)
        (map :blocks)
@@ -79,9 +79,9 @@
        doall))
 
 (defn print-quads
- "Given a map of options and a sequence of file names
+  "Given a map of options and a sequence of file names
   print a sequence of N-Quads."
- [options file-names]
+  [options file-names]
   (->> (parse-files {:options options} file-names)
        (map api/howl-to-nquads)
        (map println)

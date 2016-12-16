@@ -21,8 +21,8 @@
        (map? arg)
        (core/merge-environments env arg)
 
-       (string? arg)
-       (->> (string/split-lines arg)
+       (or (seq? arg) (string? arg))
+       (->> (if (seq? arg) arg (string/split-lines arg))
             (map append-newline)
             (howl/lines->blocks (core/reset-environment env)))
 
@@ -41,8 +41,8 @@
        (map? arg)
        (core/merge-environments env arg)
 
-       (string? arg)
-       (->> (string/split-lines arg)
+       (or (seq? arg) (string? arg))
+       (->> (if (seq? arg) arg (string/split-lines arg))
             (nquads/lines->blocks (core/reset-environment env)))
 
       ; TODO: Throw exception?
