@@ -168,7 +168,8 @@ is parsed into this JSON object:
      "leading-whitespace": "",
      "trailing-whitespace": "\n",
      "graph-name": ["PREFIXED_NAME", "ex", ":", "graph"],
-     "graph": "http://example.com/graph"}
+     "graph": "http://example.com/graph"
+     "subject": "http://example.com/graph"}
 
 This graph block:
 
@@ -425,4 +426,3 @@ is parsed into this JSON object:
      "predicate": "http://www.w3.org/2000/01/rdf-schema#comment",
      "object": "A comment on a comment.",
      "datatypes": ["PLAIN"]}
-

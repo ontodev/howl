@@ -46,7 +46,7 @@
 
 (defmethod update-environment :GRAPH_BLOCK
   [env {:keys [graph] :as block}]
-  (assoc env :graph graph))
+  (assoc env :graph graph :subject graph))
 
 (defmethod update-environment :SUBJECT_BLOCK
   [env {:keys [subject] :as block}]
@@ -129,7 +129,8 @@
 
 (defmethod block-names->iris :GRAPH_BLOCK
   [env {:keys [graph-name] :as block}]
-  (assoc block :graph (when graph-name (link/->iri env graph-name))))
+  (let [iri (when graph-name (link/->iri env graph-name))]
+    (assoc block :graph iri :subject iri)))
 
 (defmethod block-iris->names :GRAPH_BLOCK
   [env {:keys [graph] :as block}]
