@@ -145,7 +145,7 @@
       (:version options) (exit 0 (version))
       errors (exit 1 (error-msg errors))
       :else (case (-> options (get :output "ntriples") string/lower-case format-map)
-              "parses"   (print-parses arguments)
+              "parses"   (print-parses options arguments)
               "howl"     (print-howl options arguments)
               "ntriples" (print-triples options arguments)
               "nquads"   (print-quads options arguments)
