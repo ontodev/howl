@@ -168,7 +168,7 @@ is parsed into this JSON object:
      "leading-whitespace": "",
      "trailing-whitespace": "\n",
      "graph-name": ["PREFIXED_NAME", "ex", ":", "graph"],
-     "graph": "http://example.com/graph"
+     "graph": "http://example.com/graph",
      "subject": "http://example.com/graph"}
 
 This graph block:
@@ -187,7 +187,8 @@ is parsed into this JSON object:
      "leading-whitespace": "",
      "trailing-whitespace": "\n",
      "graph-name": null,
-     "graph": null}
+     "graph": null,
+     "subject": null}
 
 
 ### Subject
