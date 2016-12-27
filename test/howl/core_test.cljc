@@ -1,7 +1,7 @@
 (ns howl.core-test
   "Test core functions."
-  (:require [clojure.test :refer :all]
-            [howl.core :refer :all]))
+  (:require [clojure.test :refer [deftest testing is are]]
+            [howl.core :refer [merge-environments]]))
 
 (deftest test-merge-environments
   (testing "merges :prefixes and :labels with merge"

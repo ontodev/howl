@@ -1,9 +1,9 @@
 (ns howl.api-test
   "Integration tests against API."
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.string :as string]
             [howl.link :as link]
-            [howl.api :refer :all]))
+            [howl.api :as api]))
 
 ;(println (howl-to-nquads (slurp "test/empty-context/test1.howl")))
 ;(println (nquads-to-howl (slurp "test/nquads/test1.nq")))
@@ -30,7 +30,7 @@
     (let [context (when context-path (slurp context-path))
           howl    (slurp howl-path)
           nquads  (slurp nquads-path)]
-      (is (= nquads (howl-to-nquads options context howl))))))
+      (is (= nquads (api/howl-to-nquads options context howl))))))
 
 (deftest test-howl->nquads
   (compare-howl->nquads
@@ -44,8 +44,8 @@
     (let [context (when context-path (slurp context-path))
           howl    (slurp howl-path)
           nquads  (slurp nquads-path)]
-      (is (= nquads (howl-to-nquads options context howl)))
-      (is (= howl (nquads-to-howl options (howl-to-environment context) nquads))))))
+      (is (= nquads (api/howl-to-nquads options context howl)))
+      (is (= howl (api/nquads-to-howl options (api/howl-to-environment context) nquads))))))
 
 (deftest test-howl<->nquads
   (compare-howl<->nquads
@@ -78,8 +78,8 @@
   (testing (string/join " " [context-path howl-path])
     (let [context (when context-path (slurp context-path))
           howl    (slurp howl-path)
-          nquads  (howl-to-nquads context howl)]
-      (is (= howl (nquads-to-howl (howl-to-environment context) nquads))))))
+          nquads  (api/howl-to-nquads context howl)]
+      (is (= howl (api/nquads-to-howl (api/howl-to-environment context) nquads))))))
 
 (deftest test-howl-to-nquads-roundtrip
   (round-trip

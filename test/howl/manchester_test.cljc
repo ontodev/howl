@@ -1,24 +1,24 @@
 (ns howl.manchester-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as string]
-            [howl.manchester :refer :all]))
+            [howl.manchester :as man]))
 
 (deftest test-basic-parsing
   (testing "Simple label"
-    (is (= (parse-manchester "foo")
+    (is (= (man/parse-manchester "foo")
            [:CLASS_EXPRESSION [:LABEL "" "foo" ""]])))
 
   (testing "Quoted label"
-    (is (= (parse-manchester "'foo'")
+    (is (= (man/parse-manchester "'foo'")
            [:CLASS_EXPRESSION [:LABEL "'" "foo" "'"]])))
 
   (testing "Parens"
-    (is (= (parse-manchester "(foo )")
+    (is (= (man/parse-manchester "(foo )")
            [:CLASS_EXPRESSION
             "(" [:CLASS_EXPRESSION [:LABEL "" "foo" ""]] " " ")"])))
 
   (testing "Disjunction"
-    (is (= (parse-manchester "foo or bar")
+    (is (= (man/parse-manchester "foo or bar")
            [:CLASS_EXPRESSION
             [:DISJUNCTION
              [:CLASS_EXPRESSION [:LABEL "" "foo" ""]]
@@ -26,21 +26,21 @@
              [:CLASS_EXPRESSION [:LABEL "" "bar" ""]]]])))
 
   (testing "Conjunction"
-    (is (= (parse-manchester "foo and bar")
+    (is (= (man/parse-manchester "foo and bar")
            [:CLASS_EXPRESSION
             [:CONJUNCTION [:CLASS_EXPRESSION [:LABEL "" "foo" ""]]
              " " "and" " "
              [:CLASS_EXPRESSION [:LABEL "" "bar" ""]]]])))
 
   (testing "Negation"
-    (is (= (parse-manchester "not foo")
+    (is (= (man/parse-manchester "not foo")
            [:CLASS_EXPRESSION
             [:NEGATION
              "not" " "
              [:LABEL "" "foo" ""]]])))
 
   (testing "Some"
-    (is (= (parse-manchester "'has part' some foo")
+    (is (= (man/parse-manchester "'has part' some foo")
            [:CLASS_EXPRESSION
             [:SOME
              [:OBJECT_PROPERTY_EXPRESSION
@@ -49,7 +49,7 @@
              [:CLASS_EXPRESSION [:LABEL "" "foo" ""]]]])))
 
   (testing "Some not"
-    (is (= (parse-manchester "'has part' some not foo")
+    (is (= (man/parse-manchester "'has part' some not foo")
            [:CLASS_EXPRESSION
             [:SOME
              [:OBJECT_PROPERTY_EXPRESSION
@@ -61,7 +61,7 @@
                [:LABEL "" "foo" ""]]]]])))
 
   (testing "Complex axiom"
-    (is (= (parse-manchester "'is about' some
+    (is (= (man/parse-manchester "'is about' some
     ('material entity'
      and ('has role' some 'evaluant role'))")
            [:CLASS_EXPRESSION
@@ -88,7 +88,7 @@
               ")"]]])))
 
   (testing "Another complex axiom"
-    (is (= (parse-manchester
+    (is (= (man/parse-manchester
             "has_specified_output some
 ('information content entity'
  and ('is about' some
@@ -137,7 +137,7 @@
               ")"]]]))))
 
 (defn round-trip? [str]
-  (is (= str (manchester-format (parse-manchester str)))))
+  (is (= str (man/manchester-format (man/parse-manchester str)))))
 
 (deftest test-basic-formatting
   (testing "Simple label"
@@ -183,8 +183,8 @@
 ;;;;;;;;;; nquads generation
 (deftest test-->obj
   (testing "given a wrapped string, extracts it"
-    (is (= "foo" (->obj [["foo"]]))))
+    (is (= "foo" (man/->obj [["foo"]]))))
   (testing "given a sequence of nquads, returns the subject"
-    (is (= "foo" (->obj [[:graph "foo" "bar" "baz"]])))))
+    (is (= "foo" (man/->obj [[:graph "foo" "bar" "baz"]])))))
 
 ;; TODO - test expression->nquads

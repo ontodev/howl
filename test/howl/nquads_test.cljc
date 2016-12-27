@@ -1,15 +1,15 @@
 (ns howl.nquads-test
   "Test N-Quads rendering and supporting functions."
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.string :as string]
 
-            [howl.nquads :refer :all]
+            [howl.nquads :as nq]
             [howl.core :as core]
             [howl.util :refer [rdf> owl>]]))
 
 (deftest test-nquad-string->nquad
   (testing "parse"
-    (are [x y] (= (nquad-string->nquad x) y)
+    (are [x y] (= (nq/nquad-string->nquad x) y)
       "<s> <p> <o> ."            [nil "s" "p" "o" "LINK"]
       "<s> <p> <o> <g> ."        ["g" "s" "p" "o" "LINK"]
       "<s> <p> \"o\" ."          [nil "s" "p" "o" "PLAIN"]
@@ -22,7 +22,7 @@
 
 (deftest test-sequential-blank-nodes
   (testing "sequential"
-    (is (= (sequential-blank-nodes
+    (is (= (nq/sequential-blank-nodes
             [["g" "_:bar" "p" "_:b1" "LINK"]
              ["g" "_:bar" "p" "_:literal" "PLAIN"]])
            [["g" "_:b1" "p" "_:b2" "LINK"]

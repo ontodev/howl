@@ -2,7 +2,6 @@
   "Convert HOWL to and from HOWL syntax."
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk keywordize-keys]]
-            [clojure.data.json :as json]
             [instaparse.core :as insta]
 
             [howl.link :as link]

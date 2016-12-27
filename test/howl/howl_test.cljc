@@ -1,7 +1,7 @@
 (ns howl.howl-test
   "Test HOWL functions."
-  (:require [clojure.test :refer :all]
-            [howl.howl :refer :all]))
+  (:require [clojure.test :refer [deftest testing is are]]
+            [howl.howl :refer [group-lines]]))
 
 (deftest test-group-lines
   (testing "creates singleton groups from standalone lines"
