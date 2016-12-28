@@ -1,6 +1,7 @@
 (ns howl.link-test
   "Test link functions."
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [howl.link :as ln]))
 
 (defn parse-dt

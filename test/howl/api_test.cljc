@@ -1,6 +1,7 @@
 (ns howl.api-test
   "Integration tests against API."
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is are]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [clojure.string :as string]
             [howl.link :as link]
             [howl.api :as api]))

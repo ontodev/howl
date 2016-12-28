@@ -1,6 +1,5 @@
 (ns howl.runner
-  (:require [doo.runner :refer [doo-tests]]
+  (:require [doo.runner :refer-macros [doo-all-tests]]
             [howl.core-test]))
 
-#?(:cljs (doo-tests
-          'howl.core-test))
+#?(:cljs (doo-all-tests))
