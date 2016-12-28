@@ -2,6 +2,8 @@ language: clojure
 install:
   - curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
   - chmod +x lein
+  - npm install karma karma-cljs-test --save-dev
+  - npm install -g karma-cli
 lein: lein2
 script:
   - ./lein test
