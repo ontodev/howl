@@ -7,4 +7,3 @@ install:
 lein: lein2
 script:
   - ./lein test
-  - lein2 doo phantom cljs-test once
