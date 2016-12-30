@@ -21,14 +21,13 @@
     (is (= "//foo/bar/baz"
            (ln/->iri {:labels {"baz" {:iri "//foo/bar/baz"}}}
                      [:LABEL "baz"]))))
-  (let [exn #?(:clj Exception :cljs js/Error)]
-    (testing "Throws an exception when an expected label or prefix can't be found"
-      (is (thrown? exn (ln/->iri {} [:PREFIXED_NAME "bar" [:SPACES " "] "baz"])))
-      (is (thrown? exn (ln/->iri {} [:LABEL "baz"]))))
-    (testing "Throws an exception when a non iriref/prefixed-name/label parse-tree is passed as the second argument"
-      (is (thrown? exn (ln/->iri {} [:FOO])))
-      (is (thrown? exn (ln/->iri {} [:NAME])))
-      (is (thrown? exn (ln/->iri {} [:DATATYPES]))))))
+  (testing "Throws an exception when an expected label or prefix can't be found"
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:PREFIXED_NAME "bar" [:SPACES " "] "baz"])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:LABEL "baz"]))))
+  (testing "Throws an exception when a non iriref/prefixed-name/label parse-tree is passed as the second argument"
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:FOO])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:NAME])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:DATATYPES])))))
 
 (deftest test-datatypes
   (testing "parse datatypes"
