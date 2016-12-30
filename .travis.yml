@@ -1,4 +1,8 @@
 language: clojure
+addons:
+  apt:
+    packages:
+      - phantomjs
 install:
   - curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
   - chmod +x lein
@@ -6,4 +10,5 @@ install:
   - npm install -g karma-cli
 lein: lein2
 script:
+  - ./lein doo phantom cljs-test once
   - ./lein test
