@@ -1,18 +1,20 @@
 (ns howl.util-test
   "Test utility functions"
-  (:require [clojure.test :refer :all]
-            [clojure.test.check.clojure-test
-             :refer :all :include-macros true]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
+            #?(:clj [clojure.test.check.clojure-test
+                     :refer :all :include-macros true])
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties
              :as prop :include-macros true]
 
             [howl.util :as util]))
 
-(defspec starts-with?-detects-prefixes
-  (prop/for-all
-   [s gen/string]
-   (util/starts-with? (str s "foo") s)))
+#?(:clj
+   (defspec starts-with?-detects-prefixes
+     (prop/for-all
+      [s gen/string]
+      (util/starts-with? (str s "foo") s))))
 
 (deftest test-starts-with?
   (testing "everything starts with the empty string"
@@ -21,11 +23,12 @@
     (is (util/starts-with? "foobar" "foo"))
     (is (not (util/starts-with? "foo" "foobar")))))
 
-(defspec ends-with?-detects-suffixes
-  (prop/for-all
-   [s gen/string
-    suffix gen/string]
-   (util/ends-with? (str s suffix) suffix)))
+#?(:clj
+   (defspec ends-with?-detects-suffixes
+     (prop/for-all
+      [s gen/string
+       suffix gen/string]
+      (util/ends-with? (str s suffix) suffix))))
 
 (deftest test-ends-with?
   (testing "everything ends with the empty string"
