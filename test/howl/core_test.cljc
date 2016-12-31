@@ -1,6 +1,6 @@
 (ns howl.core-test
   "Test core functions."
-  (:require #?(:clj  [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
                :cljs [cljs.test :refer-macros [deftest testing is]])
             [howl.core :refer [merge-environments]]))
 

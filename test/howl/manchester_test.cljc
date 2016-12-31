@@ -1,5 +1,5 @@
 (ns howl.manchester-test
-  (:require #?(:clj  [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
                :cljs [cljs.test :refer-macros [deftest testing is]])
             [clojure.string :as string]
             [howl.manchester :as man]))
