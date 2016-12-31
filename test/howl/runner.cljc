@@ -1,5 +1,5 @@
 (ns howl.runner
-  (:require [doo.runner :refer-macros [doo-all-tests]]
+  (:require [doo.runner :refer-macros [doo-tests]]
             [howl.core-test]
             [howl.howl-test]
             [howl.link-test]
@@ -7,4 +7,10 @@
             [howl.nquads-test]
             [howl.util-test]))
 
-#?(:cljs (doo-all-tests))
+#?(:cljs (doo-tests
+          'howl.core-test
+          'howl.howl-test
+          'howl.link-test
+          'howl.manchester-test
+          'howl.nquads-test
+          'howl.util-test))
