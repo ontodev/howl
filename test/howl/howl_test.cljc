@@ -1,6 +1,7 @@
 (ns howl.howl-test
   "Test HOWL functions."
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [howl.howl :refer [group-lines]]))
 
 (deftest test-group-lines

@@ -1,6 +1,7 @@
 (ns howl.link-test
   "Test link functions."
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require #?(:clj  [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [howl.link :as ln]))
 
 (defn parse-dt
@@ -19,14 +20,14 @@
   (testing "handles LABELs by looking up the label in the environment"
     (is (= "//foo/bar/baz"
            (ln/->iri {:labels {"baz" {:iri "//foo/bar/baz"}}}
-                  [:LABEL "baz"]))))
+                     [:LABEL "baz"]))))
   (testing "Throws an exception when an expected label or prefix can't be found"
-    (is (thrown? Exception (ln/->iri {} [:PREFIXED_NAME "bar" [:SPACES " "] "baz"])))
-    (is (thrown? Exception (ln/->iri {} [:LABEL "baz"]))))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:PREFIXED_NAME "bar" [:SPACES " "] "baz"])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:LABEL "baz"]))))
   (testing "Throws an exception when a non iriref/prefixed-name/label parse-tree is passed as the second argument"
-    (is (thrown? Exception (ln/->iri {} [:FOO])))
-    (is (thrown? Exception (ln/->iri {} [:NAME])))
-    (is (thrown? Exception (ln/->iri {} [:DATATYPES])))))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:FOO])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:NAME])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (ln/->iri {} [:DATATYPES])))))
 
 (deftest test-datatypes
   (testing "parse datatypes"

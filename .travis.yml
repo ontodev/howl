@@ -1,3 +1,11 @@
 language: clojure
-install: curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein; chmod +x lein
-script: ./lein test
+addons:
+  apt:
+    packages:
+      - phantomjs
+install:
+  - curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+  - chmod +x lein
+script:
+  - ./lein doo phantom cljs-test once
+  - ./lein test

@@ -1,7 +1,7 @@
 (ns howl.json
   "Convert HOWL to and from JSON."
   (:require [clojure.walk :refer [postwalk keywordize-keys]]
-            [clojure.data.json :as json]))
+            [howl.util :as util]))
 
 ;; ## JSON
 
@@ -10,10 +10,7 @@
 
 (defn block->json-string
   [block]
-  (json/write-str block))
-
-(defn json-string->block
-  [json])
+  (util/write-json block))
 
 (defn keywordize-child-maps
   "Given a map where the values are maps,
@@ -52,6 +49,9 @@
   "Given a JSON representation of block,
    return the EDN representation."
   [json]
-  (->> (json/read-str json :value-fn json->value)
+  (->> (util/read-json json)
+       ;; FIXME TODO - this value traversal needs to be a tree-walk, not a naive map.
+       ;;              should really use tree-seq https://clojuredocs.org/clojure.core/tree-seq
+       (map (fn [[k v]] [k (json->value k v)]))
        (map (fn [[k v]] [(keyword k) v]))
        (into {})))

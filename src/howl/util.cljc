@@ -2,6 +2,7 @@
   "Cross-platform utility functions."
   (:require
    [clojure.string :as string]
+   #?(:clj [clojure.data.json :as json])
    #?@(:cljs
        [[goog.string]
         [goog.string.format]]))
@@ -40,6 +41,18 @@
   "Cribbed from http://stackoverflow.com/a/19709846/190887. Takes a string
    and returns true if it represents an absolute uri (false otherwise)"
   (not (not (re-find #"(?i)^(?:[a-z]+:)?//" s))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; JSON reading and writing
+(defn write-json
+  [thing]
+  #?(:clj (json/write-str thing)
+     :cljs (clj->js thing)))
+
+(defn read-json
+  [string]
+  #?(:clj (json/read-str string)
+     :cljs (js->clj string)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; General formatting shortcuts

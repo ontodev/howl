@@ -11,13 +11,17 @@
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/test.check "0.9.0"]
-                 [edn-ld "0.2.2"]]
+                 [edn-ld "0.2.2"]
+
+                 [doo "0.1.7-SNAPSHOT"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]
-            [lein-cljfmt "0.5.6"]]
+            [lein-cljfmt "0.5.6"]
+            [lein-doo "0.1.7"]]
   :main howl.cli
   :aot [howl.cli]
   :manifest {"Implementation-Version" ~project-version}
+
   :cljsbuild
   {:builds
    [{:source-paths ["src"]
@@ -25,4 +29,10 @@
      {:optimizations :advanced
       :output-dir "target"
       :output-to "target/howl.js"
-      :pretty-print true}}]})
+      :pretty-print true}}
+    {:id "cljs-test"
+     :source-paths ["src" "test"]
+     :compiler
+     {:output-to "out/testable.js"
+      :optimizations :none
+      :main howl.runner}}]})
