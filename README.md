@@ -160,15 +160,15 @@ This allows you to write in Manchester syntax, like Protégé:
     equivalent to: 'achieves planned objective' some 'assay objective'
 
 
-
 ## Build
 
 The `howl` tool is written in cross-platform Clojure. [Leiningen](http://leiningen.org) 2.5.2+ is required to build it.
 
 - `lein uberjar` builds a standalone JAR file in `target/`
-- `lein cljsbuild once` builds a JavaScript file in `target/`
-- `lein test` runs the unit and integration tests
 - `lein run` can be used to compile and run the command-line interface during development
+- `lein cljsbuild once` builds a JavaScript file in `target/`
+- `lein test` runs the unit and integration tests against the JVM
+- `lein doo phantom cljs-test` runs the unit test suite against [PhantomJS](http://phantomjs.org) (which must be installed separately)
 
 The [Makefile](Makefile) also contains some convenient build tasks.
 
