@@ -3,7 +3,7 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [<> owl> rdf>]]
+            [howl.util :as util :refer [<> owl> rdf> rdf-schema>]]
             [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
@@ -68,6 +68,40 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
        :else
        item))
    content))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; from NQuads
+(defn manchester-expression?
+  [predicate-map]
+  (and (contains? predicate-map (rdf-schema> "label"))
+       (contains? predicate-map (rdf-schema> "subClassOf"))
+       (link/blank? (get-in predicate-map [(rdf-schema> "subClassOf") 0 :object]))))
+
+(defn manchester-restriction?
+  [predicate-map]
+  false)
+(defn manchester-negation?
+  [predicate-map]
+  false)
+
+(defn process-manchester
+  [env graph subject-map]
+  (println "PROCESS-MANCHESTER")
+  (println graph)
+  (doseq [[k v] subject-map]
+    (when (manchester-expression? v)
+      (println "OBJ:" (get-in v [(rdf-schema> "subClassOf") 0 :object]))
+      (println "MANCH:" [k v])))
+
+  [graph subject-map])
+
+(defn handle-manchester
+  [env graph-map]
+  (->> graph-map
+       (map (partial apply process-manchester env))
+       (into {})))
+
+(nquads/register-handler handle-manchester)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; to NQuads

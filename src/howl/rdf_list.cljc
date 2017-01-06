@@ -71,7 +71,8 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
        (concat [:RDF_LIST])
        vec))
 
-;; From NQuads
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; From NQuads
 
 (defn list-item?
   "Given a subject map and a subject to check,
@@ -153,7 +154,7 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
 
 (defn process-lists
   "Given a graph IRI, and a subject map,
-   process each list and return the updated subject-map."
+   process each list and return the [<graph> <updated-subject-map>]."
   [env graph subject-map]
   (->> subject-map
        keys
