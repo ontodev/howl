@@ -84,14 +84,18 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [predicate-map]
   false)
 
+(defn chase-expression
+  [subject-map epxr]
+  :todo)
+
 (defn process-manchester
   [env graph subject-map]
-  (println "PROCESS-MANCHESTER")
-  (println graph)
-  (doseq [[k v] subject-map]
-    (when (manchester-expression? v)
-      (println "OBJ:" (get-in v [(rdf-schema> "subClassOf") 0 :object]))
-      (println "MANCH:" [k v])))
+  ;; (println "PROCESS-MANCHESTER")
+  ;; (println graph)
+  ;; (doseq [[k v] subject-map]
+  ;;   (when (manchester-expression? v)
+  ;;     (println "OBJ:" (get-in v [(rdf-schema> "subClassOf") 0 :object]))
+  ;;     (println "MANCH:" [k v])))
 
   [graph subject-map])
 
@@ -109,7 +113,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 (defn ->obj
   [subtree]
   (let [elem (first subtree)]
-    (or (second elem) (first elem))))
+    (or (and (string? (first elem)) (first elem))
+        (second elem))))
 
 (declare convert-expression)
 
