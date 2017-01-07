@@ -77,26 +77,43 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
        (contains? predicate-map (rdf-schema> "subClassOf"))
        (link/blank? (get-in predicate-map [(rdf-schema> "subClassOf") 0 :object]))))
 
+(defn rdf-type?
+  [predicate-map rdf-type]
+  (and (contains? predicate-map (rdf> "type"))
+       (= rdf-type (get-in predicate-map [(rdf> "type") 0 :object]))))
+
 (defn manchester-restriction?
   [predicate-map]
-  false)
+  (and (contains? predicate-map (owl> "onProperty"))
+       (rdf-type? predicate-map (owl> "Restriction"))))
+
+;; (defn manchester-conjunction?
+;;   [predicate-map]
+;;   (and (rdf-type? predicate-map (owl> "Class"))))
+
 (defn manchester-negation?
   [predicate-map]
-  false)
+  (and (contains? predicate-map (owl> "complementOf"))
+       (rdf-type? predicate-map (owl> "Class"))))
 
 (defn chase-expression
-  [subject-map epxr]
+  [subject-map expr]
   :todo)
+
+(defn process-manchester-expression
+  [env subject-map subject predicate-map]
+  (println "PROCESSING EXPRESSION" subject predicate-map)
+  subject-map)
 
 (defn process-manchester
   [env graph subject-map]
-  ;; (println "PROCESS-MANCHESTER")
-  ;; (println graph)
-  ;; (doseq [[k v] subject-map]
-  ;;   (when (manchester-expression? v)
-  ;;     (println "OBJ:" (get-in v [(rdf-schema> "subClassOf") 0 :object]))
-  ;;     (println "MANCH:" [k v])))
-
+  (println "PROCESS-MANCHESTER")
+  (reduce (fn [memo [subject predicate-map]]
+            (process-manchester-expression env memo subject predicate-map))
+          subject-map
+          (filter
+           (fn [[k v]] (manchester-expression? v))
+           subject-map))
   [graph subject-map])
 
 (defn handle-manchester
