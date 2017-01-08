@@ -71,56 +71,121 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; from NQuads
-(defn manchester-expression?
-  [predicate-map]
-  (and (contains? predicate-map (rdf-schema> "label"))
-       (contains? predicate-map (rdf-schema> "subClassOf"))
-       (link/blank? (get-in predicate-map [(rdf-schema> "subClassOf") 0 :object]))))
-
 (defn rdf-type?
   [predicate-map rdf-type]
   (and (contains? predicate-map (rdf> "type"))
        (= rdf-type (get-in predicate-map [(rdf> "type") 0 :object]))))
 
-(defn manchester-restriction?
-  [predicate-map]
-  (and (contains? predicate-map (owl> "onProperty"))
-       (rdf-type? predicate-map (owl> "Restriction"))))
+(defn get-object-in
+  [predicate-map key]
+  (get-in predicate-map [key 0 :object]))
 
-;; (defn manchester-conjunction?
-;;   [predicate-map]
-;;   (and (rdf-type? predicate-map (owl> "Class"))))
+(defn manchester-seq?
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and (link/blank? subject)
+         (contains? predicate-map (rdf> "first"))
+         (contains? predicate-map (rdf> "rest")))))
+
+(defn manchester-restriction?
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and (link/blank? subject)
+         (contains? predicate-map (owl> "onProperty"))
+         (rdf-type? predicate-map (owl> "Restriction")))))
+
+(defn manchester-conjunction?
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and (link/blank? subject)
+         (rdf-type? predicate-map (owl> "Class"))
+         (contains? predicate-map (rdf> "intersectionOf")))))
 
 (defn manchester-negation?
-  [predicate-map]
-  (and (contains? predicate-map (owl> "complementOf"))
-       (rdf-type? predicate-map (owl> "Class"))))
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and (link/blank? subject)
+         (contains? predicate-map (owl> "complementOf"))
+         (rdf-type? predicate-map (owl> "Class")))))
+
+(defn manchester-expression?
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and (contains? predicate-map (rdf-schema> "label"))
+         (contains? predicate-map (rdf-schema> "subClassOf"))
+         (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))))
 
 (defn chase-expression
-  [subject-map expr]
-  :todo)
+  [subject-map subject]
+  (when (or (manchester-expression? subject-map subject)
+            (link/blank? subject))
+    (cons subject
+          (let [sub (get subject-map subject)]
+            (cond (manchester-expression? subject-map subject)
+                  (chase-expression
+                   subject-map
+                   (get-object-in sub (rdf-schema> "subClassOf")))
+
+                  (manchester-restriction? subject-map subject)
+                  (chase-expression
+                   subject-map
+                   (or (get-object-in sub (owl> "someValuesFrom"))
+                       (get-object-in sub (owl> "allValuesFrom"))))
+
+                  (manchester-conjunction? subject-map subject)
+                  (chase-expression
+                   subject-map
+                   (get-object-in sub (rdf> "intersectionOf")))
+
+                  (manchester-seq? subject-map subject)
+                  (let [left (get-object-in sub (rdf> "first"))
+                        right (get-object-in sub (rdf> "rest"))]
+                    (concat
+                     (chase-expression subject-map left)
+                     (chase-expression subject-map right))))))))
 
 (defn process-manchester-expression
   [env subject-map subject predicate-map]
   (println "PROCESSING EXPRESSION" subject predicate-map)
-  subject-map)
+  (println "--" (get-in predicate-map [(rdf-schema> "subClassOf") 0 :object]))
+  (println "--" (chase-expression subject-map subject))
+  (apply dissoc subject-map (rest (chase-expression subject-map subject))))
 
 (defn process-manchester
   [env graph subject-map]
   (println "PROCESS-MANCHESTER")
-  (reduce (fn [memo [subject predicate-map]]
+  [graph (reduce
+          (fn [memo [subject predicate-map]]
             (process-manchester-expression env memo subject predicate-map))
           subject-map
           (filter
-           (fn [[k v]] (manchester-expression? v))
-           subject-map))
-  [graph subject-map])
+           (fn [[k v]] (manchester-expression? subject-map k))
+           subject-map))])
 
 (defn handle-manchester
   [env graph-map]
   (->> graph-map
        (map (partial apply process-manchester env))
        (into {})))
+
+;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
+;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
+;;   (slurp "test/nquads/manchester1.nq")))
+
+;; (println
+;;  (api/howl-to-nquads
+;;   {:options {:sequential-blank-nodes true}}
+;;   (slurp "test/format-context/context.howl")
+;;   (slurp "test/format-context/manchester1.howl")))
+
+;; (map
+;;  :blocks
+;;  (parse-files
+;;   {:options {:sequential-blank-nodes true}}
+;;   ["test/format-context/context.howl"
+;;    "test/format-context/manchester1.howl"]))
 
 (nquads/register-handler handle-manchester)
 
