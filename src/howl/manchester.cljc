@@ -71,14 +71,14 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; from NQuads
-(defn rdf-type?
-  [predicate-map rdf-type]
-  (and (contains? predicate-map (rdf> "type"))
-       (= rdf-type (get-in predicate-map [(rdf> "type") 0 :object]))))
-
 (defn get-object-in
   [predicate-map key]
   (get-in predicate-map [key 0 :object]))
+
+(defn rdf-type?
+  [predicate-map rdf-type]
+  (and (contains? predicate-map (rdf> "type"))
+       (= rdf-type (get-object-in predicate-map (rdf> "type")))))
 
 (defn manchester-seq?
   [subject-map subject]
@@ -119,8 +119,9 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [subject-map subject]
   (when (or (manchester-expression? subject-map subject)
             (link/blank? subject))
-    (cons subject
-          (let [sub (get subject-map subject)]
+    (let [sub (get subject-map subject)]
+      ;; (println "----" subject sub)
+      (cons subject
             (cond (manchester-expression? subject-map subject)
                   (chase-expression
                    subject-map
@@ -144,12 +145,34 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                      (chase-expression subject-map left)
                      (chase-expression subject-map right))))))))
 
+(defn make-processed-object
+  [env subject-map subject]
+  [:MANCHESTER_EXPRESSION
+   [:CLASS_EXPRESSION
+    [:SOME
+     [:OBJECT_PROPERTY_EXPRESSION [:LABEL "'" "has part" "'"]]
+     " " "some" " "
+     [:CLASS_EXPRESSION
+      [:CONJUNCTION
+       [:CLASS_EXPRESSION [:LABEL "" "engine" ""]]
+       " " "and" " "
+       [:CLASS_EXPRESSION
+        [:SOME [:OBJECT_PROPERTY_EXPRESSION [:LABEL "'" "has part" "'"]]
+         " " "some" " " [:CLASS_EXPRESSION [:LABEL "" "wheel" ""]]]]]]]]])
+
 (defn process-manchester-expression
   [env subject-map subject predicate-map]
   (println "PROCESSING EXPRESSION" subject predicate-map)
-  (println "--" (get-in predicate-map [(rdf-schema> "subClassOf") 0 :object]))
-  (println "--" (chase-expression subject-map subject))
-  (apply dissoc subject-map (rest (chase-expression subject-map subject))))
+  (println "--" (get-object-in predicate-map (rdf-schema> "subClassOf")))
+  (let [relevant-subjects (chase-expression subject-map subject)
+        without (apply dissoc subject-map (rest relevant-subjects))]
+    (println "--" relevant-subjects)
+    (println "--" (get-in without [subject (rdf-schema> "subClassOf") 0]))
+    (println "--" (make-processed-object env subject-map subject))
+    (assoc-in
+     without
+     [subject (rdf-schema> "subClassOf") 0 :processed-object]
+     (make-processed-object env subject-map subject))))
 
 (defn process-manchester
   [env graph subject-map]
@@ -167,6 +190,12 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (->> graph-map
        (map (partial apply process-manchester env))
        (into {})))
+
+;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
+;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
+;;   (slurp "test/nquads/list1.nq")))
 
 ;; (println
 ;;  (api/nquads-to-howl
