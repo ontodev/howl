@@ -105,8 +105,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [subject-map subject]
   (let [predicate-map (get subject-map subject)]
     (and (link/blank? subject)
-         (contains? predicate-map (owl> "complementOf"))
-         (rdf-type? predicate-map (owl> "Class")))))
+         (rdf-type? predicate-map (owl> "Class"))
+         (contains? predicate-map (owl> "complementOf")))))
 
 (defn manchester-expression?
   [subject-map subject]
@@ -114,6 +114,37 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     (and (contains? predicate-map (rdf-schema> "label"))
          (contains? predicate-map (rdf-schema> "subClassOf"))
          (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))))
+
+(defn manchester-component-type
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (cond (link/blank? subject)
+          (cond (and (rdf-type? predicate-map (owl> "Class"))
+                     (contains? predicate-map (owl> "complementOf")))
+                :manchester-negation
+
+                (and (rdf-type? predicate-map (owl> "Class"))
+                     (contains? predicate-map (rdf> "intersectionOf")))
+                :manchester-conjunction
+
+                (and (rdf-type? predicate-map (owl> "Class"))
+                     (contains? predicate-map (rdf> "unionOf")))
+                :manchester-disjunction
+
+                (and (contains? predicate-map (owl> "onProperty"))
+                     (rdf-type? predicate-map (owl> "Restriction")))
+                (if (contains? predicate-map (owl> "someValuesFrom"))
+                  :manchester-some
+                  :manchester-only)
+
+                (and (contains? predicate-map (rdf> "first"))
+                     (contains? predicate-map (rdf> "rest")))
+                :manchester-sequence)
+
+          (and (contains? predicate-map (rdf-schema> "label"))
+               (contains? predicate-map (rdf-schema> "subClassOf"))
+               (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))
+          :manchester-expression)))
 
 (defn chase-expression
   [subject-map subject]
