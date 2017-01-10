@@ -145,6 +145,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                      (chase-expression subject-map left)
                      (chase-expression subject-map right))))))))
 
+(declare make-processed-object)
+
 (defn combination->processed-object
   [env comb rdf-comb subject-map subject]
   (let [children (get subject-map (get-object-in (get subject-map subject) rdf-comb))
