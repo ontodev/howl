@@ -120,7 +120,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (when (or (manchester-expression? subject-map subject)
             (link/blank? subject))
     (let [sub (get subject-map subject)]
-      ;; (println "----" subject sub)
+;;      (println "----" subject sub)
       (cons subject
             (cond (manchester-expression? subject-map subject)
                   (chase-expression
@@ -145,38 +145,56 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                      (chase-expression subject-map left)
                      (chase-expression subject-map right))))))))
 
+(defn combination->processed-object
+  [env comb rdf-comb subject-map subject]
+  (let [children (get subject-map (get-object-in (get subject-map subject) rdf-comb))
+        left (get-object-in children (rdf> "first"))
+        right (get-object-in (get subject-map (get-object-in children (rdf> "rest"))) (rdf> "first"))]
+    [:CLASS_EXPRESSION
+     [:CONJUNCTION
+      (make-processed-object env subject-map left)
+      " " comb " "
+      (make-processed-object env subject-map right)]]))
+
+(defn reduce-with-env
+  [env iri]
+  (if-let [label (get-in env [:iri-label iri])]
+    (if (re-find #" " label)
+      [:LABEL "'" label "'"]
+      [:LABEL label])
+    iri))
+
 (defn make-processed-object
   [env subject-map subject]
-  [:MANCHESTER_EXPRESSION
-   [:CLASS_EXPRESSION
-    [:SOME
-     [:OBJECT_PROPERTY_EXPRESSION [:LABEL "'" "has part" "'"]]
-     " " "some" " "
-     [:CLASS_EXPRESSION
-      [:CONJUNCTION
-       [:CLASS_EXPRESSION [:LABEL "" "engine" ""]]
-       " " "and" " "
-       [:CLASS_EXPRESSION
-        [:SOME [:OBJECT_PROPERTY_EXPRESSION [:LABEL "'" "has part" "'"]]
-         " " "some" " " [:CLASS_EXPRESSION [:LABEL "" "wheel" ""]]]]]]]]])
+  (let [sub (get subject-map subject)
+        rec (fn [next-sub] (make-processed-object env subject-map next-sub))]
+    (cond (manchester-restriction? subject-map subject)
+          (let [pred (first (keys (dissoc sub (rdf> "type") (owl> "onProperty"))))]
+            [:CLASS_EXPRESSION
+             [:SOME
+              (rec (get-object-in sub (owl> "onProperty")))
+              " " (if (= pred (owl> "someValuesFrom")) "some" "only") " "
+              (rec (get-object-in sub pred))]])
+
+          (manchester-conjunction? subject-map subject)
+          (combination->processed-object env "and" (rdf> "intersectionOf") subject-map subject)
+
+          (not (link/blank? subject))
+          [:OBJECT_PROPERTY_EXPRESSION (reduce-with-env env subject)]
+          :else nil)))
 
 (defn process-manchester-expression
   [env subject-map subject predicate-map]
-  (println "PROCESSING EXPRESSION" subject predicate-map)
-  (println "--" (get-object-in predicate-map (rdf-schema> "subClassOf")))
   (let [relevant-subjects (chase-expression subject-map subject)
         without (apply dissoc subject-map (rest relevant-subjects))]
-    (println "--" relevant-subjects)
-    (println "--" (get-in without [subject (rdf-schema> "subClassOf") 0]))
-    (println "--" (make-processed-object env subject-map subject))
     (assoc-in
      without
      [subject (rdf-schema> "subClassOf") 0 :processed-object]
-     (make-processed-object env subject-map subject))))
+     [:MANCHESTER_EXPRESSION
+      (make-processed-object env subject-map (second relevant-subjects))])))
 
 (defn process-manchester
   [env graph subject-map]
-  (println "PROCESS-MANCHESTER")
   [graph (reduce
           (fn [memo [subject predicate-map]]
             (process-manchester-expression env memo subject predicate-map))
