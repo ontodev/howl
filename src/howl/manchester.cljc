@@ -188,35 +188,53 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
       " " comb " "
       (make-processed-object env subject-map right)]]))
 
-(defn reduce-with-env
-  [env iri]
-  (let [res (link/iri->name env iri)]
-    (case (first res)
-      :LABEL
-      (let [label (get res 1)]
-        (if (re-find #" " label)
-          [:LABEL "'" label "'"]
-          [:LABEL label]))
-      :else res)))
+(defmulti make-processed-object
+  (fn [_ subject-map subject]
+    (manchester-component-type subject-map subject)))
 
-(defn make-processed-object
+(defmethod make-processed-object nil
   [env subject-map subject]
-  (let [sub (get subject-map subject)
-        rec (fn [next-sub] (make-processed-object env subject-map next-sub))]
-    (cond (manchester-restriction? subject-map subject)
-          (let [pred (first (keys (dissoc sub (rdf> "type") (owl> "onProperty"))))]
-            [:CLASS_EXPRESSION
-             [:SOME
-              (rec (get-object-in sub (owl> "onProperty")))
-              " " (if (= pred (owl> "someValuesFrom")) "some" "only") " "
-              (rec (get-object-in sub pred))]])
+  [:OBJECT_PROPERTY_EXPRESSION
+   (let [res (link/iri->name env subject)]
+     (case (first res)
+       :LABEL
+       (let [label (get res 1)]
+         (if (re-find #" " label)
+           [:LABEL "'" label "'"]
+           [:LABEL label]))
+       :else res))])
 
-          (manchester-conjunction? subject-map subject)
-          (combination->processed-object env "and" (rdf> "intersectionOf") subject-map subject)
+(defmethod make-processed-object :manchester-negation
+  [env subject-map subject]
+  :TODO)
 
-          (not (link/blank? subject))
-          [:OBJECT_PROPERTY_EXPRESSION (reduce-with-env env subject)]
-          :else nil)))
+(defmethod make-processed-object :manchester-some
+  [env subject-map subject]
+  (let [rec
+        (fn [prop]
+          (make-processed-object
+           env subject-map
+           (get-object-in (get subject-map subject) prop)))]
+    [:CLASS_EXPRESSION
+     [:SOME (rec (owl> "onProperty")) " " "some" " " (rec (owl> "someValuesFrom"))]]))
+
+(defmethod make-processed-object :manchester-only
+  [env subject-map subject]
+  (let [rec
+        (fn [prop]
+          (make-processed-object
+           env subject-map
+           (get-object-in (get subject-map subject) prop)))]
+    [:CLASS_EXPRESSION
+     [:ONLY (rec (owl> "onProperty")) " " "only" " " (rec (owl> "allValuesFrom"))]]))
+
+(defmethod make-processed-object :manchester-conjunction
+  [env subject-map subject]
+  (combination->processed-object env "and" (rdf> "intersectionOf") subject-map subject))
+
+(defmethod make-processed-object :manchester-disjunction
+  [env subject-map subject]
+  (combination->processed-object env "or" (rdf> "unionOf") subject-map subject))
 
 (defn process-manchester-expression
   [env subject-map subject predicate-map]

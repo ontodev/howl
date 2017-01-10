@@ -64,10 +64,10 @@
    "test/format-context/context.howl"
    "test/format-context/test1.howl"
    "test/nquads/test1.nq")
-  ;; (compare-howl<->nquads
-  ;;  "test/format-context/context.howl"
-  ;;  "test/format-context/manchester1.howl"
-  ;;  "test/nquads/manchester1.nq")
+  (compare-howl<->nquads
+   "test/format-context/context.howl"
+   "test/format-context/manchester1.howl"
+   "test/nquads/manchester1.nq")
   (compare-howl<->nquads
    "test/untyped-context/context.howl"
    "test/untyped-context/annotations1.howl"
