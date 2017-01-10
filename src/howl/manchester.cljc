@@ -120,7 +120,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (when (or (manchester-expression? subject-map subject)
             (link/blank? subject))
     (let [sub (get subject-map subject)]
-;;      (println "----" subject sub)
       (cons subject
             (cond (manchester-expression? subject-map subject)
                   (chase-expression
@@ -160,11 +159,14 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 (defn reduce-with-env
   [env iri]
-  (if-let [label (get-in env [:iri-label iri])]
-    (if (re-find #" " label)
-      [:LABEL "'" label "'"]
-      [:LABEL label])
-    iri))
+  (let [res (link/iri->name env iri)]
+    (case (first res)
+      :LABEL
+      (let [label (get res 1)]
+        (if (re-find #" " label)
+          [:LABEL "'" label "'"]
+          [:LABEL label]))
+      :else res)))
 
 (defn make-processed-object
   [env subject-map subject]
