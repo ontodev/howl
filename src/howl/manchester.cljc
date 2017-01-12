@@ -117,34 +117,39 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 (defn manchester-component-type
   [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (cond (link/blank? subject)
-          (cond (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (owl> "complementOf")))
-                :manchester-negation
+  (let [predicate-map (get subject-map subject)
+        valid-keys #{(owl> "Class") (owl> "Restriction") (rdf> "type")
+                     (owl> "complementOf") (owl> "onProperty") (owl> "someValuesFrom") (owl> "allValuesFrom")
+                     (rdf> "intersectionOf") (rdf> "unionOf") (rdf> "first") (rdf> "rest")
+                     (rdf-schema> "label") (rdf-schema> "subClassOf")}]
+    (when (clojure.set/subset? (set (keys predicate-map)) valid-keys)
+      (cond (link/blank? subject)
+            (cond (and (rdf-type? predicate-map (owl> "Class"))
+                       (contains? predicate-map (owl> "complementOf")))
+                  :manchester-negation
 
-                (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (rdf> "intersectionOf")))
-                :manchester-conjunction
+                  (and (rdf-type? predicate-map (owl> "Class"))
+                       (contains? predicate-map (rdf> "intersectionOf")))
+                  :manchester-conjunction
 
-                (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (rdf> "unionOf")))
-                :manchester-disjunction
+                  (and (rdf-type? predicate-map (owl> "Class"))
+                       (contains? predicate-map (rdf> "unionOf")))
+                  :manchester-disjunction
 
-                (and (contains? predicate-map (owl> "onProperty"))
-                     (rdf-type? predicate-map (owl> "Restriction")))
-                (if (contains? predicate-map (owl> "someValuesFrom"))
-                  :manchester-some
-                  :manchester-only)
+                  (and (contains? predicate-map (owl> "onProperty"))
+                       (rdf-type? predicate-map (owl> "Restriction")))
+                  (if (contains? predicate-map (owl> "someValuesFrom"))
+                    :manchester-some
+                    :manchester-only)
 
-                (and (contains? predicate-map (rdf> "first"))
-                     (contains? predicate-map (rdf> "rest")))
-                :manchester-sequence)
+                  (and (contains? predicate-map (rdf> "first"))
+                       (contains? predicate-map (rdf> "rest")))
+                  :manchester-sequence)
 
-          (and (contains? predicate-map (rdf-schema> "label"))
-               (contains? predicate-map (rdf-schema> "subClassOf"))
-               (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))
-          :manchester-expression)))
+            (and (contains? predicate-map (rdf-schema> "label"))
+                 (contains? predicate-map (rdf-schema> "subClassOf"))
+                 (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))
+            :manchester-expression))))
 
 (defn chase-expression
   [subject-map subject]
@@ -202,7 +207,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
          (if (re-find #" " label)
            [:LABEL "'" label "'"]
            [:LABEL label]))
-       :else res))])
+       res))])
 
 (defmethod make-processed-object :manchester-negation
   [env subject-map subject]
@@ -253,7 +258,9 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
             (process-manchester-expression env memo subject predicate-map))
           subject-map
           (filter
-           (fn [[k v]] (manchester-expression? subject-map k))
+           (fn [[k v]]
+             (= :manchester-expression
+                (manchester-component-type subject-map k)))
            subject-map))])
 
 (defn handle-manchester
