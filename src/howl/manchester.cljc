@@ -80,41 +80,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (and (contains? predicate-map (rdf> "type"))
        (= rdf-type (get-object-in predicate-map (rdf> "type")))))
 
-(defn manchester-seq?
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (and (link/blank? subject)
-         (contains? predicate-map (rdf> "first"))
-         (contains? predicate-map (rdf> "rest")))))
-
-(defn manchester-restriction?
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (and (link/blank? subject)
-         (contains? predicate-map (owl> "onProperty"))
-         (rdf-type? predicate-map (owl> "Restriction")))))
-
-(defn manchester-conjunction?
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (and (link/blank? subject)
-         (rdf-type? predicate-map (owl> "Class"))
-         (contains? predicate-map (rdf> "intersectionOf")))))
-
-(defn manchester-negation?
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (and (link/blank? subject)
-         (rdf-type? predicate-map (owl> "Class"))
-         (contains? predicate-map (owl> "complementOf")))))
-
-(defn manchester-expression?
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (and (contains? predicate-map (rdf-schema> "label"))
-         (contains? predicate-map (rdf-schema> "subClassOf"))
-         (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))))
-
 (defn manchester-component-type
   [subject-map subject]
   (let [predicate-map (get subject-map subject)
@@ -136,8 +101,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                        (contains? predicate-map (rdf> "unionOf")))
                   :manchester-disjunction
 
-                  (and (contains? predicate-map (owl> "onProperty"))
-                       (rdf-type? predicate-map (owl> "Restriction")))
+                  (and (rdf-type? predicate-map (owl> "Restriction"))
+                       (contains? predicate-map (owl> "onProperty")))
                   (if (contains? predicate-map (owl> "someValuesFrom"))
                     :manchester-some
                     :manchester-only)
@@ -151,34 +116,48 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                  (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))
             :manchester-expression))))
 
-(defn chase-expression
+(defmulti chase-expression
+  manchester-component-type)
+
+(defmethod chase-expression nil [_ _] nil)
+
+(defmethod chase-expression :manchester-expression
   [subject-map subject]
-  (when (or (manchester-expression? subject-map subject)
-            (link/blank? subject))
-    (let [sub (get subject-map subject)]
-      (cons subject
-            (cond (manchester-expression? subject-map subject)
-                  (chase-expression
-                   subject-map
-                   (get-object-in sub (rdf-schema> "subClassOf")))
+  (cons subject
+        (chase-expression
+         subject-map
+         (get-object-in (get subject-map subject) (rdf-schema> "subClassOf")))))
 
-                  (manchester-restriction? subject-map subject)
-                  (chase-expression
-                   subject-map
-                   (or (get-object-in sub (owl> "someValuesFrom"))
-                       (get-object-in sub (owl> "allValuesFrom"))))
+(defmethod chase-expression :manchester-some
+  [subject-map subject]
+  (cons subject
+        (chase-expression
+         subject-map
+         (get-object-in (get subject-map subject) (owl> "someValuesFrom")))))
 
-                  (manchester-conjunction? subject-map subject)
-                  (chase-expression
-                   subject-map
-                   (get-object-in sub (rdf> "intersectionOf")))
+(defmethod chase-expression :manchester-only
+  [subject-map subject]
+  (cons subject
+        (chase-expression
+         subject-map
+         (get-object-in (get subject-map subject) (owl> "allValuesFrom")))))
 
-                  (manchester-seq? subject-map subject)
-                  (let [left (get-object-in sub (rdf> "first"))
-                        right (get-object-in sub (rdf> "rest"))]
-                    (concat
-                     (chase-expression subject-map left)
-                     (chase-expression subject-map right))))))))
+(defmethod chase-expression :manchester-conjunction
+  [subject-map subject]
+  (cons subject
+        (chase-expression
+         subject-map
+         (get-object-in (get subject-map subject) (rdf> "intersectionOf")))))
+
+(defmethod chase-expression :manchester-sequence
+  [subject-map subject]
+  (let [sub (get subject-map subject)
+        left (get-object-in sub (rdf> "first"))
+        right (get-object-in sub (rdf> "rest"))]
+    (cons subject
+          (concat
+           (chase-expression subject-map left)
+           (chase-expression subject-map right)))))
 
 (declare make-processed-object)
 
@@ -245,6 +224,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [env subject-map subject predicate-map]
   (let [relevant-subjects (chase-expression subject-map subject)
         without (apply dissoc subject-map (rest relevant-subjects))]
+    (println "SUBS:" (manchester-component-type subject-map subject) relevant-subjects)
     (assoc-in
      without
      [subject (rdf-schema> "subClassOf") 0 :processed-object]
