@@ -1,5 +1,6 @@
 (ns howl.constants.rdf
-  (:require [howl.util :as util :refer [rdf>]]))
+  (:require [howl.util :as util :refer [rdf>]])
+  (:refer-clojure :exclude [type list first next rest]))
 
 (def ^:const type (rdf> "type"))
 (def ^:const intersection-of (rdf> "intersectionOf"))
