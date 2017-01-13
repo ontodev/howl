@@ -11,7 +11,7 @@
 
 ; LABELs that contain spaces must be single-quoted
 
-(def manchester-iri "http://www.w3.org/TR/owl2-manchester-syntax/")
+(def ^:const manchester-iri "http://www.w3.org/TR/owl2-manchester-syntax/")
 
 (def manchester-grammar "
 CLASS_EXPRESSION = '(' SPACE? CLASS_EXPRESSION SPACE? ')' SPACE?
@@ -72,13 +72,13 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; from NQuads
 (defn get-object-in
-  [predicate-map key]
-  (get-in predicate-map [key 0 :object]))
+  [predicate-map keys]
+  (get-in predicate-map (concat keys [0 :object])))
 
 (defn rdf-type?
   [predicate-map type-string]
   (and (contains? predicate-map (rdf> "type"))
-       (= type-string (get-object-in predicate-map (rdf> "type")))))
+       (= type-string (get-object-in predicate-map [(rdf> "type")]))))
 
 (def ^:const valid-manchester-predicate-keys
   #{(owl> "Class") (owl> "Restriction") (rdf> "type")
@@ -114,7 +114,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
           (and (contains? predicate-map (rdf-schema> "label"))
                (contains? predicate-map (rdf-schema> "subClassOf"))
-               (link/blank? (get-object-in predicate-map (rdf-schema> "subClassOf"))))
+               (link/blank? (get-object-in predicate-map [(rdf-schema> "subClassOf")])))
           :manchester-expression)))
 
 (defmulti chase-expression
@@ -127,41 +127,41 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (owl> "complementOf")))))
+         (get-object-in subject-map [subject (owl> "complementOf")]))))
 
 (defmethod chase-expression :manchester-conjunction
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (rdf> "intersectionOf")))))
+         (get-object-in subject-map [subject (rdf> "intersectionOf")]))))
 
 (defmethod chase-expression :manchester-disjunction
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (rdf> "unionOf")))))
+         (get-object-in subject-map [subject (rdf> "unionOf")]))))
 
 (defmethod chase-expression :manchester-some
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (owl> "someValuesFrom")))))
+         (get-object-in subject-map [subject (owl> "someValuesFrom")]))))
 
 (defmethod chase-expression :manchester-only
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (owl> "allValuesFrom")))))
+         (get-object-in subject-map [subject (owl> "allValuesFrom")]))))
 
 (defmethod chase-expression :manchester-sequence
   [subject-map subject]
   (let [sub (get subject-map subject)
-        left (get-object-in sub (rdf> "first"))
-        right (get-object-in sub (rdf> "rest"))]
+        left (get-object-in sub [(rdf> "first")])
+        right (get-object-in sub [(rdf> "rest")])]
     (cons subject
           (concat
            (chase-expression subject-map left)
@@ -172,15 +172,15 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in (get subject-map subject) (rdf-schema> "subClassOf")))))
+         (get-object-in subject-map [subject (rdf-schema> "subClassOf")]))))
 
 (declare make-processed-object)
 
 (defn combination->processed-object
   [env comb rdf-comb subject-map subject]
-  (let [children (get subject-map (get-object-in (get subject-map subject) rdf-comb))
-        left (get-object-in children (rdf> "first"))
-        right (get-object-in (get subject-map (get-object-in children (rdf> "rest"))) (rdf> "first"))]
+  (let [children (get subject-map (get-object-in subject-map [subject rdf-comb]))
+        left (get-object-in children [(rdf> "first")])
+        right (get-object-in subject-map [(get-object-in children [(rdf> "rest")]) (rdf> "first")])]
     [:CLASS_EXPRESSION
      [:CONJUNCTION
       (make-processed-object env subject-map left)
@@ -209,7 +209,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
    [:NEGATION "not" " "
     (make-processed-object
      env subject-map
-     (get-object-in (get subject-map subject) (owl> "complementOf")))]])
+     (get-object-in subject-map [subject (owl> "complementOf")]))]])
 
 (defmethod make-processed-object :manchester-some
   [env subject-map subject]
@@ -217,7 +217,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
         (fn [prop]
           (make-processed-object
            env subject-map
-           (get-object-in (get subject-map subject) prop)))]
+           (get-object-in subject-map [subject prop])))]
     [:CLASS_EXPRESSION
      [:SOME (rec (owl> "onProperty")) " " "some" " " (rec (owl> "someValuesFrom"))]]))
 
@@ -227,7 +227,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
         (fn [prop]
           (make-processed-object
            env subject-map
-           (get-object-in (get subject-map subject) prop)))]
+           (get-object-in subject-map [subject prop])))]
     [:CLASS_EXPRESSION
      [:ONLY (rec (owl> "onProperty")) " " "only" " " (rec (owl> "allValuesFrom"))]]))
 
@@ -272,31 +272,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (->> graph-map
        (map (partial apply process-manchester env))
        (into {})))
-
-;; (println
-;;  (api/nquads-to-howl
-;;   {:options {:sequential-blank-nodes true}}
-;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
-;;   (slurp "test/nquads/list1.nq")))
-
-;; (println
-;;  (api/nquads-to-howl
-;;   {:options {:sequential-blank-nodes true}}
-;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
-;;   (slurp "test/nquads/manchester1.nq")))
-
-;; (println
-;;  (api/howl-to-nquads
-;;   {:options {:sequential-blank-nodes true}}
-;;   (slurp "test/format-context/context.howl")
-;;   (slurp "test/format-context/manchester1.howl")))
-
-;; (map
-;;  :blocks
-;;  (parse-files
-;;   {:options {:sequential-blank-nodes true}}
-;;   ["test/format-context/context.howl"
-;;    "test/format-context/manchester1.howl"]))
 
 (nquads/register-handler handle-manchester)
 
