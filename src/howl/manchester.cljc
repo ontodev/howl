@@ -3,11 +3,14 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [<> owl> rdf> rdf-schema>]]
+            [howl.util :as util :refer [<> rdf-schema>]]
             [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
-            [howl.nquads :as nquads]))
+            [howl.nquads :as nquads]
+
+            [howl.constants.owl :as owl]
+            [howl.constants.rdf :as rdf]))
 
 ; LABELs that contain spaces must be single-quoted
 
@@ -77,39 +80,39 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 (defn rdf-type?
   [predicate-map type-string]
-  (and (contains? predicate-map (rdf> "type"))
-       (= type-string (get-object-in predicate-map [(rdf> "type")]))))
+  (and (contains? predicate-map rdf/type)
+       (= type-string (get-object-in predicate-map [rdf/type]))))
 
 (def ^:const valid-manchester-predicate-keys
-  #{(owl> "Class") (owl> "Restriction") (rdf> "type")
-    (owl> "complementOf") (owl> "onProperty") (owl> "someValuesFrom") (owl> "allValuesFrom")
-    (rdf> "intersectionOf") (rdf> "unionOf") (rdf> "first") (rdf> "rest")
+  #{owl/class owl/restriction rdf/type
+    owl/complement-of owl/on-property owl/some-values-from owl/all-values-from
+    rdf/intersection-of rdf/union-of rdf/first rdf/rest
     (rdf-schema> "label") (rdf-schema> "subClassOf")})
 
 (defn manchester-component-type
   [subject-map subject]
   (let [predicate-map (get subject-map subject)]
     (cond (link/blank? subject)
-          (cond (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (owl> "complementOf")))
+          (cond (and (rdf-type? predicate-map owl/class)
+                     (contains? predicate-map owl/complement-of))
                 :manchester-negation
 
-                (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (rdf> "intersectionOf")))
+                (and (rdf-type? predicate-map owl/class)
+                     (contains? predicate-map rdf/intersection-of))
                 :manchester-conjunction
 
-                (and (rdf-type? predicate-map (owl> "Class"))
-                     (contains? predicate-map (rdf> "unionOf")))
+                (and (rdf-type? predicate-map owl/class)
+                     (contains? predicate-map rdf/union-of))
                 :manchester-disjunction
 
-                (and (rdf-type? predicate-map (owl> "Restriction"))
-                     (contains? predicate-map (owl> "onProperty")))
-                (if (contains? predicate-map (owl> "someValuesFrom"))
+                (and (rdf-type? predicate-map owl/restriction)
+                     (contains? predicate-map owl/on-property))
+                (if (contains? predicate-map owl/some-values-from)
                   :manchester-some
                   :manchester-only)
 
-                (and (contains? predicate-map (rdf> "first"))
-                     (contains? predicate-map (rdf> "rest")))
+                (and (contains? predicate-map rdf/first)
+                     (contains? predicate-map rdf/rest))
                 :manchester-sequence)
 
           (and (contains? predicate-map (rdf-schema> "label"))
@@ -127,41 +130,41 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (owl> "complementOf")]))))
+         (get-object-in subject-map [subject owl/complement-of]))))
 
 (defmethod chase-expression :manchester-conjunction
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (rdf> "intersectionOf")]))))
+         (get-object-in subject-map [subject rdf/intersection-of]))))
 
 (defmethod chase-expression :manchester-disjunction
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (rdf> "unionOf")]))))
+         (get-object-in subject-map [subject rdf/union-of]))))
 
 (defmethod chase-expression :manchester-some
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (owl> "someValuesFrom")]))))
+         (get-object-in subject-map [subject owl/some-values-from]))))
 
 (defmethod chase-expression :manchester-only
   [subject-map subject]
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (owl> "allValuesFrom")]))))
+         (get-object-in subject-map [subject owl/all-values-from]))))
 
 (defmethod chase-expression :manchester-sequence
   [subject-map subject]
   (let [sub (get subject-map subject)
-        left (get-object-in sub [(rdf> "first")])
-        right (get-object-in sub [(rdf> "rest")])]
+        left (get-object-in sub [rdf/first])
+        right (get-object-in sub [rdf/rest])]
     (cons subject
           (concat
            (chase-expression subject-map left)
@@ -179,8 +182,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 (defn combination->processed-object
   [env comb rdf-comb subject-map subject]
   (let [children (get subject-map (get-object-in subject-map [subject rdf-comb]))
-        left (get-object-in children [(rdf> "first")])
-        right (get-object-in subject-map [(get-object-in children [(rdf> "rest")]) (rdf> "first")])]
+        left (get-object-in children [rdf/first])
+        right (get-object-in subject-map [(get-object-in children [rdf/rest]) rdf/first])]
     [:CLASS_EXPRESSION
      [:CONJUNCTION
       (make-processed-object env subject-map left)
@@ -209,7 +212,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
    [:NEGATION "not" " "
     (make-processed-object
      env subject-map
-     (get-object-in subject-map [subject (owl> "complementOf")]))]])
+     (get-object-in subject-map [subject owl/complement-of]))]])
 
 (defmethod make-processed-object :manchester-some
   [env subject-map subject]
@@ -219,7 +222,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
            env subject-map
            (get-object-in subject-map [subject prop])))]
     [:CLASS_EXPRESSION
-     [:SOME (rec (owl> "onProperty")) " " "some" " " (rec (owl> "someValuesFrom"))]]))
+     [:SOME (rec owl/on-property) " " "some" " " (rec owl/some-values-from)]]))
 
 (defmethod make-processed-object :manchester-only
   [env subject-map subject]
@@ -229,15 +232,15 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
            env subject-map
            (get-object-in subject-map [subject prop])))]
     [:CLASS_EXPRESSION
-     [:ONLY (rec (owl> "onProperty")) " " "only" " " (rec (owl> "allValuesFrom"))]]))
+     [:ONLY (rec owl/on-property) " " "only" " " (rec owl/all-values-from)]]))
 
 (defmethod make-processed-object :manchester-conjunction
   [env subject-map subject]
-  (combination->processed-object env "and" (rdf> "intersectionOf") subject-map subject))
+  (combination->processed-object env "and" rdf/intersection-of subject-map subject))
 
 (defmethod make-processed-object :manchester-disjunction
   [env subject-map subject]
-  (combination->processed-object env "or" (rdf> "unionOf") subject-map subject))
+  (combination->processed-object env "or" rdf/union-of subject-map subject))
 
 (defn process-manchester-expression
   [env subject-map subject predicate-map]
@@ -295,8 +298,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
         left (convert-expression left)
         right (convert-expression right)]
     (concat
-     [[b (rdf> "type") (owl> "Restriction")]
-      [b (owl> "onProperty") (->obj left)]
+     [[b rdf/type owl/restriction]
+      [b owl/on-property (->obj left)]
       [b pred (->obj right)]]
      left
      right)))
@@ -312,12 +315,12 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
         left (convert-expression left)
         right (convert-expression right)]
     (concat
-     [[b1 (rdf> "type") (owl> "Class")]
+     [[b1 rdf/type owl/class]
       [b1 pred b2]
-      [b2 (rdf> "first") (->obj left)]
-      [b2 (rdf> "rest") b3]
-      [b3 (rdf> "first") (->obj right)]
-      [b3 (rdf> "rest") (rdf> "nil")]]
+      [b2 rdf/first (->obj left)]
+      [b2 rdf/rest b3]
+      [b3 rdf/first (->obj right)]
+      [b3 rdf/rest rdf/NIL]]
      left
      right)))
 
@@ -330,8 +333,8 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (let [b (link/random-blank-node)
         target (convert-expression target)]
     (concat
-     [[b (rdf> "type") (owl> "Class")]
-      [b (owl> "complementOf") (->obj target)]]
+     [[b rdf/type owl/class]
+      [b owl/complement-of (->obj target)]]
      target)))
 
 (defn convert-expression
@@ -342,10 +345,10 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     (:MANCHESTER_EXPRESSION :OBJECT_PROPERTY_EXPRESSION) (convert-expression (second exp))
     :IRI [exp]
     :CLASS_EXPRESSION (mapcat convert-expression (rest exp))
-    :SOME (restriction->nquads exp (owl> "someValuesFrom"))
-    :ONLY (restriction->nquads exp (owl> "allValuesFrom"))
-    :CONJUNCTION (combination->nquads exp (rdf> "intersectionOf"))
-    :DISJUNCTION (combination->nquads exp (rdf> "unionOf"))
+    :SOME (restriction->nquads exp owl/some-values-from)
+    :ONLY (restriction->nquads exp owl/all-values-from)
+    :CONJUNCTION (combination->nquads exp rdf/intersection-of)
+    :DISJUNCTION (combination->nquads exp rdf/union-of)
     :NEGATION (negation->nquads exp)
     (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp)))
 

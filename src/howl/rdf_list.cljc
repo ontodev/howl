@@ -3,16 +3,13 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [<> owl> rdf>]]
+            [howl.util :as util :refer [<> rdf>]]
             [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
-            [howl.nquads :as nquads]))
+            [howl.nquads :as nquads]
 
-(def rdf-list-iri "http://www.w3.org/1999/02/22-rdf-syntax-ns#List")
-(def rdf-first "http://www.w3.org/1999/02/22-rdf-syntax-ns#first")
-(def rdf-next "http://www.w3.org/1999/02/22-rdf-syntax-ns#next")
-(def rdf-nil "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")
+            [howl.constants.rdf :as rdf]))
 
 (def list-grammar
   (str "
@@ -32,11 +29,11 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
       (throw (Exception. "RDF List parser failure")))
     result))
 
-(defmethod howl/parse-content ["LINK" rdf-list-iri]
+(defmethod howl/parse-content ["LINK" rdf/list]
   [env datatypes unparsed]
   (vec (concat [:RDF_LIST] (parse-list unparsed))))
 
-(defmethod core/content-names->iris ["LINK" rdf-list-iri]
+(defmethod core/content-names->iris ["LINK" rdf/list]
   [env datatypes content]
   (->> content
        (filter vector?)
@@ -52,7 +49,7 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
        (concat [:RDF_LIST])
        vec))
 
-(defmethod core/content-iris->names ["LINK" rdf-list-iri]
+(defmethod core/content-iris->names ["LINK" rdf/list]
   [env datatypes objects]
   (->> objects
        (filter map?)
@@ -81,7 +78,7 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
   (let [predicate-map (get subject-map subject)]
     (and
      (link/blank? subject)
-     (clojure.set/subset? #{rdf-first rdf-next} (set (keys predicate-map))))))
+     (clojure.set/subset? #{rdf/first rdf/next} (set (keys predicate-map))))))
 
 (defn list-head?
   "Given a subject map and a subject to check,
@@ -92,7 +89,7 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
    (list-item? subject-map subject)
    (->> (get-in subject-map [:blank-object-uses subject])
         (map second)
-        (remove #(= rdf-next %))
+        (remove #(= rdf/next %))
         count
         (not= 0))))
 
@@ -122,11 +119,11 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
   (loop [subjects []
          subject head]
     (let [predicate-map (get subject-map subject)
-          object (get-in predicate-map [rdf-first 0 :object])
-          datatype (get-in predicate-map [rdf-first 0 :datatype])
+          object (get-in predicate-map [rdf/first 0 :object])
+          datatype (get-in predicate-map [rdf/first 0 :datatype])
           result {:subject subject :object object :datatype datatype}
-          next (get-in predicate-map [rdf-next 0 :object])]
-      (if (= next rdf-nil)
+          next (get-in predicate-map [rdf/next 0 :object])]
+      (if (= next rdf/NIL)
         (conj subjects result)
         (recur (conj subjects result) next)))))
 
@@ -179,17 +176,17 @@ WHITESPACE  = #'(\\r|\\n|\\s)*'"
   [graph items]
   (reduce
    (fn [quads {:keys [object datatype]}]
-     (let [n (get-in quads [0 1] rdf-nil)
+     (let [n (get-in quads [0 1] rdf/NIL)
            b (link/random-blank-node)]
        (vec
         (concat
-         [[graph b rdf-first object datatype]
-          [graph b rdf-next n "LINK"]]
+         [[graph b rdf/first object datatype]
+          [graph b rdf/next n "LINK"]]
          quads))))
    []
    (->> items rest reverse)))
 
-(defmethod nquads/object->nquads ["LINK" rdf-list-iri]
+(defmethod nquads/object->nquads ["LINK" rdf/list]
   [graph datatypes object]
   (let [result (reduce-list graph object)]
     [(second (first result)) result]))
