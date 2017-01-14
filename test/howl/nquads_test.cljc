@@ -5,8 +5,7 @@
             [clojure.string :as string]
 
             [howl.nquads :as nq]
-            [howl.core :as core]
-            [howl.util :refer [rdf> owl>]]))
+            [howl.core :as core]))
 
 (deftest test-nquad-string->nquad
   (testing "parse"

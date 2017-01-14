@@ -3,7 +3,7 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [<> rdf-schema>]]
+            [howl.util :as util]
             [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
@@ -87,7 +87,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   #{owl/class owl/restriction rdf/type
     owl/complement-of owl/on-property owl/some-values-from owl/all-values-from
     rdf/intersection-of rdf/union-of rdf/first rdf/rest
-    (rdf-schema> "label") (rdf-schema> "subClassOf")})
+    rdf/label rdf/sub-class-of})
 
 (defn manchester-component-type
   [subject-map subject]
@@ -115,9 +115,9 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
                      (contains? predicate-map rdf/rest))
                 :manchester-sequence)
 
-          (and (contains? predicate-map (rdf-schema> "label"))
-               (contains? predicate-map (rdf-schema> "subClassOf"))
-               (link/blank? (get-object-in predicate-map [(rdf-schema> "subClassOf")])))
+          (and (contains? predicate-map rdf/label)
+               (contains? predicate-map rdf/sub-class-of)
+               (link/blank? (get-object-in predicate-map [rdf/sub-class-of])))
           :manchester-expression)))
 
 (defmulti chase-expression
@@ -175,7 +175,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (cons subject
         (chase-expression
          subject-map
-         (get-object-in subject-map [subject (rdf-schema> "subClassOf")]))))
+         (get-object-in subject-map [subject rdf/sub-class-of]))))
 
 (declare make-processed-object)
 
@@ -253,7 +253,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
       (let [without (apply dissoc subject-map (rest relevant-subjects))]
         (assoc-in
          without
-         [subject (rdf-schema> "subClassOf") 0 :processed-object]
+         [subject rdf/sub-class-of 0 :processed-object]
          [:MANCHESTER_EXPRESSION
           (make-processed-object env subject-map (second relevant-subjects))]))
       subject-map)))
