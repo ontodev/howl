@@ -1,0 +1,7 @@
+<http://example.com/bird> <http://www.w3.org/2000/01/rdf-schema#label> "Bird" .
+<http://example.com/bird> <http://www.w3.org/2000/01/rdf-schema#subClassOf> _:b1 .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+_:b1 <http://www.w3.org/2002/07/owl#complementOf> _:b2 .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> .
+_:b2 <http://www.w3.org/2002/07/owl#onProperty> <http://purl.obolibrary.org/obo/BFO_0000050> .
+_:b2 <http://www.w3.org/2002/07/owl#allValuesFrom> <http://example.com/wheel> .

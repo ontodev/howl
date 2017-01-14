@@ -69,6 +69,10 @@
    "test/format-context/manchester1.howl"
    "test/nquads/manchester1.nq")
   (compare-howl<->nquads
+   "test/format-context/context.howl"
+   "test/format-context/manchester2.howl"
+   "test/nquads/manchester2.nq")
+  (compare-howl<->nquads
    "test/untyped-context/context.howl"
    "test/untyped-context/annotations1.howl"
    "test/nquads/annotations1.nq")
