@@ -53,7 +53,3 @@
   [string]
   #?(:clj (json/read-str string)
      :cljs (js->clj string)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;; General formatting shortcuts
-(defn <> [s] (str "<" s ">"))

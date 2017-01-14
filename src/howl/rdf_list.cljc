@@ -3,7 +3,7 @@
   (:require [clojure.string :as string]
             [clojure.walk :refer [postwalk]]
             [instaparse.core :as insta]
-            [howl.util :as util :refer [<>]]
+            [howl.util :as util]
             [howl.link :as link]
             [howl.core :as core]
             [howl.howl :as howl]
