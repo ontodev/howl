@@ -5,7 +5,8 @@
             [howl.howl :as howl]
             [howl.nquads :as nquads]
             [howl.rdf-list :as rdf-list]
-            [howl.manchester :as manchester]))
+            [howl.manchester :as manchester]
+            [howl.util :as util]))
 
 (defn append-newline
   [s]
@@ -26,8 +27,7 @@
             (map append-newline)
             (howl/lines->blocks (core/reset-environment env)))
 
-      ; TODO: Throw exception?
-       :else env))
+       :else (util/throw-exception "Unexpected input -- " arg)))
    {}
    args))
 
@@ -45,8 +45,7 @@
        (->> (if (seq? arg) arg (string/split-lines arg))
             (nquads/lines->blocks (core/reset-environment env)))
 
-      ; TODO: Throw exception?
-       :else env))
+       :else (util/throw-exception "Unexpected input -- " arg)))
    {}
    args))
 

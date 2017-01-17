@@ -11,8 +11,21 @@
 
 (defn merge-environments
   [& envs]
-  ; TODO: Do this properly!
-  (apply merge-with merge envs))
+  ;; TODO -   This is closer to "properly" in that it'll handle any values we can throw at it.
+  ;;        Are there cases where we need to be doing something else?
+  ;;        Should we be catting vectors for instance, or transforming strings in some known way?
+  ;;        Adding elements to sets perhaps?
+  ;;          In all the cases I see in our test suite, this is also overkill (since we only ever
+  ;;        seem to merge either the empty environment, or environments that have no key conflicts).
+  ;;        In the old model, it was more elaborate because merging two mostly-overlapping
+  ;;        environments was something that happened often.
+  (apply
+   merge-with
+   (fn [a b]
+     (if (and (map? a) (map? b))
+       (merge a b)
+       b))
+   envs))
 
 (defmulti update-environment
   "Given an environment and a block,
