@@ -19,7 +19,7 @@
   (reduce
    (fn [env arg]
      (cond
-       (map? arg)
+       (or (map? arg) (nil? arg))
        (core/merge-environments env arg)
 
        (or (seq? arg) (string? arg))
@@ -38,7 +38,7 @@
   (reduce
    (fn [env arg]
      (cond
-       (map? arg)
+       (or (map? arg) (nil? arg))
        (core/merge-environments env arg)
 
        (or (seq? arg) (string? arg))

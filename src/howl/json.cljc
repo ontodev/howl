@@ -50,8 +50,12 @@
    return the EDN representation."
   [json]
   (->> (util/read-json json)
-       ;; FIXME TODO - this value traversal needs to be a tree-walk, not a naive map.
-       ;;              should really use tree-seq https://clojuredocs.org/clojure.core/tree-seq
+       ;; FIXME  TODO - this value traversal needs to be a tree-walk, not a naive map.
+       ;;               should really use tree-seq https://clojuredocs.org/clojure.core/tree-seq
+       ;;               (the original read `(json/read-str json :value-fn json->value)`, which means
+       ;;               json->value was applied to each value in a deep tree-traversal, not just the
+       ;;               top-level values like we're doing below. Based on a reading of json->value,
+       ;;               I'm not sure this is a significant difference).
        (map (fn [[k v]] [k (json->value k v)]))
        (map (fn [[k v]] [(keyword k) v]))
        (into {})))
