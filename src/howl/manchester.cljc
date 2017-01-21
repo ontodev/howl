@@ -92,6 +92,14 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 (defn manchester-component-type
   [subject-map subject]
   (let [predicate-map (get subject-map subject)]
+    (when (= subject "_:b1")
+      (println "manchester-component-type")
+      (println
+       "CONSIDERING" subject
+       (link/blank? subject)
+       (rdf-type? predicate-map owl/restriction)
+       (contains? predicate-map owl/on-property)
+       (contains? predicate-map owl/some-values-from)))
     (cond (link/blank? subject)
           (cond (and (rdf-type? predicate-map owl/class)
                      (contains? predicate-map owl/complement-of))
@@ -350,12 +358,20 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     :CONJUNCTION (combination->nquads exp rdf/intersection-of)
     :DISJUNCTION (combination->nquads exp rdf/union-of)
     :NEGATION (negation->nquads exp)
-    (util/throw-exception "UNSUPPORTED ->NQUADS FORM" exp)))
+    (util/throw-exception "UNSUPPORTED ->NQUADS FORM '" exp "'")))
+
+(defn tap [thing]
+  (println " ====>" thing)
+  thing)
 
 (defmethod nquads/object->nquads ["LINK" manchester-iri]
   [graph datatypes object]
-  (->> object
-       convert-expression
-       (filter #(= 3 (count %)))
-       (map #(concat [graph] % ["LINK"]))
-       ((fn [xs] [(second (first xs)) xs]))))
+  (let [converted (convert-expression object)]
+    (if (and (= 1 (count converted))
+             (vector? (first converted))
+             (= :IRI (first (first converted))))
+      [(second (first converted))]
+      (->> converted
+           (filter #(= 3 (count %)))
+           (map #(concat [graph] % ["LINK"]))
+           ((fn [xs] [(second (first xs)) xs]))))))

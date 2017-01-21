@@ -47,6 +47,18 @@
       (is (= nquads (api/howl-to-nquads options context howl)))
       (is (= howl (api/nquads-to-howl options (api/howl-to-environment context) nquads))))))
 
+;; (println
+;;  (api/howl-to-nquads
+;;   {:options {:sequential-blank-nodes true}}
+;;   (slurp "test/laika-context/context.howl")
+;;   (slurp "test/laika-context/test1.howl")))
+
+;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
+;;   (api/howl-to-environment (slurp "test/laika-context/context.howl"))
+;;   (slurp "test/laika-context/test1.nq")))
+
 (deftest test-howl<->nquads
   (compare-howl<->nquads
    nil
@@ -72,6 +84,10 @@
    "test/format-context/context.howl"
    "test/format-context/manchester2.howl"
    "test/nquads/manchester2.nq")
+  (compare-howl<->nquads
+   "test/laika-context/context.howl"
+   "test/laika-context/test1.howl"
+   "test/laika-context/test1.nq")
   (compare-howl<->nquads
    "test/untyped-context/context.howl"
    "test/untyped-context/annotations1.howl"

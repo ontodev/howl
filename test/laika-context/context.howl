@@ -1,0 +1,21 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX kn: <https://knotation.org/>
+
+BASE <http://knotation.org/example-1#>
+
+LABEL Manchester: <http://www.w3.org/TR/owl2-manchester-syntax/>
+LABEL type [LINK]: rdf:type
+LABEL subclass of [LINK / Manchester]: rdfs:subClassOf
+LABEL has exact synonym: oio:hasExactSynonym
+
+LABEL Canis lupus: obo:NCBITaxon_9612
+LABEL Canis lupus familiaris: obo:NCBITaxon_9615
+LABEL head: obo:UBERON_0000033
+LABEL craniocervical region: obo:UBERON_0007811
+LABEL part of [LINK]: obo:BFO_0000050
+LABEL Laika: <https://en.m.wikipedia.org/wiki/Laika>
+LABEL Laika's head: <laikas-head>
