@@ -134,7 +134,7 @@ ARROWS      = #'>*' #'\\s*'"
 
 (defn indent
   [content]
-  (let [lines (string/split-lines content)]
+  (let [lines (string/split-lines (or content ""))]
     (->> (rest lines)
          (map #(if (string/blank? %) % (str "  " %)))
          (concat [(first lines)])
