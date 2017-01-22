@@ -89,49 +89,51 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     rdf/intersection-of rdf/union-of rdf/first rdf/rest
     rdf/label rdf/sub-class-of})
 
-(defn manchester-component-type
-  [subject-map subject]
-  (let [predicate-map (get subject-map subject)]
-    (when (= subject "_:b1")
-      (println "manchester-component-type")
-      (println
-       "CONSIDERING" subject
-       (link/blank? subject)
-       (rdf-type? predicate-map owl/restriction)
-       (contains? predicate-map owl/on-property)
-       (contains? predicate-map owl/some-values-from)))
-    (cond (link/blank? subject)
-          (cond (and (rdf-type? predicate-map owl/class)
-                     (contains? predicate-map owl/complement-of))
-                :manchester-negation
+(def manchester-component-type
+  (memoize
+   (fn [subject-map subject]
+     (let [predicate-map (get subject-map subject)]
+       (when (= subject "_:b1")
+         (println "manchester-component-type")
+         (println
+          "CONSIDERING" subject
+          (link/blank? subject)
+          (rdf-type? predicate-map owl/restriction)
+          (contains? predicate-map owl/on-property)
+          (contains? predicate-map owl/some-values-from)))
+       (cond (link/blank? subject)
+             (cond (and (rdf-type? predicate-map owl/class)
+                        (contains? predicate-map owl/complement-of))
+                   :manchester-negation
 
-                (and (rdf-type? predicate-map owl/class)
-                     (contains? predicate-map rdf/intersection-of))
-                :manchester-conjunction
+                   (and (rdf-type? predicate-map owl/class)
+                        (contains? predicate-map rdf/intersection-of))
+                   :manchester-conjunction
 
-                (and (rdf-type? predicate-map owl/class)
-                     (contains? predicate-map rdf/union-of))
-                :manchester-disjunction
+                   (and (rdf-type? predicate-map owl/class)
+                        (contains? predicate-map rdf/union-of))
+                   :manchester-disjunction
 
-                (and (rdf-type? predicate-map owl/restriction)
-                     (contains? predicate-map owl/on-property))
-                (if (contains? predicate-map owl/some-values-from)
-                  :manchester-some
-                  :manchester-only)
+                   (and (rdf-type? predicate-map owl/restriction)
+                        (contains? predicate-map owl/on-property))
+                   (if (contains? predicate-map owl/some-values-from)
+                     :manchester-some
+                     :manchester-only)
 
-                (and (contains? predicate-map rdf/first)
-                     (contains? predicate-map rdf/rest))
-                :manchester-sequence)
+                   (and (contains? predicate-map rdf/first)
+                        (contains? predicate-map rdf/rest))
+                   :manchester-sequence)
 
-          (and (contains? predicate-map rdf/label)
-               (contains? predicate-map rdf/sub-class-of)
-               (link/blank? (get-object-in predicate-map [rdf/sub-class-of])))
-          :manchester-expression)))
+             (and (contains? predicate-map rdf/label)
+                  (contains? predicate-map rdf/sub-class-of)
+                  (link/blank? (get-object-in predicate-map [rdf/sub-class-of])))
+             :manchester-expression)))))
 
 (defmulti chase-expression
   manchester-component-type)
 
-(defmethod chase-expression nil [_ _] nil)
+(defmethod chase-expression nil [_ subject]
+  (cons subject nil))
 
 (defmethod chase-expression :manchester-negation
   [subject-map subject]
@@ -250,14 +252,18 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   [env subject-map subject]
   (combination->processed-object env "or" rdf/union-of subject-map subject))
 
+(defn deep-verify
+  [subject-map subject relevant-subjects]
+  (every? (fn [subject]
+            (clojure.set/subset?
+             (set (keys (get subject-map subject)))
+             valid-manchester-predicate-keys))
+          relevant-subjects))
+
 (defn process-manchester-expression
   [env subject-map subject predicate-map]
   (let [relevant-subjects (chase-expression subject-map subject)]
-    (if (every? (fn [subject]
-                  (clojure.set/subset?
-                   (set (keys (get subject-map subject)))
-                   valid-manchester-predicate-keys))
-                relevant-subjects)
+    (if (deep-verify subject-map subject relevant-subjects)
       (let [without (apply dissoc subject-map (rest relevant-subjects))]
         (assoc-in
          without
