@@ -93,14 +93,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
   (memoize
    (fn [subject-map subject]
      (let [predicate-map (get subject-map subject)]
-       (when (= subject "_:b1")
-         (println "manchester-component-type")
-         (println
-          "CONSIDERING" subject
-          (link/blank? subject)
-          (rdf-type? predicate-map owl/restriction)
-          (contains? predicate-map owl/on-property)
-          (contains? predicate-map owl/some-values-from)))
        (cond (link/blank? subject)
              (cond (and (rdf-type? predicate-map owl/class)
                         (contains? predicate-map owl/complement-of))
@@ -127,12 +119,19 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
              (and (contains? predicate-map rdf/label)
                   (contains? predicate-map rdf/sub-class-of)
                   (link/blank? (get-object-in predicate-map [rdf/sub-class-of])))
-             :manchester-expression)))))
+             :manchester-expression
+
+             (and (contains? predicate-map rdf/sub-class-of)
+                  (not (link/blank? (get-object-in predicate-map [rdf/sub-class-of]))))
+             :manchester-label)))))
 
 (defmulti chase-expression
   manchester-component-type)
 
 (defmethod chase-expression nil [_ subject]
+  (cons subject nil))
+
+(defmethod chase-expression :manchester-label [_ subject]
   (cons subject nil))
 
 (defmethod chase-expression :manchester-negation
@@ -216,6 +215,18 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
            [:LABEL label]))
        res))])
 
+(defmethod make-processed-object :manchester-label
+  [env subject-map subject]
+  [:OBJECT_PROPERTY_EXPRESSION
+   (let [res (link/iri->name env (get-object-in subject-map [subject rdf/sub-class-of]))]
+     (case (first res)
+       :LABEL
+       (let [label (get res 1)]
+         (if (re-find #" " label)
+           [:LABEL "'" label "'"]
+           [:LABEL label]))
+       res))])
+
 (defmethod make-processed-object :manchester-negation
   [env subject-map subject]
   [:CLASS_EXPRESSION
@@ -260,29 +271,56 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
              valid-manchester-predicate-keys))
           relevant-subjects))
 
-(defn process-manchester-expression
+(defmulti process-manchester-expression
+  (fn [_ subject-map subject _]
+    (manchester-component-type subject-map subject)))
+
+;; TODO - re-factor the nex three functions a bit (they share common structure)
+(defmethod process-manchester-expression :default
   [env subject-map subject predicate-map]
   (let [relevant-subjects (chase-expression subject-map subject)]
     (if (deep-verify subject-map subject relevant-subjects)
-      (let [without (apply dissoc subject-map (rest relevant-subjects))]
-        (assoc-in
+      (let [without (apply dissoc subject-map relevant-subjects)
+            processed [:MANCHESTER_EXPRESSION (make-processed-object env subject-map (first relevant-subjects))]]
+        (reduce
+         ; TODO - pick object instead of assuming 0
+         #(assoc-in %1 (concat %2 [0 :processed-object]) processed)
          without
-         [subject rdf/sub-class-of 0 :processed-object]
-         [:MANCHESTER_EXPRESSION
-          (make-processed-object env subject-map (second relevant-subjects))]))
+         (get-in without [:blank-object-uses subject])))
+      subject-map)))
+
+(defmethod process-manchester-expression :manchester-label
+  [env subject-map subject predicate-map]
+  (let [relevant-subjects (chase-expression subject-map subject)]
+    (let [processed [:MANCHESTER_EXPRESSION (make-processed-object env subject-map (first relevant-subjects))]]
+      (assoc-in subject-map [subject rdf/sub-class-of 0 :processed-object] processed))))
+
+(defmethod process-manchester-expression :manchester-expression
+  [env subject-map subject predicate-map]
+  (let [relevant-subjects (chase-expression subject-map subject)]
+    (if (deep-verify subject-map subject relevant-subjects)
+      (let [without (apply dissoc subject-map (rest relevant-subjects))
+            processed [:MANCHESTER_EXPRESSION (make-processed-object env subject-map (second relevant-subjects))]]
+        (assoc-in without [subject rdf/sub-class-of 0 :processed-object] processed))
       subject-map)))
 
 (defn process-manchester
   [env graph subject-map]
-  [graph (reduce
-          (fn [memo [subject predicate-map]]
-            (process-manchester-expression env memo subject predicate-map))
-          subject-map
-          (filter
-           (fn [[k v]]
-             (= :manchester-expression
-                (manchester-component-type subject-map k)))
-           subject-map))])
+  (let [comp-type #(manchester-component-type subject-map (first %))]
+    [graph (reduce
+            (fn [memo [subject predicate-map]]
+              (if (contains? memo subject)
+                (process-manchester-expression env memo subject predicate-map)
+                memo))
+            subject-map
+            (sort-by
+             #(case (comp-type %)
+                :manchester-expression 0
+                :manchester-label 1
+                2)
+             (filter
+              #(comp-type %)
+              subject-map)))]))
 
 (defn handle-manchester
   [env graph-map]
@@ -365,10 +403,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
     :DISJUNCTION (combination->nquads exp rdf/union-of)
     :NEGATION (negation->nquads exp)
     (util/throw-exception "UNSUPPORTED ->NQUADS FORM '" exp "'")))
-
-(defn tap [thing]
-  (println " ====>" thing)
-  thing)
 
 (defmethod nquads/object->nquads ["LINK" manchester-iri]
   [graph datatypes object]

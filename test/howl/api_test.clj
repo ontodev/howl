@@ -56,6 +56,12 @@
 ;; (println
 ;;  (api/nquads-to-howl
 ;;   {:options {:sequential-blank-nodes true}}
+;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
+;;   (slurp "test/nquads/manchester1.nq")))
+
+;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
 ;;   (api/howl-to-environment (slurp "test/laika-context/context.howl"))
 ;;   (slurp "test/laika-context/test1.nq")))
 

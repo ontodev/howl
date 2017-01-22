@@ -53,3 +53,9 @@
   [string]
   #?(:clj (json/read-str string)
      :cljs (js->clj string)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; debugging utility
+(defn tap [prefix thing]
+  (println prefix (str (if (seq? thing) (vec thing) thing)))
+  thing)
