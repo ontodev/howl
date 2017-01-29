@@ -1,6 +1,7 @@
 (ns howl.cli
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
+            [clojure.data.csv :as csv]
             [clojure.tools.cli :refer [parse-opts]]
             [edn-ld.jena]
             [howl.util :as util]
@@ -13,12 +14,29 @@
 
 (defn file-lines
   [filename]
-  (line-seq (clojure.java.io/reader filename)))
+  (line-seq (io/reader filename)))
 
 (defn exit
   [status msg]
   (println msg)
   (System/exit status))
+
+(defn tsv-to-howl
+  "Given a SUBJECT/label/type TSV file, returns the corresponding
+lazy sequence of Howl lines"
+  [filename]
+  (mapcat
+   (fn [[subject label type]]
+     ;; FIXME - sanitize the label properly. (Not doing it now because the _real_ solution
+     ;;         is probably to start up table.cljc, and emit Howl blocks from tabular data
+     ;;         rather than the below table->string hack)
+     (let [l (first (string/split (string/replace label #"[\[\]]" "") #"@"))]
+       [(str "LABEL " l ": " subject)
+        l
+        (str "label: " l)
+        (str "type: " type)
+        ""]))
+   (rest (csv/read-csv (io/reader filename) :separator \tab))))
 
 (defn parse-howl-file
   "Takes a filename, and optionally a starting environment, and parses that

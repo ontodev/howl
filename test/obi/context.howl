@@ -1,0 +1,108 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX protege: <http://protege.stanford.edu/plugins/owl/protege#>
+PREFIX BFO: <obo:BFO_>
+PREFIX CARO: <obo:CARO_>
+PREFIX CHEBI: <obo:CHEBI_>
+PREFIX CL: <obo:CL_>
+PREFIX CLO: <obo:CLO_>
+PREFIX ENVO: <obo:ENVO_>
+PREFIX GAZ: <obo:GAZ_>
+PREFIX GO: <obo:GO_>
+PREFIX HP: <obo:HP_>
+PREFIX IAO: <obo:IAO_>
+PREFIX IDO: <obo:IDO_>
+PREFIX NCBITaxon: <obo:NCBITaxon_>
+PREFIX OBI: <obo:OBI_>
+PREFIX OGMS: <obo:OGMS_>
+PREFIX PATO: <obo:PATO_>
+PREFIX PR: <obo:PR_>
+PREFIX REO: <obo:REO_>
+PREFIX RO: <obo:RO_>
+PREFIX SO: <obo:SO_>
+PREFIX UBERON: <obo:UBERON_>
+PREFIX UO: <obo:UO_>
+PREFIX VO: <obo:VO_>
+
+LABEL type: rdf:type
+LABEL label: rdfs:label
+LABEL comment: rdfs:comment
+LABEL subclass of: rdfs:subClassOf
+LABEL equivalent to: owl:equivalentClass
+LABEL deprecated: owl:deprecated
+
+obo:obi.owl
+dc:contributor: Advisors for this project come from the IFOMIS group, Saarbruecken and from the Co-ODE group in Manchester@en
+dc:creator: Alan Ruttenberg@en
+dc:creator: Allyson Lister@en
+dc:creator: Barry Smith@en
+dc:creator: Bill Bug@en
+dc:creator: Bjoern Peters@en
+dc:creator: Carlo Torniai@en
+dc:creator: Chris Mungall@en
+dc:creator: Chris Stoeckert@en
+dc:creator: Chris Taylor@en
+dc:creator: Christian Bolling@en
+dc:creator: Cristian Cocos@en
+dc:creator: Daniel Rubin@en
+dc:creator: Daniel Schober@en
+dc:creator: Dawn Field@en
+dc:creator: Dirk Derom@en
+dc:creator: Elisabetta Manduchi@en
+dc:creator: Eric Deutsch@en
+dc:creator: Frank Gibson@en
+dc:creator: Gilberto Fragoso@en
+dc:creator: Helen C. Causton@en
+dc:creator: Helen Parkinson@en
+dc:creator: Holger Stenzhorn@en
+dc:creator: James A. Overton@en
+dc:creator: James Malone@en
+dc:creator: Jay Greenbaum@en
+dc:creator: Jeffrey Grethe@en
+dc:creator: Jennifer Fostel@en
+dc:creator: Jessica Turner@en
+dc:creator: Jie Zheng@en
+dc:creator: Joe White@en
+dc:creator: John Westbrook@en
+dc:creator: Kevin Clancy@en
+dc:creator: Larisa Soldatova@en
+dc:creator: Lawrence Hunter@en
+dc:creator: Liju Fan@en
+dc:creator: Luisa Montecchi@en
+dc:creator: Matthew Brush@en
+dc:creator: Matthew Pocock@en
+dc:creator: Melanie Courtot@en
+dc:creator: Melissa Haendel@en
+dc:creator: Mervi Heiskanen@en
+dc:creator: Monnie McGee@en
+dc:creator: Norman Morrison@en
+dc:creator: Philip Lord@en
+dc:creator: Philippe Rocca-Serra@en
+dc:creator: Pierre Grenon@en
+dc:creator: Richard Bruskiewich@en
+dc:creator: Richard Scheuermann@en
+dc:creator: Robert Stevens@en
+dc:creator: Ryan R. Brinkman@en
+dc:creator: Stefan Wiemann@en
+dc:creator: Susanna-Assunta Sansone@en
+dc:creator: Tanya Gray@en
+dc:creator: Tina Hernandez-Boussard@en
+dc:creator: Trish Whetzel@en
+dc:creator: Yongqun He@en
+dc:date: 2009-07-31^^xsd:date
+dc:description: The Ontology for Biomedical Investigations (OBI) is build in a collaborative, international effort and will serve as a resource for annotating biomedical investigations, including the study design, protocols and instrumentation used, the data generated and the types of analysis performed on the data. This ontology arose from the Functional Genomics Investigation Ontology (FuGO) and will contain both terms that are common to all biomedical investigations, including functional genomics investigations and those that are more domain specific.@en
+dc:format: OWL-DL@en
+dc:license: <http://creativecommons.org/licenses/by/3.0/>
+dc:subject: An ontology for the annotation of biomedical and functional genomics experiments.@en
+dc:title: Ontology for Biomedical Investigation@en
+owl:versionIRI: <http://purl.obolibrary.org/obo/obi/2015-12-07/obi.owl>
+owl:versionInfo: 2015-12-07
+protege:defaultLanguage: en
+rdf:type: owl:NamedIndividual
+rdf:type: owl:Ontology
+rdfs:comment: Please cite the OBI consortium http://purl.obolibrary.org/obo/obi where traditional citation is called for. However it is adequate that individual terms be attributed simply by use of the identifying PURL for the term, in projects that refer to them.
+

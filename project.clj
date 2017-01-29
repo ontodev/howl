@@ -10,6 +10,7 @@
                  [com.lucasbradstreet/instaparse-cljs "1.4.1.1"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/data.csv "0.1.3"]
                  [org.clojure/test.check "0.9.0"]
                  [edn-ld "0.2.2"]
                  [doo "0.1.7-SNAPSHOT"]]

@@ -1,0 +1,3248 @@
+SUBJECT	label:	type:>
+<http://purl.obolibrary.org/obo/iao/2015-02-23/iao.owl>	IAO Release 2015-02-23	owl:NamedIndividual
+<http://purl.obolibrary.org/obo/obi/2015-12-07/obi.owl>	OBI Release 2015-12-07	owl:NamedIndividual
+<http://www.geneontology.org/formats/oboInOwl#ObsoleteClass>	Obsolete Class	owl:Class
+<http://www.geneontology.org/formats/oboInOwl#shorthand>	shorthand	owl:AnnotationProperty
+BFO:0000001	entity@en	owl:Class
+BFO:0000002	continuant@en	owl:Class
+BFO:0000003	occurrent@en	owl:Class
+BFO:0000004	independent continuant@en	owl:Class
+BFO:0000005	obsolete dependent continuant@en	owl:Class
+BFO:0000006	spatial region@en	owl:Class
+BFO:0000008	temporal region@en	owl:Class
+BFO:0000009	two-dimensional spatial region@en	owl:Class
+BFO:0000011	spatiotemporal region@en	owl:Class
+BFO:0000015	process@en	owl:Class
+BFO:0000016	disposition@en	owl:Class
+BFO:0000017	realizable entity@en	owl:Class
+BFO:0000018	zero-dimensional spatial region@en	owl:Class
+BFO:0000019	quality@en	owl:Class
+BFO:0000020	specifically dependent continuant@en	owl:Class
+BFO:0000023	role@en	owl:Class
+BFO:0000024	fiat object@en	owl:Class
+BFO:0000026	one-dimensional spatial region@en	owl:Class
+BFO:0000027	object aggregate@en	owl:Class
+BFO:0000028	three-dimensional spatial region@en	owl:Class
+BFO:0000029	site@en	owl:Class
+BFO:0000030	object@en	owl:Class
+BFO:0000031	generically dependent continuant@en	owl:Class
+BFO:0000034	function@en	owl:Class
+BFO:0000035	process boundary@en	owl:Class
+BFO:0000038	one-dimensional temporal region@en	owl:Class
+BFO:0000040	material entity@en	owl:Class
+BFO:0000050	part of@en	owl:ObjectProperty
+BFO:0000051	has part@en	owl:ObjectProperty
+BFO:0000054	realized in@en	owl:ObjectProperty
+BFO:0000055	realizes@en	owl:ObjectProperty
+BFO:0000062	preceded by@en	owl:AnnotationProperty
+BFO:0000062	preceded by@en	owl:ObjectProperty
+BFO:0000063	precedes@en	owl:AnnotationProperty
+BFO:0000063	precedes@en	owl:ObjectProperty
+BFO:0000066	occurs in@en	owl:ObjectProperty
+BFO:0000067	contains process@en	owl:ObjectProperty
+BFO:0000140	continuant fiat boundary@en	owl:Class
+BFO:0000141	immaterial entity@en	owl:Class
+BFO:0000142	one-dimensional continuant fiat boundary@en	owl:Class
+BFO:0000144	process profile@en	owl:Class
+BFO:0000145	relational quality@en	owl:Class
+BFO:0000146	two-dimensional continuant fiat boundary@en	owl:Class
+BFO:0000147	zero-dimensional continuant fiat boundary@en	owl:Class
+BFO:0000148	zero-dimensional temporal region@en	owl:Class
+BFO:0000179	BFO OWL specification label@en	owl:AnnotationProperty
+BFO:0000180	BFO CLIF specification label@en	owl:AnnotationProperty
+BFO:0000182	history@en	owl:Class
+CARO:0000004	portion of organism substance	owl:Class
+CARO:0000043	portion of tissue	owl:Class
+CARO:0000055	multi-tissue structure	owl:Class
+CARO:0000066	epithelium	owl:Class
+CARO:0001008	gross anatomical part@en	owl:Class
+CHEBI:15377	water	owl:Class
+CHEBI:15956	biotin	owl:Class
+CHEBI:16670	peptide	owl:Class
+CHEBI:16991	deoxyribonucleic acid	owl:Class
+CHEBI:17137	hydrogensulfite	owl:Class
+CHEBI:17234	glucose	owl:Class
+CHEBI:17709	5'-adenylyl sulfate	owl:Class
+CHEBI:23367	molecular entity	owl:Class
+CHEBI:23528	cytochalasin	owl:Class
+CHEBI:23995	N-ethyl-N-nitrosourea	owl:Class
+CHEBI:24636	proton	owl:Class
+CHEBI:25078	luciferin	owl:Class
+CHEBI:26710	sodium chloride	owl:Class
+CHEBI:27889	lead(0)	owl:Class
+CHEBI:28619	acrylamide	owl:Class
+CHEBI:29191	hydroxyl	owl:Class
+CHEBI:29237	deuterium atom	owl:Class
+CHEBI:30682	ruthenium atom	owl:Class
+CHEBI:31624	fluorescein	owl:Class
+CHEBI:31642	gadodiamide hydrate	owl:Class
+CHEBI:31643	gadoteridol	owl:Class
+CHEBI:31991	phenol red	owl:Class
+CHEBI:32142	sodium citrate dihydrate	owl:Class
+CHEBI:33250	atom	owl:Class
+CHEBI:33359	rhodium atom	owl:Class
+CHEBI:33375	gadolinium atom	owl:Class
+CHEBI:33376	terbium atom	owl:Class
+CHEBI:33696	nucleic acid	owl:Class
+CHEBI:33697	ribonucleic acid	owl:Class
+CHEBI:33709	amino acid	owl:Class
+CHEBI:33839	macromolecule	owl:Class
+CHEBI:35729	gadolinium molecular entity	owl:Class
+CHEBI:37333	gadodiamide	owl:Class
+CHEBI:37586	sodium phosphate	owl:Class
+CHEBI:37972	phosphorus-32 atom	owl:Class
+CHEBI:37973	phosphorus-33 atom	owl:Class
+CHEBI:37987	Cy3 dye	owl:Class
+CHEBI:37989	Cy5 dye	owl:Class
+CHEBI:42098	digoxigenin	owl:Class
+CHEBI:42191	ethylenediaminetetraacetic acid	owl:Class
+CHEBI:4705	double-stranded DNA	owl:Class
+CHEBI:472552	5-bromo-2'-deoxyuridine	owl:Class
+CHEBI:50076	chromium-51	owl:Class
+CHEBI:51756	Alexa Fluor 532	owl:Class
+CHEBI:51760	Alexa Fluor 546	owl:Class
+CHEBI:52673	Alexa Fluor 555	owl:Class
+CHEBI:53526	tritiated thymidine	owl:Class
+CHEBI:59050	dimethyl sulfate	owl:Class
+CHEBI:59051	diethyl pyrocarbonate	owl:Class
+CHEBI:59052	1,1-dihydroxy-3-ethoxy-2-butanone	owl:Class
+CHEBI:59053	N-cyclohexyl-N'-(2-(4-morpholinyl)ethyl)carbodiimide	owl:Class
+CHEBI:59054	N-methylisatoic anhydride	owl:Class
+CHEBI:59055	(S)-1-(4-bromoacetamidobenzyl)EDTA	owl:Class
+CHEBI:59056	EDTA methidiumpropylamide	owl:Class
+CHEBI:59424	bromophenol blue	owl:Class
+CHEBI:9754	tris	owl:Class
+CL:0000000	cell@en	owl:Class
+CL:0000001	primary cultured cell	owl:Class
+CL:0000003	native cell	owl:Class
+CL:0000010	cultured cell	owl:Class
+CL:0000057	fibroblast	owl:Class
+CL:0000066	epithelial cell	owl:Class
+CL:0000084	T cell	owl:Class
+CL:0000097	mast cell	owl:Class
+CL:0000182	hepatocyte	owl:Class
+CL:0000232	erythrocyte	owl:Class
+CL:0000235	macrophage	owl:Class
+CL:0000236	B cell	owl:Class
+CL:0000451	dendritic cell	owl:Class
+CL:0000542	lymphocyte	owl:Class
+CL:0000578	experimentally modified cell in vitro	owl:Class
+CL:0000624	CD4-positive, alpha-beta T cell	owl:Class
+CL:0000625	CD8-positive, alpha-beta T cell	owl:Class
+CL:0000767	basophil	owl:Class
+CL:0000786	plasma cell	owl:Class
+CL:0000789	alpha-beta T cell	owl:Class
+CL:0000794	CD8-positive, alpha-beta cytotoxic T cell	owl:Class
+CL:0000814	mature NK T cell	owl:Class
+CL:0000842	mononuclear cell	owl:Class
+CLO:0000001	cell line cell	owl:Class
+CLO:0000018	mortal cell line cell	owl:Class
+CLO:0000019	immortal cell line cell	owl:Class
+CLO:0000031	cell line@en	owl:Class
+CLO:0009828	immortal cell line@en	owl:Class
+CLO:0009829	mortal cell line@en	owl:Class
+ENVO:00001998	soil	owl:Class
+ENVO:00002257	podzol	owl:Class
+ENVO:00010483	environmental material	owl:Class
+GAZ:00000448	geographic location	owl:Class
+GAZ:00000448	geographic location	owl:NamedIndividual
+GO:0001047	core promoter binding	owl:Class
+GO:0001788	antibody-dependent cellular cytotoxicity	owl:Class
+GO:0001806	type IV hypersensitivity	owl:Class
+GO:0001816	cytokine production	owl:Class
+GO:0001906	cell killing	owl:Class
+GO:0001913	T cell mediated cytotoxicity	owl:Class
+GO:0002250	adaptive immune response	owl:Class
+GO:0002367	cytokine production involved in immune response	owl:Class
+GO:0002390	platelet activating factor production	owl:Class
+GO:0002507	tolerance induction	owl:Class
+GO:0002514	B cell tolerance induction	owl:Class
+GO:0002517	T cell tolerance induction	owl:Class
+GO:0002524	hypersensitivity	owl:Class
+GO:0002534	cytokine production involved in inflammatory response	owl:Class
+GO:0003674	molecular_function	owl:Class
+GO:0003823	antigen binding	owl:Class
+GO:0003824	catalytic activity	owl:Class
+GO:0003964	RNA-directed DNA polymerase activity	owl:Class
+GO:0005216	ion channel activity	owl:Class
+GO:0005575	cellular_component	owl:Class
+GO:0005694	chromosome	owl:Class
+GO:0005739	mitochondrion	owl:Class
+GO:0006006	glucose metabolic process	owl:Class
+GO:0006260	DNA replication	owl:Class
+GO:0006306	DNA methylation	owl:Class
+GO:0006338	chromatin remodeling	owl:Class
+GO:0006909	phagocytosis	owl:Class
+GO:0006955	immune response	owl:Class
+GO:0006974	cellular response to DNA damage stimulus	owl:Class
+GO:0007049	cell cycle	owl:Class
+GO:0007596	blood coagulation	owl:Class
+GO:0008150	biological_process	owl:Class
+GO:0008228	opsonization	owl:Class
+GO:0008283	cell proliferation	owl:Class
+GO:0009566	fertilization	owl:Class
+GO:0009987	cellular process	owl:Class
+GO:0010467	gene expression	owl:Class
+GO:0010573	vascular endothelial growth factor production	owl:Class
+GO:0016064	immunoglobulin mediated immune response	owl:Class
+GO:0016570	histone modification	owl:Class
+GO:0019814	immunoglobulin complex	owl:Class
+GO:0019815	B cell receptor complex	owl:Class
+GO:0019882	antigen processing and presentation	owl:Class
+GO:0019904	protein domain specific binding	owl:Class
+GO:0030041	actin filament polymerization	owl:Class
+GO:0030097	hemopoiesis	owl:Class
+GO:0032601	connective tissue growth factor production	owl:Class
+GO:0032602	chemokine production	owl:Class
+GO:0032604	granulocyte macrophage colony-stimulating factor production	owl:Class
+GO:0032605	hepatocyte growth factor production	owl:Class
+GO:0032606	type I interferon production	owl:Class
+GO:0032608	interferon-beta production	owl:Class
+GO:0032609	interferon-gamma production	owl:Class
+GO:0032610	interleukin-1 alpha production	owl:Class
+GO:0032611	interleukin-1 beta production	owl:Class
+GO:0032612	interleukin-1 production	owl:Class
+GO:0032613	interleukin-10 production	owl:Class
+GO:0032614	interleukin-11 production	owl:Class
+GO:0032615	interleukin-12 production	owl:Class
+GO:0032616	interleukin-13 production	owl:Class
+GO:0032617	interleukin-14 production	owl:Class
+GO:0032618	interleukin-15 production	owl:Class
+GO:0032619	interleukin-16 production	owl:Class
+GO:0032620	interleukin-17 production	owl:Class
+GO:0032621	interleukin-18 production	owl:Class
+GO:0032622	interleukin-19 production	owl:Class
+GO:0032623	interleukin-2 production	owl:Class
+GO:0032624	interleukin-20 production	owl:Class
+GO:0032625	interleukin-21 production	owl:Class
+GO:0032626	interleukin-22 production	owl:Class
+GO:0032627	interleukin-23 production	owl:Class
+GO:0032628	interleukin-24 production	owl:Class
+GO:0032629	interleukin-25 production	owl:Class
+GO:0032630	interleukin-26 production	owl:Class
+GO:0032631	interleukin-27 production	owl:Class
+GO:0032632	interleukin-3 production	owl:Class
+GO:0032633	interleukin-4 production	owl:Class
+GO:0032634	interleukin-5 production	owl:Class
+GO:0032635	interleukin-6 production	owl:Class
+GO:0032636	interleukin-7 production	owl:Class
+GO:0032637	interleukin-8 production	owl:Class
+GO:0032638	interleukin-9 production	owl:Class
+GO:0032639	TRAIL production	owl:Class
+GO:0032640	tumor necrosis factor production	owl:Class
+GO:0032641	lymphotoxin A production	owl:Class
+GO:0032905	transforming growth factor beta1 production	owl:Class
+GO:0032906	transforming growth factor beta2 production	owl:Class
+GO:0032907	transforming growth factor beta3 production	owl:Class
+GO:0033036	macromolecule localization	owl:Class
+GO:0034061	DNA polymerase activity	owl:Class
+GO:0034343	type III interferon production	owl:Class
+GO:0035393	chemokine (C-X-C motif) ligand 9 production	owl:Class
+GO:0035397	helper T cell enhancement of adaptive immune response	owl:Class
+GO:0035398	helper T cell enhancement of T cell mediated immune response	owl:Class
+GO:0035399	helper T cell enhancement of B cell mediated immune response	owl:Class
+GO:0035746	granzyme A production	owl:Class
+GO:0035944	perforin production	owl:Class
+GO:0036262	granulysin production	owl:Class
+GO:0040029	regulation of gene expression, epigenetic	owl:Class
+GO:0040030	regulation of molecular function, epigenetic	owl:Class
+GO:0042098	T cell proliferation	owl:Class
+GO:0042101	T cell receptor complex	owl:Class
+GO:0042110	T cell activation	owl:Class
+GO:0042571	immunoglobulin complex, circulating	owl:Class
+GO:0042575	DNA polymerase complex	owl:Class
+GO:0042605	peptide antigen binding	owl:Class
+GO:0042611	MHC protein complex	owl:Class
+GO:0043227	membrane-bounded organelle	owl:Class
+GO:0043234	protein complex	owl:Class
+GO:0043316	cytotoxic T cell degranulation	owl:Class
+GO:0043565	sequence-specific DNA binding	owl:Class
+GO:0044030	regulation of DNA methylation	owl:Class
+GO:0044807	macrophage migration inhibitory factor production	owl:Class
+GO:0044808	Oncostatin M production	owl:Class
+GO:0044809	chemokine (C-C motif) ligand 17 production	owl:Class
+GO:0048869	cellular developmental process	owl:Class
+GO:0050896	response to stimulus	owl:Class
+GO:0051276	chromosome organization	owl:Class
+GO:0070358	actin polymerization-dependent cell motility	owl:Class
+GO:0071604	transforming growth factor beta production	owl:Class
+GO:0071605	monocyte chemotactic protein-1 production	owl:Class
+GO:0071606	chemokine (C-C motif) ligand 4 production	owl:Class
+GO:0071607	macrophage inflammatory protein-1 gamma production	owl:Class
+GO:0071608	macrophage inflammatory protein-1 alpha production	owl:Class
+GO:0071609	chemokine (C-C motif) ligand 5 production	owl:Class
+GO:0071610	chemokine (C-C motif) ligand 1 production	owl:Class
+GO:0071611	granulocyte colony-stimulating factor production	owl:Class
+GO:0071612	IP-10 production	owl:Class
+GO:0071613	granzyme B production	owl:Class
+GO:0071706	tumor necrosis factor superfamily cytokine production	owl:Class
+GO:0071924	chemokine (C-C motif) ligand 22 production	owl:Class
+GO:0072535	tumor necrosis factor (ligand) superfamily member 11 production	owl:Class
+GO:0097087	interleukin-17A production	owl:Class
+GO:0097088	interleukin-17F production	owl:Class
+GO:0097278	complement-dependent cytotoxicity	owl:Class
+GO:0097280	histamine secretion mediated by immunoglobulin	owl:Class
+GO:0097281	immune complex formation	owl:Class
+GO:0097282	immunoglobulin-mediated neutralization	owl:Class
+GO:0097388	chemokine (C-C motif) ligand 19 production	owl:Class
+GO:0097389	chemokine (C-C motif) ligand 21 production	owl:Class
+GO:0097390	chemokine (C-X-C motif) ligand 12 production	owl:Class
+GO:0097391	chemokine (C-X-C motif) ligand 13 production	owl:Class
+GO:0097392	chemokine (C-X-C motif) ligand 16 production	owl:Class
+HP:0000855	Insulin resistance	owl:Class
+IAO:0000001	conditional specification@en	owl:Class
+IAO:0000002	example to be eventually removed@en	owl:NamedIndividual
+IAO:0000003	measurement unit label@en	owl:Class
+IAO:0000005	objective specification@en	owl:Class
+IAO:0000006	narrative object@en	owl:Class
+IAO:0000007	action specification@en	owl:Class
+IAO:0000008	obsolete_artifact	owl:Class
+IAO:0000009	datum label@en	owl:Class
+IAO:0000010	software@en	owl:Class
+IAO:0000012	obsolete2_digital entity@en	owl:Class
+IAO:0000013	journal article@en	owl:Class
+IAO:0000015	information carrier@en	owl:Class
+IAO:0000017	model number@en	owl:Class
+IAO:0000018	obsolete_material_entity	owl:Class
+IAO:0000019	obsolete2_binary digital entity@en	owl:Class
+IAO:0000024	obsolete_unit of measure	owl:Class
+IAO:0000025	programming language@en	owl:Class
+IAO:0000027	data item@en	owl:Class
+IAO:0000028	symbol@en	owl:Class
+IAO:0000029	numeral@en	owl:Class
+IAO:0000030	information content entity@en	owl:Class
+IAO:0000031	integer numeral@en	owl:Class
+IAO:0000032	scalar measurement datum@en	owl:Class
+IAO:0000033	directive information entity@en	owl:Class
+IAO:0000034	time trigger@en	owl:Class
+IAO:0000035	obsolete_study interpretation@en	owl:Class
+IAO:0000037	dot plot@en	owl:Class
+IAO:0000038	graph@en	owl:Class
+IAO:0000039	has measurement unit label@en	owl:ObjectProperty
+IAO:0000047	obsolete2_text based digital entity@en	owl:Class
+IAO:0000055	rule@en	owl:Class
+IAO:0000057	contour plot@en	owl:Class
+IAO:0000059	obsolete2_report figure@en	owl:Class
+IAO:0000064	algorithm@en	owl:Class
+IAO:0000065	software interpreter@en	owl:Class
+IAO:0000078	curation status specification@en	owl:Class
+IAO:0000079	density plot@en	owl:Class
+IAO:0000088	report@en	owl:Class
+IAO:0000091	obsolete_report element@en	owl:Class
+IAO:0000093	obsolete2_binary executable@en	owl:Class
+IAO:0000096	source code module@en	owl:Class
+IAO:0000097	obsolete_report table@en	owl:Class
+IAO:0000098	data format specification@en	owl:Class
+IAO:0000100	data set@en	owl:Class
+IAO:0000101	image@en	owl:Class
+IAO:0000102	data about an ontology part@en	owl:Class
+IAO:0000103	failed exploratory term@en	owl:NamedIndividual
+IAO:0000104	plan specification@en	owl:Class
+IAO:0000105	obsolete2_digital document@en	owl:Class
+IAO:0000109	measurement datum@en	owl:Class
+IAO:0000111	editor preferred label@en	owl:AnnotationProperty
+IAO:0000111	editor preferred term	owl:AnnotationProperty
+IAO:0000111	editor preferred term@en	owl:AnnotationProperty
+IAO:0000111	editor preferred term~editor preferred label	owl:AnnotationProperty
+IAO:0000112	example of usage@en	owl:AnnotationProperty
+IAO:0000113	in branch@en	owl:AnnotationProperty
+IAO:0000114	has curation status@en	owl:AnnotationProperty
+IAO:0000115	definition	owl:AnnotationProperty
+IAO:0000115	definition@en	owl:AnnotationProperty
+IAO:0000115	textual definition	owl:AnnotationProperty
+IAO:0000116	editor note@en	owl:AnnotationProperty
+IAO:0000117	term editor@en	owl:AnnotationProperty
+IAO:0000118	alternative term@en	owl:AnnotationProperty
+IAO:0000119	definition source@en	owl:AnnotationProperty
+IAO:0000120	metadata complete@en	owl:NamedIndividual
+IAO:0000121	organizational term@en	owl:NamedIndividual
+IAO:0000122	ready for release@en	owl:NamedIndividual
+IAO:0000123	metadata incomplete@en	owl:NamedIndividual
+IAO:0000124	uncurated@en	owl:NamedIndividual
+IAO:0000125	pending final vetting@en	owl:NamedIndividual
+IAO:0000128	obsolete_identifier	owl:Class
+IAO:0000129	version number@en	owl:Class
+IAO:0000131	serial number@en	owl:Class
+IAO:0000132	lot number@en	owl:Class
+IAO:0000135	obsolete_specifically denotes	owl:ObjectProperty
+IAO:0000136	is about@en	owl:ObjectProperty
+IAO:0000140	setting datum@en	owl:Class
+IAO:0000141	obsolete_digital quality	owl:Class
+IAO:0000142	mentions@en	owl:ObjectProperty
+IAO:0000144	conclusion textual entity@en	owl:Class
+IAO:0000178	material information bearer@en	owl:Class
+IAO:0000179	histogram@en	owl:Class
+IAO:0000180	heatmap@en	owl:Class
+IAO:0000181	Venn diagram@en	owl:Class
+IAO:0000182	obsolete_survival curve@en	owl:Class
+IAO:0000183	dendrogram@en	owl:Class
+IAO:0000184	scatter plot@en	owl:Class
+IAO:0000185	photograph@en	owl:Class
+IAO:0000186	photographic print@en	owl:Class
+IAO:0000219	denotes@en	owl:ObjectProperty
+IAO:0000220	obsolete_materially denotes	owl:ObjectProperty
+IAO:0000221	is quality measurement of@en	owl:ObjectProperty
+IAO:0000222	obsolete_describes	owl:ObjectProperty
+IAO:0000223	obsolete_represents	owl:ObjectProperty
+IAO:0000224	core@en	owl:NamedIndividual
+IAO:0000225	obsolescence reason specification@en	owl:Class
+IAO:0000226	placeholder removed@en	owl:NamedIndividual
+IAO:0000227	terms merged@en	owl:NamedIndividual
+IAO:0000228	term imported@en	owl:NamedIndividual
+IAO:0000229	term split@en	owl:NamedIndividual
+IAO:0000230	other@en	owl:NamedIndividual
+IAO:0000231	has obsolescence reason@en	owl:AnnotationProperty
+IAO:0000232	curator note@en	owl:AnnotationProperty
+IAO:0000300	textual entity@en	owl:Class
+IAO:0000301	citation@en	owl:Class
+IAO:0000302	author identification@en	owl:Class
+IAO:0000303	institutional identification@en	owl:Class
+IAO:0000304	caption@en	owl:Class
+IAO:0000305	document title@en	owl:Class
+IAO:0000306	table@en	owl:Class
+IAO:0000307	table of abbreviations@en	owl:Class
+IAO:0000308	figure@en	owl:Class
+IAO:0000309	diagram@en	owl:Class
+IAO:0000310	document@en	owl:Class
+IAO:0000311	publication@en	owl:Class
+IAO:0000312	publication about an investigation@en	owl:Class
+IAO:0000313	patent@en	owl:Class
+IAO:0000314	document part@en	owl:Class
+IAO:0000315	abstract@en	owl:Class
+IAO:0000316	introduction to a publication about an investigation@en	owl:Class
+IAO:0000317	methods section@en	owl:Class
+IAO:0000318	results section@en	owl:Class
+IAO:0000319	discussion section of a publication about an investigation@en	owl:Class
+IAO:0000320	references section@en	owl:Class
+IAO:0000321	author list@en	owl:Class
+IAO:0000322	institution list@en	owl:Class
+IAO:0000323	author contributions section@en	owl:Class
+IAO:0000324	acknowledgements section@en	owl:Class
+IAO:0000325	footnote@en	owl:Class
+IAO:0000326	supplementary material to a document@en	owl:Class
+IAO:0000327	table of contents@en	owl:Class
+IAO:0000328	table of figures@en	owl:Class
+IAO:0000329	running title@en	owl:Class
+IAO:0000330	copyright section@en	owl:Class
+IAO:0000400	cartesian spatial coordinate datum@en	owl:Class
+IAO:0000401	one dimensional cartesian spatial coordinate datum@en	owl:Class
+IAO:0000402	two dimensional cartesian spatial coordinate datum@en	owl:Class
+IAO:0000403	three dimensional cartesian spatial coordinate datum@en	owl:Class
+IAO:0000407	has coordinate unit label@en	owl:ObjectProperty
+IAO:0000408	length measurement datum@en	owl:Class
+IAO:0000409	denotator type	owl:Class
+IAO:0000410	universal	owl:NamedIndividual
+IAO:0000411	is denotator type	owl:AnnotationProperty
+IAO:0000412	imported from@en	owl:AnnotationProperty
+IAO:0000413	is duration of@en	owl:ObjectProperty
+IAO:0000414	mass measurement datum@en	owl:Class
+IAO:0000415	hypothesis textual entity@en	owl:Class
+IAO:0000416	time measurement datum@en	owl:Class
+IAO:0000417	is quality measured as@en	owl:ObjectProperty
+IAO:0000418	is quality specification of@en	owl:ObjectProperty
+IAO:0000419	quality is specified as@en	owl:ObjectProperty
+IAO:0000420	defined class	owl:NamedIndividual
+IAO:0000421	named class expression	owl:NamedIndividual
+IAO:0000422	postal address@en	owl:Class
+IAO:0000423	to be replaced with external ontology term@en	owl:NamedIndividual
+IAO:0000424	expand expression to@en	owl:AnnotationProperty
+IAO:0000425	expand assertion to@en	owl:AnnotationProperty
+IAO:0000426	first order logic expression@en	owl:AnnotationProperty
+IAO:0000427	antisymmetric property@en	owl:AnnotationProperty
+IAO:0000428	requires discussion@en	owl:NamedIndividual
+IAO:0000429	email address@en	owl:Class
+IAO:0000442	author role@en	owl:Class
+IAO:0000443	data item extraction from journal article	owl:Class
+IAO:0000572	documenting@en	owl:Class
+IAO:0000573	line graph@en	owl:Class
+IAO:0000574	assigning a centrally registered identifier@en	owl:Class
+IAO:0000575	associating information with a centrally registered identifier in its registry@en	owl:Class
+IAO:0000576	obsolete_establishing a CRID registry	owl:Class
+IAO:0000577	centrally registered identifier symbol@en	owl:Class
+IAO:0000578	centrally registered identifier@en	owl:Class
+IAO:0000579	centrally registered identifier registry@en	owl:Class
+IAO:0000580	looking up a centrally registered identifier@en	owl:Class
+IAO:0000581	has time stamp@en	owl:ObjectProperty
+IAO:0000582	time stamped measurement datum@en	owl:Class
+IAO:0000583	has measurement datum@en	owl:ObjectProperty
+IAO:0000584	time sampled measurement data set@en	owl:Class
+IAO:0000589	OBO foundry unique label@en	owl:AnnotationProperty
+IAO:0000590	written name@en	owl:Class
+IAO:0000591	software method@en	owl:Class
+IAO:0000592	software module@en	owl:Class
+IAO:0000593	software library@en	owl:Class
+IAO:0000594	software application@en	owl:Class
+IAO:0000595	software script@en	owl:Class
+IAO:0000596	has ID digit count@en	owl:AnnotationProperty
+IAO:0000597	has ID range allocated to@en	owl:AnnotationProperty
+IAO:0000598	has ID policy for	owl:AnnotationProperty
+IAO:0000599	has ID prefix@en	owl:AnnotationProperty
+IAO:0000600	elucidation@en	owl:AnnotationProperty
+IAO:0000601	has associated axiom(nl)@en	owl:AnnotationProperty
+IAO:0000602	has associated axiom(fol)@en	owl:AnnotationProperty
+IAO:0000603	is allocated id range@en	owl:AnnotationProperty
+IAO:0000604	retired from use as of	owl:AnnotationProperty
+IAO:0010000	has axiom label@en	owl:AnnotationProperty
+IAO:0100001	term replaced by@en	owl:AnnotationProperty
+IDO:0000586	infection@en	owl:Class
+IDO:0000666	human pathogenicity disposition@en	owl:Class
+NCBITaxon:10090	Mus musculus	owl:Class
+NCBITaxon:10116	Rattus norvegicus	owl:Class
+NCBITaxon:10239	Viruses	owl:Class
+NCBITaxon:117571	Euteleostomi	owl:Class
+NCBITaxon:1206794	Ecdysozoa	owl:Class
+NCBITaxon:197562	Pancrustacea	owl:Class
+NCBITaxon:2	Bacteria	owl:Class
+NCBITaxon:2157	Archaea	owl:Class
+NCBITaxon:2759	Eukaryota	owl:Class
+NCBITaxon:314146	Euarchontoglires	owl:Class
+NCBITaxon:32523	Tetrapoda	owl:Class
+NCBITaxon:32524	Amniota	owl:Class
+NCBITaxon:33154	Opisthokonta	owl:Class
+NCBITaxon:33213	Bilateria	owl:Class
+NCBITaxon:3702	Arabidopsis thaliana	owl:Class
+NCBITaxon:39107	Murinae	owl:Class
+NCBITaxon:40674	Mammalia	owl:Class
+NCBITaxon:44689	Dictyostelium discoideum	owl:Class
+NCBITaxon:4890	Ascomycota	owl:Class
+NCBITaxon:4896	Schizosaccharomyces pombe	owl:Class
+NCBITaxon:4932	Saccharomyces cerevisiae	owl:Class
+NCBITaxon:5140	Neurospora	owl:Class
+NCBITaxon:6239	Caenorhabditis elegans	owl:Class
+NCBITaxon:6668	Daphnia	owl:Class
+NCBITaxon:716545	saccharomyceta	owl:Class
+NCBITaxon:7227	Drosophila melanogaster	owl:Class
+NCBITaxon:7742	Vertebrata <Metazoa>	owl:Class
+NCBITaxon:7955	Danio rerio	owl:Class
+NCBITaxon:8353	Xenopus <genus>	owl:Class
+NCBITaxon:9031	Gallus gallus	owl:Class
+NCBITaxon:9606	Homo sapiens	owl:Class
+NCBITaxon:9989	Rodentia	owl:Class
+OBI:0000006	role of being consumer safety officer@en	owl:Class
+OBI:0000010	fluorescent reporter intensity@en	owl:Class
+OBI:0000011	planned process@en	owl:Class
+OBI:0000014	regulator role@en	owl:Class
+OBI:0000015	biological feature identification objective@en	owl:Class
+OBI:0000016	regulation-assigned role@en	owl:Class
+OBI:0000017	regulatory role@en	owl:Class
+OBI:0000018	material supplier role@en	owl:Class
+OBI:0000020	contract research organization role@en	owl:Class
+OBI:0000021	list-mode data file@en	owl:Class
+OBI:0000023	classified data set@en	owl:Class
+OBI:0000025	reference substance role@en	owl:Class
+OBI:0000026	cytological stain role@en	owl:Class
+OBI:0000029	centrifuge pellet role@en	owl:Class
+OBI:0000032	clinical research coordinator role@en	owl:Class
+OBI:0000034	supernatant role@en	owl:Class
+OBI:0000038	chromatography column@en	owl:Class
+OBI:0000040	drug role@en	owl:Class
+OBI:0000041	pump valve switch@en	owl:Class
+OBI:0000043	xenotransplantation@en	owl:Class
+OBI:0000044	physical document@en	owl:Class
+OBI:0000045	waiting@en	owl:Class
+OBI:0000047	processed material@en	owl:Class
+OBI:0000048	chromatography device@en	owl:Class
+OBI:0000049	mass spectrometer@en	owl:Class
+OBI:0000050	obsolete_platform@en	owl:Class
+OBI:0000051	liquid chromatography mass spectrometry platform@en	owl:Class
+OBI:0000052	microarray platform@en	owl:Class
+OBI:0000054	ratio of collected to emitted light@en	owl:Class
+OBI:0000055	software optimization objective@en	owl:Class
+OBI:0000056	notified body role@en	owl:Class
+OBI:0000057	allotransplantation@en	owl:Class
+OBI:0000059	gamma counter@en	owl:Class
+OBI:0000060	trial monitor role@en	owl:Class
+OBI:0000064	positive reference substance role@en	owl:Class
+OBI:0000065	polyethylene glycol p-(1,1,3,3-tetramethylbutyl)-phenyl ether@en	owl:Class
+OBI:0000066	investigation@en	owl:Class
+OBI:0000067	evaluant role@en	owl:Class
+OBI:0000068	reporting party role@en	owl:Class
+OBI:0000070	assay@en	owl:Class
+OBI:0000071	quantitative confidence value@en	owl:Class
+OBI:0000073	sample preparation for assay@en	owl:Class
+OBI:0000075	diagnosis textual entity@en	owl:Class
+OBI:0000076	unplanned occurrence effecting an investigation@en	owl:Class
+OBI:0000078	eMedical record@en	owl:Class
+OBI:0000079	culture medium@en	owl:Class
+OBI:0000083	electronic case report tabulation@en	owl:Class
+OBI:0000084	polystyrene tube@en	owl:Class
+OBI:0000086	reagent role@en	owl:Class
+OBI:0000089	role of regulator of chemical manufacturer@en	owl:Class
+OBI:0000091	detector reagent role@en	owl:Class
+OBI:0000092	role of certified IRB professional@en	owl:Class
+OBI:0000093	patient role@en	owl:Class
+OBI:0000094	material processing@en	owl:Class
+OBI:0000096	protocol testing objective@en	owl:Class
+OBI:0000097	participant under investigation role@en	owl:Class
+OBI:0000100	obsolete_role of being first subject treated@en	owl:Class
+OBI:0000101	measured expression level@en	owl:Class
+OBI:0000102	responsible party role@en	owl:Class
+OBI:0000103	principal investigator role@en	owl:Class
+OBI:0000105	transplantation@en	owl:Class
+OBI:0000107	provides_service_consumer_with	owl:ObjectProperty
+OBI:0000109	biological vector role@en	owl:Class
+OBI:0000110	pH indicator dye role@en	owl:Class
+OBI:0000112	specimen role@en	owl:Class
+OBI:0000113	sequence feature identification objective@en	owl:Class
+OBI:0000115	intervention design@en	owl:Class
+OBI:0000116	worker role@en	owl:Class
+OBI:0000117	Bernoulli trial@en	owl:Class
+OBI:0000118	gene list@en	owl:Class
+OBI:0000119	number of particles in subset@en	owl:Class
+OBI:0000124	is_supported_by_data	owl:ObjectProperty
+OBI:0000125	number of lost events electronic@en	owl:Class
+OBI:0000129	calibration substance role@en	owl:Class
+OBI:0000131	molecular feature identification objective@en	owl:Class
+OBI:0000134	hardware testing objective@en	owl:Class
+OBI:0000136	incubator@en	owl:Class
+OBI:0000140	obsolete_label role@en	owl:Class
+OBI:0000143	baseline participant role@en	owl:Class
+OBI:0000144	role of independent data monitoring committee@en	owl:Class
+OBI:0000145	pathologist role@en	owl:Class
+OBI:0000146	supernatant collection system harvesting frame@en	owl:Class
+OBI:0000151	filter paper@en	owl:Class
+OBI:0000153	cell co-culturing@en	owl:Class
+OBI:0000154	role of Institutional Review Board@en	owl:Class
+OBI:0000158	eSource document@en	owl:Class
+OBI:0000161	crossover population role@en	owl:Class
+OBI:0000162	complete nutrient role@en	owl:Class
+OBI:0000163	radiolabel role@en	owl:Class
+OBI:0000164	cDNA library@en	owl:Class
+OBI:0000167	electronic case report form@en	owl:Class
+OBI:0000169	placebo role@en	owl:Class
+OBI:0000171	autotransplantation@en	owl:Class
+OBI:0000172	parameter threshold@en	owl:Class
+OBI:0000174	study group role@en	owl:Class
+OBI:0000175	p-value@en	owl:Class
+OBI:0000181	population@en	owl:Class
+OBI:0000182	nuclear magnetic resonance 3D structure determination assay	owl:Class
+OBI:0000185	imaging assay@en	owl:Class
+OBI:0000186	protocol optimization objective@en	owl:Class
+OBI:0000188	role of pathology review board@en	owl:Class
+OBI:0000192	microtiter plate@en	owl:Class
+OBI:0000196	role of impartial witness@en	owl:Class
+OBI:00001975	chromatin immunoprecipitation@en	owl:Class
+OBI:0000198	biological replicate role@en	owl:Class
+OBI:0000201	radioactivity detection	owl:Class
+OBI:0000202	investigation agent role	owl:Class
+OBI:0000204	nutrient role@en	owl:Class
+OBI:0000205	obsolete_dropout role@en	owl:Class
+OBI:0000207	health care provider role@en	owl:Class
+OBI:0000208	methodology testing objective@en	owl:Class
+OBI:0000210	analytical cytology data file@en	owl:Class
+OBI:0000211	proxy respondent role@en	owl:Class
+OBI:0000213	fluorescence compensation matrix@en	owl:Class
+OBI:0000214	negative reference substance role@en	owl:Class
+OBI:0000215	role of legally acceptable representative@en	owl:Class
+OBI:0000218	investigation results report@en	owl:Class
+OBI:0000219	cellular feature identification objective@en	owl:Class
+OBI:0000220	reference subject role@en	owl:Class
+OBI:0000221	vital dye role@en	owl:Class
+OBI:0000223	obsolete_blinded medication role@en	owl:Class
+OBI:0000224	sub-investigator role@en	owl:Class
+OBI:0000227	data encoding@en	owl:Class
+OBI:0000231	enzymatic cleavage@en	owl:Class
+OBI:0000232	hardware optimization objective@en	owl:Class
+OBI:0000233	obsolete_defined_material@en	owl:Class
+OBI:0000234	trial statistician role@en	owl:Class
+OBI:0000235	standard error@en	owl:Class
+OBI:0000237	antigen role@en	owl:Class
+OBI:0000242	software testing objective@en	owl:Class
+OBI:0000243	sponsor role@en	owl:Class
+OBI:0000245	organization@en	owl:Class
+OBI:0000248	feed role@en	owl:Class
+OBI:0000249	technical replicate role@en	owl:Class
+OBI:0000250	dye role@en	owl:Class
+OBI:0000251	cluster@en	owl:Class
+OBI:0000252	cohort role@en	owl:Class
+OBI:0000253	artificially induced nucleic acid hybridization@en	owl:Class
+OBI:0000257	DNA extraction@en	owl:Class
+OBI:0000260	plan@en	owl:Class
+OBI:0000264	obsolete_sample population@en	owl:Class
+OBI:0000268	organism feature identification objective@en	owl:Class
+OBI:0000269	number of lost events computer@en	owl:Class
+OBI:0000272	protocol@en	owl:Class
+OBI:0000273	role of regulator of consumables and medical devices@en	owl:Class
+OBI:0000274	adding a material entity into a target@en	owl:Class
+OBI:0000275	analyte role@en	owl:Class
+OBI:0000278	disease stage@en	owl:Class
+OBI:0000281	intraperitoneal injection@en	owl:Class
+OBI:0000286	precipitate@en	owl:Class
+OBI:0000288	protein-protein interaction detection@en	owl:Class
+OBI:0000291	transcription factor binding site assay@en	owl:Class
+OBI:0000293	has_specified_input@en	owl:ObjectProperty
+OBI:0000294	obsolete_is_concretization_of@en	owl:ObjectProperty
+OBI:0000295	is_specified_input_of@en	owl:ObjectProperty
+OBI:0000296	obsolete_enrollment@en	owl:Class
+OBI:0000297	obsolete_is_concretized_as@en	owl:ObjectProperty
+OBI:0000298	obsolete_has_quality@en	owl:ObjectProperty
+OBI:0000299	has_specified_output@en	owl:ObjectProperty
+OBI:0000300	obsolete_is_realized_by@en	owl:ObjectProperty
+OBI:0000301	obsoleted_has_specified_output_information@en	owl:ObjectProperty
+OBI:0000304	is_manufactured_by@en	owl:ObjectProperty
+OBI:0000306	obsolete_has_function@en	owl:ObjectProperty
+OBI:0000307	obsoleted_is_reagent_in@en	owl:ObjectProperty
+OBI:0000308	obsolete_realizes@en	owl:ObjectProperty
+OBI:0000309	obsoleted_utilizes_reagent@en	owl:ObjectProperty
+OBI:0000310	adverse event trigger@en	owl:Class
+OBI:0000311	obsoleted_is_device_for@en	owl:ObjectProperty
+OBI:0000312	is_specified_output_of@en	owl:ObjectProperty
+OBI:0000313	obsoleted_utilizes_device@en	owl:ObjectProperty
+OBI:0000314	is_proxy_for@en	owl:ObjectProperty
+OBI:0000315	obsoleted_has_specified_input_information@en	owl:ObjectProperty
+OBI:0000316	obsolete_has_role@en	owl:ObjectProperty
+OBI:0000317	Transformation-ML@en	owl:NamedIndividual
+OBI:0000318	eluate@en	owl:Class
+OBI:0000319	material to be added role@en	owl:Class
+OBI:0000321	ACS@en	owl:NamedIndividual
+OBI:0000322	XML@en	owl:NamedIndividual
+OBI:0000323	obsolete_peritoneum@en	owl:Class
+OBI:0000324	RDF@en	owl:NamedIndividual
+OBI:0000325	zip@en	owl:NamedIndividual
+OBI:0000326	tar@en	owl:NamedIndividual
+OBI:0000327	FCS@en	owl:NamedIndividual
+OBI:0000329	Compensation-ML@en	owl:NamedIndividual
+OBI:0000330	Gating-ML@en	owl:NamedIndividual
+OBI:0000332	OWL@en	owl:NamedIndividual
+OBI:0000338	drawing a conclusion based on data@en	owl:Class
+OBI:0000339	planning@en	owl:Class
+OBI:0000340	obsolete_documenting@en	owl:Class
+OBI:0000341	histological sample preparation@en	owl:Class
+OBI:0000343	inductive reasoning@en	owl:Class
+OBI:0000345	mass analyzer@en	owl:Class
+OBI:0000355	hypothesis driven investigation@en	owl:Class
+OBI:0000356	hypothesis generating investigation@en	owl:Class
+OBI:0000361	ion source@en	owl:Class
+OBI:0000364	ion detector@en	owl:Class
+OBI:0000365	obsolete_results_from	owl:ObjectProperty
+OBI:0000366	metabolite profiling@en	owl:Class
+OBI:0000367	light emission function@en	owl:Class
+OBI:0000368	record function@en	owl:Class
+OBI:0000369	magnify function@en	owl:Class
+OBI:0000370	contain function@en	owl:Class
+OBI:0000371	heat function@en	owl:Class
+OBI:0000372	material separation function@en	owl:Class
+OBI:0000373	ionize process@en	owl:Class
+OBI:0000374	excitation function@en	owl:Class
+OBI:0000375	freeze function@en	owl:Class
+OBI:0000376	synthesizing function@en	owl:Class
+OBI:0000377	perturb function@en	owl:Class
+OBI:0000378	filter function@en	owl:Class
+OBI:0000379	mechanical function@en	owl:Class
+OBI:0000380	gas filter function@en	owl:Class
+OBI:0000381	liquid filter function@en	owl:Class
+OBI:0000383	transfer function@en	owl:Class
+OBI:0000384	electricity supply function@en	owl:Class
+OBI:0000385	ionization function@en	owl:Class
+OBI:0000387	cool function@en	owl:Class
+OBI:0000388	connection function@en	owl:Class
+OBI:0000389	isoelectric focusing device@en	owl:Class
+OBI:0000390	thermostatic circulator@en	owl:Class
+OBI:0000391	energy supply function@en	owl:Class
+OBI:0000392	information processor function@en	owl:Class
+OBI:0000393	signal conversion function@en	owl:Class
+OBI:0000394	blot module@en	owl:Class
+OBI:0000395	signal amplification function@en	owl:Class
+OBI:0000397	image acquisition function@en	owl:Class
+OBI:0000398	image creation device@en	owl:Class
+OBI:0000399	solid support function@en	owl:Class
+OBI:0000400	display function@en	owl:Class
+OBI:0000401	environment control function@en	owl:Class
+OBI:0000403	sort function@en	owl:Class
+OBI:0000404	gel dryer@en	owl:Class
+OBI:0000405	primer role@en	owl:Class
+OBI:0000406	PCR product@en	owl:Class
+OBI:0000407	viral RNA extraction@en	owl:Class
+OBI:0000409	nucleic acid template role@en	owl:Class
+OBI:0000410	recombinant plasmid@en	owl:Class
+OBI:0000411	cloning vector role@en	owl:Class
+OBI:0000413	cell cycle synchronization@en	owl:Class
+OBI:0000415	polymerase chain reaction@en	owl:Class
+OBI:0000416	cloning insert role@en	owl:Class
+OBI:0000417	achieves_planned_objective	owl:ObjectProperty
+OBI:0000418	measuring glucose concentration in blood serum@en	owl:Class
+OBI:0000419	reverse transcriptase@en	owl:Class
+OBI:0000420	obsolete_trypsinized material@en	owl:Class
+OBI:0000422	syringe@en	owl:Class
+OBI:0000423	extract@en	owl:Class
+OBI:0000424	transcription profiling assay@en	owl:Class
+OBI:0000425	averaging objective@en	owl:Class
+OBI:0000426	injection@en	owl:Class
+OBI:0000427	enzyme@en	owl:Class
+OBI:0000429	intraperitoneal administration@en	owl:Class
+OBI:0000430	plasmid@en	owl:Class
+OBI:0000431	injection into organ section@en	owl:Class
+OBI:0000432	polyacrylamide gel@en	owl:Class
+OBI:0000433	DNA sequence feature detection@en	owl:Class
+OBI:0000434	adding material objective@en	owl:Class
+OBI:0000435	genotyping assay@en	owl:Class
+OBI:0000436	needle@en	owl:Class
+OBI:0000437	analyte measurement objective@en	owl:Class
+OBI:0000438	DNA sequence variation detection@en	owl:Class
+OBI:0000439	agarose gel@en	owl:Class
+OBI:0000441	assay objective@en	owl:Class
+OBI:0000442	obsolete_heart@en	owl:Class
+OBI:0000443	analyte assay@en	owl:Class
+OBI:0000444	target of material addition role@en	owl:Class
+OBI:0000445	mass measurement assay@en	owl:Class
+OBI:0000446	obsolete_identification@en	owl:Class
+OBI:0000447	intra cellular electrophysiology recording	owl:Class
+OBI:0000448	packed column@en	owl:Class
+OBI:0000449	obsolete_defined_output@en	owl:Class
+OBI:0000450	regulatory agency@en	owl:Class
+OBI:0000451	normalized data set@en	owl:Class
+OBI:0000453	measure function@en	owl:Class
+OBI:0000454	extracellular electrophysiology recording	owl:Class
+OBI:0000455	consume data function@en	owl:Class
+OBI:0000456	material transformation objective@en	owl:Class
+OBI:0000457	manufacturing@en	owl:Class
+OBI:0000458	manufacturing objective@en	owl:Class
+OBI:0000459	obsoleted_is_specified_information_output_of	owl:ObjectProperty
+OBI:0000461	obsolete_the supplier role of Affymetrix	owl:NamedIndividual
+OBI:0000462	Affymetrix@en	owl:NamedIndividual
+OBI:0000463	column chromatography detector@en	owl:Class
+OBI:0000464	Bruker autosampler@en	owl:Class
+OBI:0000465	organic acid column@en	owl:Class
+OBI:0000466	thermal conductivity detector@en	owl:Class
+OBI:0000467	Bruker US 2 NMR magnet@en	owl:Class
+OBI:0000468	protein column@en	owl:Class
+OBI:0000469	solvent mixer@en	owl:Class
+OBI:0000470	mass spectrometry assay	owl:Class
+OBI:0000471	study design execution	owl:Class
+OBI:0000473	Bruker NMR Case sample changer@en	owl:Class
+OBI:0000474	nano pump system@en	owl:Class
+OBI:0000475	Bruker AutoClean system@en	owl:Class
+OBI:0000476	manual injection system@en	owl:Class
+OBI:0000477	Varian GEMINI spectrometer@en	owl:Class
+OBI:0000478	column connector@en	owl:Class
+OBI:0000479	solid NMR probe@en	owl:Class
+OBI:0000480	Bruker high resolution probe@en	owl:Class
+OBI:0000481	chromatography detector@en	owl:Class
+OBI:0000482	normal phase column@en	owl:Class
+OBI:0000483	APOLLO console@en	owl:Class
+OBI:0000484	NMR sample holder@en	owl:Class
+OBI:0000485	chromatography instrument@en	owl:Class
+OBI:0000486	continuous wave NMR instrument@en	owl:Class
+OBI:0000487	fourier transformation NMR instrument@en	owl:Class
+OBI:0000489	nitrogen phosphorous detector@en	owl:Class
+OBI:0000490	cation exchange column@en	owl:Class
+OBI:0000491	direct detection NMR probe@en	owl:Class
+OBI:0000492	Bruker B-ACS system@en	owl:Class
+OBI:0000493	rapid resolution column@en	owl:Class
+OBI:0000494	liquid chromatography autosampler@en	owl:Class
+OBI:0000495	vacuum degasser@en	owl:Class
+OBI:0000496	capillary column@en	owl:Class
+OBI:0000497	sample inlet@en	owl:Class
+OBI:0000498	NMR tube washing system@en	owl:Class
+OBI:0000499	NMR console@en	owl:Class
+OBI:0000500	dual loop autosampler@en	owl:Class
+OBI:0000501	variable wavelength detector@en	owl:Class
+OBI:0000503	Bruker LC-NMR platform@en	owl:Class
+OBI:0000504	sample injection system@en	owl:Class
+OBI:0000505	multiple wavelength detector@en	owl:Class
+OBI:0000506	photoionization detector@en	owl:Class
+OBI:0000507	gas generator@en	owl:Class
+OBI:0000508	column jacket@en	owl:Class
+OBI:0000509	electron capture detector@en	owl:Class
+OBI:0000510	reversed phase column@en	owl:Class
+OBI:0000511	injector lubricant@en	owl:Class
+OBI:0000512	isolation of cell population	owl:Class
+OBI:0000513	DISCOVERY console@en	owl:Class
+OBI:0000514	Bruker AMX series NMR instrument@en	owl:Class
+OBI:0000515	chromatofocusing column@en	owl:Class
+OBI:0000516	NMR probe@en	owl:Class
+OBI:0000517	NMR magnet@en	owl:Class
+OBI:0000518	trap column@en	owl:Class
+OBI:0000519	flow probe@en	owl:Class
+OBI:0000520	clinical chemistry assay	owl:Class
+OBI:0000521	flame ionization detector@en	owl:Class
+OBI:0000522	vial@en	owl:Class
+OBI:0000523	magic angle spinning rotor@en	owl:Class
+OBI:0000524	Varian VXR spectrometer@en	owl:Class
+OBI:0000525	splitless GC injector@en	owl:Class
+OBI:0000526	preparative autosampler@en	owl:Class
+OBI:0000527	flow high resolution probe@en	owl:Class
+OBI:0000528	liquid chromatography valve@en	owl:Class
+OBI:0000529	JEOL NMR probe@en	owl:Class
+OBI:0000530	Bruker UltraShield Plus NMR magnet@en	owl:Class
+OBI:0000531	Bruker CryoProbe@en	owl:Class
+OBI:0000532	column cartridge@en	owl:Class
+OBI:0000533	affinity column@en	owl:Class
+OBI:0000534	tecmag NMR instrument@en	owl:Class
+OBI:0000535	gel filtration column@en	owl:Class
+OBI:0000536	fraction collector@en	owl:Class
+OBI:0000537	copy number variation profiling	owl:Class
+OBI:0000538	in-line filter@en	owl:Class
+OBI:0000539	imaging NMR probe@en	owl:Class
+OBI:0000540	isolation of adherent cells	owl:Class
+OBI:0000541	Bruker AC series NMR instrument@en	owl:Class
+OBI:0000542	gas chromatography equipment@en	owl:Class
+OBI:0000543	syringe filter@en	owl:Class
+OBI:0000544	Bruker SampleRail system@en	owl:Class
+OBI:0000545	column compartment@en	owl:Class
+OBI:0000546	capillary pump system@en	owl:Class
+OBI:0000547	evaporative light scattering detector@en	owl:Class
+OBI:0000548	isolation of PBMCs	owl:Class
+OBI:0000549	column cartridger@en	owl:Class
+OBI:0000550	nitrogen generator@en	owl:Class
+OBI:0000551	needle assembly@en	owl:Class
+OBI:0000552	reverse transcribed polymerase chain reaction	owl:Class
+OBI:0000553	Bruker Capillary LC-NMR platform@en	owl:Class
+OBI:0000554	gas chromatography oven@en	owl:Class
+OBI:0000555	autosampler@en	owl:Class
+OBI:0000556	isocratic pump system@en	owl:Class
+OBI:0000557	flash pump system@en	owl:Class
+OBI:0000558	Varian UNITY INOVA spectrometer@en	owl:Class
+OBI:0000559	liquid NMR probe@en	owl:Class
+OBI:0000560	ion exchange column@en	owl:Class
+OBI:0000561	Bruker NMR probe@en	owl:Class
+OBI:0000562	anion trap column@en	owl:Class
+OBI:0000563	fluorescene detector@en	owl:Class
+OBI:0000564	tecmag EAGLE probe@en	owl:Class
+OBI:0000565	electrical conductivity detector@en	owl:Class
+OBI:0000566	NMR instrument@en	owl:Class
+OBI:0000567	Bruker UltraShield NMR magnet@en	owl:Class
+OBI:0000568	piston-seal@en	owl:Class
+OBI:0000569	mass selective detector@en	owl:Class
+OBI:0000570	spin column@en	owl:Class
+OBI:0000571	manufacturer role	owl:Class
+OBI:0000572	transfer line@en	owl:Class
+OBI:0000573	gradient pump system@en	owl:Class
+OBI:0000574	high temperature column@en	owl:Class
+OBI:0000575	Bruker Ultrastabilized NMR magnet@en	owl:Class
+OBI:0000576	scattered molecular aggregate@en	owl:Class
+OBI:0000577	obsolete_molecular concentration@en	owl:Class
+OBI:0000578	NMR sample tube@en	owl:Class
+OBI:0000579	Varian UNITY spectrometer@en	owl:Class
+OBI:0000580	AVANCE II spectrometer@en	owl:Class
+OBI:0000581	y-column connector@en	owl:Class
+OBI:0000582	Bruker LC-NMR/MS platform@en	owl:Class
+OBI:0000583	refractive index detector@en	owl:Class
+OBI:0000584	anion exchange column@en	owl:Class
+OBI:0000586	plunger column@en	owl:Class
+OBI:0000588	flame photometric detector@en	owl:Class
+OBI:0000589	chromatography pump system@en	owl:Class
+OBI:0000590	Bruker 1mm MicroProbe@en	owl:Class
+OBI:0000591	Bruker BEST NMR system@en	owl:Class
+OBI:0000592	chromatography detector filter@en	owl:Class
+OBI:0000593	cation trap column@en	owl:Class
+OBI:0000594	column adapter@en	owl:Class
+OBI:0000595	pulsed amperometric detector@en	owl:Class
+OBI:0000596	Bruker NMR instrument@en	owl:Class
+OBI:0000597	Bruker NMR magnet@en	owl:Class
+OBI:0000598	ozone-induced chemiluminescence detector@en	owl:Class
+OBI:0000599	tecmag NMR console@en	owl:Class
+OBI:0000600	JEOL NMR instrument@en	owl:Class
+OBI:0000601	chromatography consumable@en	owl:Class
+OBI:0000602	column frit@en	owl:Class
+OBI:0000603	liquid chromatography column@en	owl:Class
+OBI:0000604	detector lamp@en	owl:Class
+OBI:0000605	chart recorder@en	owl:Class
+OBI:0000606	open tubular column@en	owl:Class
+OBI:0000607	high resolution magic angle spin probe@en	owl:Class
+OBI:0000608	hydrogen generator@en	owl:Class
+OBI:0000609	glass column@en	owl:Class
+OBI:0000610	auto injector@en	owl:Class
+OBI:0000611	Varian NMR instrument@en	owl:Class
+OBI:0000612	Bruker MATCH tube holder system@en	owl:Class
+OBI:0000613	Bruker SPE-NMR platform@en	owl:Class
+OBI:0000614	guard column@en	owl:Class
+OBI:0000615	protein expression profiling	owl:Class
+OBI:0000616	high resolution probe with automatic tuning and matching@en	owl:Class
+OBI:0000617	fluorine-induced chemiluminescence detector@en	owl:Class
+OBI:0000618	size exclusion column@en	owl:Class
+OBI:0000619	chromatography splitter@en	owl:Class
+OBI:0000620	Bruker micro imaging probe@en	owl:Class
+OBI:0000621	custom made column@en	owl:Class
+OBI:0000622	gel permeation column@en	owl:Class
+OBI:0000623	NMR spectroscopy	owl:Class
+OBI:0000624	Bruker SampleJet system@en	owl:Class
+OBI:0000625	JEOL ECX NMR spectrometer@en	owl:Class
+OBI:0000626	DNA sequencing	owl:Class
+OBI:0000627	quaternary pump system@en	owl:Class
+OBI:0000628	carbon nanotube column@en	owl:Class
+OBI:0000629	Bruker solid magic angle spinning probe@en	owl:Class
+OBI:0000630	hematology	owl:Class
+OBI:0000631	Varian MERCURY spectrometer@en	owl:Class
+OBI:0000632	Bruker Metabolic Profiler@en	owl:Class
+OBI:0000633	column heater@en	owl:Class
+OBI:0000634	DNA methylation profiling assay	owl:Class
+OBI:0000635	JEOL CapNMR probe@en	owl:Class
+OBI:0000636	acquisition computer@en	owl:Class
+OBI:0000637	gas chromatography detector@en	owl:Class
+OBI:0000638	gas purifier@en	owl:Class
+OBI:0000639	material separation objective	owl:Class
+OBI:0000640	indirect detection probe@en	owl:Class
+OBI:0000641	JEOL ECA NMR spectrometer@en	owl:Class
+OBI:0000642	atomic emission detector@en	owl:Class
+OBI:0000643	has grain	owl:ObjectProperty
+OBI:0000644	obsoleted_is_specified_information_intput_of	owl:ObjectProperty
+OBI:0000645	is grain of@en	owl:ObjectProperty
+OBI:0000646	supplies	owl:ObjectProperty
+OBI:0000647	has_supplier	owl:ObjectProperty
+OBI:0000648	clustered data set@en	owl:Class
+OBI:0000649	data set of features@en	owl:Class
+OBI:0000650	differential expression analysis data transformation@en	owl:Class
+OBI:0000651	urine specimen	owl:Class
+OBI:0000652	material combination	owl:Class
+OBI:0000653	fuzzy clustering objective@en	owl:Class
+OBI:0000654	device setting	owl:Class
+OBI:0000655	blood specimen	owl:Class
+OBI:0000656	data set of predicted values according to fitted curve@en	owl:Class
+OBI:0000658	data representational model	owl:Class
+OBI:0000659	specimen collection process	owl:Class
+OBI:0000660	background corrected data set@en	owl:Class
+OBI:0000661	enzyme-linked immunosorbent assay	owl:Class
+OBI:0000662	error corrected data set@en	owl:Class
+OBI:0000663	class prediction data transformation@en	owl:Class
+OBI:0000664	BrdU incorporation assay	owl:Class
+OBI:0000665	obsolete intracellular cytokine staining assay	owl:Class
+OBI:0000666	background correction data transformation@en	owl:Class
+OBI:0000667	obsolete MHC multimer staining assay	owl:Class
+OBI:0000668	error correction data transformation@en	owl:Class
+OBI:0000669	tritiated thymidine incorporation assay	owl:Class
+OBI:0000671	sample from organism	owl:Class
+OBI:0000673	statistical hypothesis test@en	owl:Class
+OBI:0000674	center value@en	owl:Class
+OBI:0000675	statistical hypothesis test objective@en	owl:Class
+OBI:0000676	reduced dimension data set@en	owl:Class
+OBI:0000678	portioning objective	owl:Class
+OBI:0000679	average value@en	owl:Class
+OBI:0000680	whole organism preparation	owl:Class
+OBI:0000681	separation into different composition objective	owl:Class
+OBI:0000682	obsolete_study result	owl:Class
+OBI:0000684	specimen collection objective	owl:Class
+OBI:0000685	creating a mixture of molecules in solution	owl:Class
+OBI:0000686	material combination objective	owl:Class
+OBI:0000687	nucleotide overhang cloning	owl:Class
+OBI:0000688	rodent care protocol	owl:Class
+OBI:0000689	454 Genome Sequence 20	owl:Class
+OBI:0000690	immunoprecipitation	owl:Class
+OBI:0000691	ABI 377 automated sequencer	owl:Class
+OBI:0000692	recombination enzyme based cloning	owl:Class
+OBI:0000693	MeDIP-seq assay	owl:Class
+OBI:0000694	animal feeding	owl:Class
+OBI:0000695	chain termination sequencing	owl:Class
+OBI:0000696	AB SOLiD System	owl:Class
+OBI:0000697	Helicos sequencing	owl:Class
+OBI:0000698	obsolete_DNA ligase	owl:Class
+OBI:0000699	survival assessment	owl:Class
+OBI:0000700	support vector machine	owl:Class
+OBI:0000701	self-organizing map	owl:Class
+OBI:0000702	454 Genome Sequencer FLX	owl:Class
+OBI:0000703	Illumina Genome Analyzer II	owl:Class
+OBI:0000704	decision tree induction objective	owl:Class
+OBI:0000705	Edman degradation	owl:Class
+OBI:0000706	SOLiD sequencing	owl:Class
+OBI:0000707	decision tree building data transformation@en	owl:Class
+OBI:0000708	laboratory animal care	owl:Class
+OBI:0000709	yeast artificial chromosome vector	owl:Class
+OBI:0000710	Li-Cor 4300 DNA Analysis System	owl:Class
+OBI:0000711	library preparation	owl:Class
+OBI:0000712	pathogen challenge	owl:Class
+OBI:0000713	GenePattern software	owl:Class
+OBI:0000714	graph of vertices	owl:Class
+OBI:0000715	animal care protocol	owl:Class
+OBI:0000716	ChIP-seq assay	owl:Class
+OBI:0000717	HeliScope Single Molecule Sequencer	owl:Class
+OBI:0000718	pathogen role	owl:Class
+OBI:0000719	vaccine preparation	owl:Class
+OBI:0000720	immunologic adjuvant role	owl:Class
+OBI:0000721	glucose tolerance test	owl:Class
+OBI:0000722	paired-end library	owl:Class
+OBI:0000723	DNA sequencing by ligation	owl:Class
+OBI:0000724	Solexa sequencing	owl:Class
+OBI:0000725	host role	owl:Class
+OBI:0000726	peak matching	owl:Class
+OBI:0000727	k-nearest neighbors@en	owl:Class
+OBI:0000728	rodent care	owl:Class
+OBI:0000729	cloning plasmid	owl:Class
+OBI:0000730	pyrosequencing	owl:Class
+OBI:0000731	recombinant vector	owl:Class
+OBI:0000732	restriction enzyme	owl:Class
+OBI:0000734	DNA sequencing by synthesis	owl:Class
+OBI:0000735	NTP-2000	owl:Class
+OBI:0000736	single fragment library	owl:Class
+OBI:0000737	cloning vector	owl:Class
+OBI:0000738	restriction enzyme based cloning	owl:Class
+OBI:0000739	Student's t-test	owl:Class
+OBI:0000740	material sample role	owl:Class
+OBI:0000741	topologically preserved clustered data set	owl:Class
+OBI:0000742	nucleic acid restriction enzyme digest	owl:Class
+OBI:0000743	immune response assay	owl:Class
+OBI:0000744	material sampling process	owl:Class
+OBI:0000747	material sample	owl:Class
+OBI:0000748	bisulfite sequencing	owl:Class
+OBI:0000749	CART@en	owl:Class
+OBI:0000750	study design independent variable@en	owl:Class
+OBI:0000751	study design dependent variable@en	owl:Class
+OBI:0000752	Thermo	owl:NamedIndividual
+OBI:0000753	Waters	owl:NamedIndividual
+OBI:0000754	BIO-RAD	owl:NamedIndividual
+OBI:0000755	GenePattern hierarchical clustering	owl:NamedIndividual
+OBI:0000756	Ambion	owl:NamedIndividual
+OBI:0000757	Helicos	owl:NamedIndividual
+OBI:0000758	Roche	owl:NamedIndividual
+OBI:0000759	Illumina	owl:NamedIndividual
+OBI:0000760	GenePattern PCA	owl:NamedIndividual
+OBI:0000761	GenePattern module SVM	owl:NamedIndividual
+OBI:0000762	GenePattern k-nearest neighbors	owl:NamedIndividual
+OBI:0000763	GenePattern LOOCV	owl:NamedIndividual
+OBI:0000764	GenePattern k-means clustering	owl:NamedIndividual
+OBI:0000765	Agilent	owl:NamedIndividual
+OBI:0000766	GenePattern module KMeansClustering	owl:NamedIndividual
+OBI:0000767	GenePattern CART	owl:NamedIndividual
+OBI:0000768	GenePattern module CARTXValidation	owl:NamedIndividual
+OBI:0000769	Li-Cor	owl:NamedIndividual
+OBI:0000770	Bruker Corporation	owl:NamedIndividual
+OBI:0000771	GenePattern module KNNXValidation	owl:NamedIndividual
+OBI:0000772	GenePattern module PeakMatch	owl:NamedIndividual
+OBI:0000773	GenePattern module KNN	owl:NamedIndividual
+OBI:0000774	GenePattern module HierarchicalClustering	owl:NamedIndividual
+OBI:0000775	GenePattern SVM	owl:NamedIndividual
+OBI:0000776	Applied Biosystems	owl:NamedIndividual
+OBI:0000777	GenePattern module PCA	owl:NamedIndividual
+OBI:0000778	GenePattern peak matching	owl:NamedIndividual
+OBI:0000779	Bruker Daltonics	owl:NamedIndividual
+OBI:0000780	GenePattern HeatMapViewer data visualization	owl:NamedIndividual
+OBI:0000781	GenePattern HierarchicalClusteringViewer data visualization	owl:NamedIndividual
+OBI:0000782	GenePattern module HeatMapViewer	owl:NamedIndividual
+OBI:0000783	GenePattern module HierarchicalClusteringViewer	owl:NamedIndividual
+OBI:0000784	anticoagulant-containing test tube	owl:Class
+OBI:0000785	study design controlled variable@en	owl:Class
+OBI:0000787	human antithrombin-III (AT-III) in blood assay	owl:Class
+OBI:0000788	fluorescently labeled MHC multimer	owl:Class
+OBI:0000789	survival rate	owl:Class
+OBI:0000790	recombinant BAC cloning	owl:Class
+OBI:0000791	multiple testing correction objective	owl:Class
+OBI:0000792	statistical model validation	owl:Class
+OBI:0000793	double blind study execution	owl:Class
+OBI:0000794	transcription factor binding site	owl:Class
+OBI:0000795	glucometer	owl:Class
+OBI:0000796	purification objective	owl:Class
+OBI:0000797	obsolete_primary structure of protein	owl:Class
+OBI:0000798	capsule shell	owl:Class
+OBI:0000799	recombinant phage cloning	owl:Class
+OBI:0000800	cross linking	owl:Class
+OBI:0000801	spike train datum	owl:Class
+OBI:0000802	prothrombin time assay	owl:Class
+OBI:0000803	denaturing	owl:Class
+OBI:0000804	informing investigator of subject study arm	owl:Class
+OBI:0000805	antithrombin-III (AT-III) berichrome assay	owl:Class
+OBI:0000806	material maintenance objective	owl:Class
+OBI:0000807	presentation of stimulus	owl:Class
+OBI:0000808	spectrolyse heparin antifactor-Xa assay	owl:Class
+OBI:0000809	amplified DNA	owl:Class
+OBI:0000810	informed consent process	owl:Class
+OBI:0000811	primary structure of DNA macromolecule	owl:Class
+OBI:0000812	measuring neural activity in the caudate nucleus	owl:Class
+OBI:0000813	to be treated with active ingredient role	owl:Class
+OBI:0000814	guar gum	owl:Class
+OBI:0000815	Berichrom(r) Antithrombin III (A) Kit	owl:Class
+OBI:0000816	micro electrode	owl:Class
+OBI:0000817	fucoidan	owl:Class
+OBI:0000818	calibration	owl:Class
+OBI:0000819	anticoagulant tube storage of blood specimen	owl:Class
+OBI:0000820	activated partial thromboplastin time (aPTT) assay	owl:Class
+OBI:0000821	filled capsule	owl:Class
+OBI:0000822	single blind study execution	owl:Class
+OBI:0000823	thrombin time assay	owl:Class
+OBI:0000824	recombinant YAC cloning	owl:Class
+OBI:0000825	to be treated with placebo role	owl:Class
+OBI:0000826	treatment portion of study execution	owl:Class
+OBI:0000827	pill	owl:Class
+OBI:0000828	research organization	owl:Class
+OBI:0000829	Sysmex Corporation, Kobe, Japan	owl:NamedIndividual
+OBI:0000830	obsolete_primary structure of sequence macromolecule	owl:Class
+OBI:0000831	DNA residue methylation	owl:Class
+OBI:0000832	measurement device	owl:Class
+OBI:0000833	objective_achieved_by	owl:ObjectProperty
+OBI:0000834	high molecular weight DNA extract	owl:Class
+OBI:0000835	manufacturer	owl:Class
+OBI:0000836	test tube	owl:Class
+OBI:0000837	oral ingestion of pill	owl:Class
+OBI:0000838	material maintenance	owl:Class
+OBI:0000839	labeled oligonucleotide	owl:Class
+OBI:0000840	unblinding process	owl:Class
+OBI:0000841	subject agrees they understand informed consent document	owl:Class
+OBI:0000842	informing subject of study arm	owl:Class
+OBI:0000843	Sysmex CA-6000 Coagulation Analyzer	owl:Class
+OBI:0000844	hospital	owl:Class
+OBI:0000845	primary structure of RNA molecule	owl:Class
+OBI:0000846	is member of organization	owl:ObjectProperty
+OBI:0000847	test substance role	owl:Class
+OBI:0000848	polyA RNA extraction	owl:Class
+OBI:0000849	organellar RNA extraction	owl:Class
+OBI:0000850	obsolete_the manufacturer role of Agilent	owl:NamedIndividual
+OBI:0000851	obsolete_diethyl pyrocarbonate	owl:Class
+OBI:0000852	record of missing knowledge	owl:Class
+OBI:0000853	obsolete_manufacturer role of Bruker Daltonics	owl:NamedIndividual
+OBI:0000854	western blot analysis	owl:Class
+OBI:0000855	total RNA extraction	owl:Class
+OBI:0000856	obsolete intracellular material detection by flow cytometry assay	owl:Class
+OBI:0000857	complementary nucleotide probe role	owl:Class
+OBI:0000858	record of unknown sex	owl:Class
+OBI:0000859	cytoplasmic RNA extraction	owl:Class
+OBI:0000860	northern blot analysis	owl:Class
+OBI:0000861	Likelihood-ratio test	owl:Class
+OBI:0000862	nuclear RNA extract	owl:Class
+OBI:0000863	obsolete_the manufacturer role of Thermo	owl:NamedIndividual
+OBI:0000864	obsolete_the manufacturer role of Li-Cor	owl:NamedIndividual
+OBI:0000865	96-well neutralization assay	owl:Class
+OBI:0000866	obsolete_the manufacturer role of Roche	owl:NamedIndividual
+OBI:0000867	establishing cancer cell line	owl:Class
+OBI:0000868	pattern matching objective	owl:Class
+OBI:0000869	polyA RNA extract	owl:Class
+OBI:0000870	single-nucleotide-resolution nucleic acid structure mapping assay	owl:Class
+OBI:0000871	viral hemagglutination assay	owl:Class
+OBI:0000872	serum neutralization of viral infectivity assay	owl:Class
+OBI:0000873	pre-mortem specimen	owl:Class
+OBI:0000874	detection of specific nucleic acid polymers with complementary probes	owl:Class
+OBI:0000875	viral hemagglutination inhibition assay	owl:Class
+OBI:0000876	cytoplasmic RNA extract	owl:Class
+OBI:0000877	cell line immortalization	owl:Class
+OBI:0000878	obsolete_the manufacturer role of Ambion	owl:NamedIndividual
+OBI:0000879	random primed DNA labeling	owl:Class
+OBI:0000880	RNA extract	owl:Class
+OBI:0000881	obsolete_the manufacturer role of BIO-RAD	owl:NamedIndividual
+OBI:0000882	cell-cell killing assay	owl:Class
+OBI:0000883	in vivo cell killing assay	owl:Class
+OBI:0000884	obsolete_the regulator role of the FDA	owl:NamedIndividual
+OBI:0000885	secondary structure of sequence macromolecule	owl:Class
+OBI:0000886	obsolete_the manufacturer role of Illumina	owl:NamedIndividual
+OBI:0000887	obsolete_the manufacturer role of Helicos	owl:NamedIndividual
+OBI:0000888	nuclear RNA extraction	owl:Class
+OBI:0000889	survival curve@en	owl:Class
+OBI:0000890	obsolete_manufacturer role of Bruker Corporation	owl:NamedIndividual
+OBI:0000891	cell proliferation assay	owl:Class
+OBI:0000892	Southern blot analysis	owl:Class
+OBI:0000893	real time polymerase chain reaction assay	owl:Class
+OBI:0000894	protein extract	owl:Class
+OBI:0000895	total RNA extract	owl:Class
+OBI:0000896	secondary structure of RNA molecule	owl:Class
+OBI:0000897	DEPC structure mapping assay	owl:Class
+OBI:0000898	obsolete_the manufacturer role of Waters	owl:NamedIndividual
+OBI:0000899	organellar RNA extract	owl:Class
+OBI:0000900	obsolete_manufacturer role of applied biosystems	owl:NamedIndividual
+OBI:0000901	U.S. Food and Drug Administration	owl:NamedIndividual
+OBI:0000902	post mortem specimen	owl:Class
+OBI:0000903	in vitro cell killing assay	owl:Class
+OBI:0000904	reporter cell line analyte detection bioassay	owl:Class
+OBI:0000905	sequence feature annotation	owl:Class
+OBI:0000906	induced hemagglutination	owl:Class
+OBI:0000907	supplying	owl:Class
+OBI:0000908	labeled DNA extract	owl:Class
+OBI:0000909	cloacal specimen	owl:Class
+OBI:0000910	radio immuno assay	owl:Class
+OBI:0000911	real time reverse-transcription polymerase chain reaction  assay	owl:Class
+OBI:0000912	X-ray crystallography assay	owl:Class
+OBI:0000913	promoter activity detection by reporter gene assay	owl:Class
+OBI:0000914	nasopharyngeal aspirate specimen	owl:Class
+OBI:0000915	freezing storage	owl:Class
+OBI:0000916	flow cytometry assay	owl:Class
+OBI:0000917	nasal swab specimen	owl:Class
+OBI:0000918	Dulbecco's modified Eagle medium	owl:Class
+OBI:0000919	animal euthanization	owl:Class
+OBI:0000920	cytometric bead array assay	owl:Class
+OBI:0000921	labeled RNA extract	owl:Class
+OBI:0000922	frozen specimen	owl:Class
+OBI:0000923	surface plasmon resonance binding assay	owl:Class
+OBI:0000924	labeled specimen	owl:Class
+OBI:0000925	infectious agent@en	owl:Class
+OBI:0000926	obsolete_ambidexterious handedness	owl:Class
+OBI:0000927	lyophilization storage	owl:Class
+OBI:0000928	material combination function	owl:Class
+OBI:0000929	obsolete_training service provider role	owl:Class
+OBI:0000930	calorimeter	owl:Class
+OBI:0000931	study intervention	owl:Class
+OBI:0000932	material separation device	owl:Class
+OBI:0000933	positron emission tomography scanner	owl:Class
+OBI:0000934	intramuscular injection	owl:Class
+OBI:0000935	micromanipulator	owl:Class
+OBI:0000936	obsolete_material access provider role	owl:Class
+OBI:0000937	obsolete_left handedness	owl:Class
+OBI:0000938	categorical measurement datum	owl:Class
+OBI:0000939	training process	owl:Class
+OBI:0000940	optical microscope	owl:Class
+OBI:0000941	service consumer role	owl:Class
+OBI:0000942	intradermal injection	owl:Class
+OBI:0000943	chemical cleavage	owl:Class
+OBI:0000944	handedness assay	owl:Class
+OBI:0000945	vibration isolation table	owl:Class
+OBI:0000946	sterilization function	owl:Class
+OBI:0000947	service provider role	owl:Class
+OBI:0000948	oscilloscope	owl:Class
+OBI:0000949	accessed material role	owl:Class
+OBI:0000950	paraffin specimen	owl:Class
+OBI:0000951	compound treatment design	owl:Class
+OBI:0000952	oral administration	owl:Class
+OBI:0000953	processed specimen	owl:Class
+OBI:0000954	subcutaneous injection	owl:Class
+OBI:0000955	electrode puller	owl:Class
+OBI:0000956	obsolete_handedness	owl:Class
+OBI:0000957	self reported handedness assessment	owl:Class
+OBI:0000958	right handed	owl:NamedIndividual
+OBI:0000959	vibrotome	owl:Class
+OBI:0000960	reagent application function	owl:Class
+OBI:0000961	addition of molecular tracer function	owl:Class
+OBI:0000962	training objective	owl:Class
+OBI:0000963	categorical label	owl:Class
+OBI:0000964	in live cell assay	owl:Class
+OBI:0000965	lyophilized specimen	owl:Class
+OBI:0000966	in live organism assay	owl:Class
+OBI:0000967	container	owl:Class
+OBI:0000968	device	owl:Class
+OBI:0000969	dose specification	owl:Class
+OBI:0000970	scalar score from composite inputs	owl:Class
+OBI:0000971	fresh specimen	owl:Class
+OBI:0000972	obsolete_electrically powered device	owl:Class
+OBI:0000973	sequence data@en	owl:Class
+OBI:0000974	obsolete_right handedness	owl:Class
+OBI:0000975	cell-cell binding detection by flow cytometry assay	owl:Class
+OBI:0000976	handedness categorical measurement datum	owl:Class
+OBI:0000977	paraffin storage	owl:Class
+OBI:0000978	in container assay	owl:Class
+OBI:0000979	ambidexterous	owl:NamedIndividual
+OBI:0000980	obsolete_protocol service provider role	owl:Class
+OBI:0000981	agar stab specimen	owl:Class
+OBI:0000982	computed tomography scanner	owl:Class
+OBI:0000983	intranasal mucosal administration	owl:Class
+OBI:0000984	dose	owl:Class
+OBI:0000985	growth condition intervention design	owl:Class
+OBI:0000986	obsolete_DNA sequencing training service	owl:Class
+OBI:0000987	obsolete_general scalar measurement datum	owl:Class
+OBI:0000988	performing a diagnosis	owl:Class
+OBI:0000989	PCR instrument	owl:Class
+OBI:0000990	electron microscope	owl:Class
+OBI:0000991	Edinburgh score	owl:Class
+OBI:0000992	DNA sequencing service	owl:Class
+OBI:0000993	service provision objective	owl:Class
+OBI:0000994	intravenous injection	owl:Class
+OBI:0000995	administration of material to specimen	owl:Class
+OBI:0000996	device creation objective	owl:Class
+OBI:0000997	growth environment	owl:Class
+OBI:0000998	left handed	owl:NamedIndividual
+OBI:0000999	has category label	owl:ObjectProperty
+OBI:0001000	questionnaire	owl:Class
+OBI:0001001	Edinburgh handedness assay	owl:Class
+OBI:0001002	Faraday cage	owl:Class
+OBI:0001003	agar stab storage	owl:Class
+OBI:0001004	Edingburgh handedness inventory	owl:NamedIndividual
+OBI:0001005	RNASE CL3 structure mapping assay	owl:Class
+OBI:0001006	CMCT structure mapping assay	owl:Class
+OBI:0001007	image creation	owl:Class
+OBI:0001008	MPE-Fe(II) structure mapping assay	owl:Class
+OBI:0001009	obsolete_qualitative binding detection assay@en	owl:Class
+OBI:0001010	nucleic acid extract	owl:Class
+OBI:0001011	ENU structure mapping assay	owl:Class
+OBI:0001012	RNASE V1 structure mapping assay	owl:Class
+OBI:0001013	kethoxal structure mapping assay	owl:Class
+OBI:0001014	single-nucleotide-resolution nucleic acid structure mapping assay using enzymatic probing	owl:Class
+OBI:0001015	DMS structure mapping assay	owl:Class
+OBI:0001016	DNASE 1 structure mapping assay	owl:Class
+OBI:0001017	single-nucleotide-resolution nucleic acid structure mapping assay using chemical probing	owl:Class
+OBI:0001018	Rhodium DNA structure mapping assay	owl:Class
+OBI:0001019	RNA ADA I RNA structure mapping assay	owl:Class
+OBI:0001020	Lead structure mapping assay	owl:Class
+OBI:0001021	RNASE T2 structure mapping assay	owl:Class
+OBI:0001022	gene dosage assay	owl:Class
+OBI:0001023	Fe-BABE RNA structure mapping assay	owl:Class
+OBI:0001024	RNASE U2 structure mapping assay	owl:Class
+OBI:0001025	binding constant determination assay@en	owl:Class
+OBI:0001026	NMIA RNA structure mapping assay	owl:Class
+OBI:0001027	Terbium RNA structure mapping assay	owl:Class
+OBI:0001028	feature extraction	owl:Class
+OBI:0001029	OH-radical structure mapping assay	owl:Class
+OBI:0001030	RNASE T1 structure mapping assay	owl:Class
+OBI:0001031	array image creation	owl:Class
+OBI:0001032	light emission device	owl:Class
+OBI:0001033	perturbation device	owl:Class
+OBI:0001034	environmental control device	owl:Class
+OBI:0001035	Nuclease S1 structure mapping assay	owl:Class
+OBI:0001036	specimen fixation function	owl:Class
+OBI:0001037	obsolete_specimen fixation function	owl:Class
+OBI:0001038	Ruthenium structure mapping assay	owl:Class
+OBI:0001039	inline probing RNA structure mapping	owl:Class
+OBI:0001040	current amplification function	owl:Class
+OBI:0001041	stabilization function	owl:Class
+OBI:0001042	pump function	owl:Class
+OBI:0001043	cell transfer function	owl:Class
+OBI:0001044	angiograph	owl:Class
+OBI:0001045	capillary blotter	owl:Class
+OBI:0001046	bioreactor	owl:Class
+OBI:0001047	pH meter	owl:Class
+OBI:0001048	digital camera	owl:Class
+OBI:0001049	chip spotting device	owl:Class
+OBI:0001050	RNA extraction/purification instrument	owl:Class
+OBI:0001051	DNA extract	owl:Class
+OBI:0001052	two-photon laser/detector	owl:Class
+OBI:0001053	electrophoresis system	owl:Class
+OBI:0001054	PET synthesizer	owl:Class
+OBI:0001055	spinning-disk confocal microscope	owl:Class
+OBI:0001056	DNA synthesizer	owl:Class
+OBI:0001057	high performance liquid chromatography instrument	owl:Class
+OBI:0001058	microplate reader	owl:Class
+OBI:0001059	ELISA microplate reader	owl:Class
+OBI:0001060	spot cutter	owl:Class
+OBI:0001061	microwave synthesis system	owl:Class
+OBI:0001062	densitometer	owl:Class
+OBI:0001063	automatic staining machine	owl:Class
+OBI:0001064	automatic tissue processor	owl:Class
+OBI:0001065	stereo microscope	owl:Class
+OBI:0001066	top loading balance	owl:Class
+OBI:0001067	perfusion station	owl:Class
+OBI:0001068	SPECT scanner	owl:Class
+OBI:0001069	array manufacturer role@en	owl:Class
+OBI:0001070	scintillation counter	owl:Class
+OBI:0001071	programmable array microscope	owl:Class
+OBI:0001072	cryostat	owl:Class
+OBI:0001073	microtome knife maker	owl:Class
+OBI:0001074	cryofixation device	owl:Class
+OBI:0001075	hybridization oven	owl:Class
+OBI:0001076	incubator shaker	owl:Class
+OBI:0001077	small-animal image acquisition device	owl:Class
+OBI:0001078	infrared image acquisition device	owl:Class
+OBI:0001079	confocal microscope	owl:Class
+OBI:0001080	patch clamp device	owl:Class
+OBI:0001081	gel imaging system	owl:Class
+OBI:0001082	protein separation apparatus	owl:Class
+OBI:0001083	multichannel electronic pipette	owl:Class
+OBI:0001084	vitrification apparatus	owl:Class
+OBI:0001085	radiography instrument	owl:Class
+OBI:0001086	radiation measurement device	owl:Class
+OBI:0001087	lyophilizer	owl:Class
+OBI:0001088	tandem mass spectrometer	owl:Class
+OBI:0001089	microhardness tester	owl:Class
+OBI:0001090	multimode microplate reader	owl:Class
+OBI:0001091	mechanical balance	owl:Class
+OBI:0001092	computer cluster	owl:Class
+OBI:0001093	microtome knife sharpener	owl:Class
+OBI:0001094	plate shaker	owl:Class
+OBI:0001095	coagulation analyzer	owl:Class
+OBI:0001096	laser capture microdissection microscope	owl:Class
+OBI:0001097	liquid extraction robot	owl:Class
+OBI:0001098	ultrasound machine	owl:Class
+OBI:0001099	immunoblot scanner	owl:Class
+OBI:0001100	microcentrifuge	owl:Class
+OBI:0001101	electronic repeater pipette	owl:Class
+OBI:0001102	electron paramagnetic resonance spectrometer	owl:Class
+OBI:0001103	rocker	owl:Class
+OBI:0001104	analytical balance	owl:Class
+OBI:0001105	scanning force microscope	owl:Class
+OBI:0001106	pulsed-field gel electrophoresis system	owl:Class
+OBI:0001107	tissue embedding station	owl:Class
+OBI:0001108	nucleic acid sequencer	owl:Class
+OBI:0001109	bead array reader	owl:Class
+OBI:0001110	real-time PCR machine	owl:Class
+OBI:0001111	paraffin oven	owl:Class
+OBI:0001112	autoclave	owl:Class
+OBI:0001113	microplate washer	owl:Class
+OBI:0001114	nucleic acid extraction/purification instrument	owl:Class
+OBI:0001115	ELISA microplate washer	owl:Class
+OBI:0001116	vacuum manifold	owl:Class
+OBI:0001117	DNA extraction/purification instrument	owl:Class
+OBI:0001118	multichannel pipette	owl:Class
+OBI:0001119	cell harvester	owl:Class
+OBI:0001120	portable fluorometer	owl:Class
+OBI:0001121	gel electrophoresis system	owl:Class
+OBI:0001122	diffractometer	owl:Class
+OBI:0001123	microdissection instrument	owl:Class
+OBI:0001124	micropipette puller	owl:Class
+OBI:0001125	laser scanning confocal microscope	owl:Class
+OBI:0001126	digital microscope	owl:Class
+OBI:0001127	freeze substitution system	owl:Class
+OBI:0001128	micropipette	owl:Class
+OBI:0001129	voltage clamp device	owl:Class
+OBI:0001130	vacuum oven	owl:Class
+OBI:0001131	slide warmer	owl:Class
+OBI:0001132	capillary electrophoresis instrument	owl:Class
+OBI:0001133	denaturing high-performance liquid chromatography instrument	owl:Class
+OBI:0001134	agarose gel electrophoresis system	owl:Class
+OBI:0001135	balance	owl:Class
+OBI:0001136	surface plasmon resonance instrument	owl:Class
+OBI:0001137	protein sequencer	owl:Class
+OBI:0001138	X-ray source	owl:Class
+OBI:0001139	liquid chromatography instrument	owl:Class
+OBI:0001140	spike-in quality control role@en	owl:Class
+OBI:0001141	individual organism identifier@en	owl:Class
+OBI:0001142	dye swap quality control role@en	owl:Class
+OBI:0001143	labeled nucleic acid extract	owl:Class
+OBI:0001144	binding constant@en	owl:Class
+OBI:0001145	3D structure determination of bound complex assay	owl:Class
+OBI:0001146	binding assay	owl:Class
+OBI:0001147	cell culture expansion@en	owl:Class
+OBI:0001148	gene knock out@en	owl:Class
+OBI:0001149	gene knock in@en	owl:Class
+OBI:0001150	chromosomal substitution@en	owl:Class
+OBI:0001151	genetically modified material@en	owl:Class
+OBI:0001152	transfection@en	owl:Class
+OBI:0001153	genetic transformation objective@en	owl:Class
+OBI:0001154	induced mutation@en	owl:Class
+OBI:0001155	3D structural organization datum	owl:Class
+OBI:0001156	age since planting measurement datum@en	owl:Class
+OBI:0001157	age since hatching measurement datum@en	owl:Class
+OBI:0001158	age measurement assay@en	owl:Class
+OBI:0001159	age since egg laying measurement datum@en	owl:Class
+OBI:0001160	assay validation objective@en	owl:Class
+OBI:0001161	age since germination measurement datum@en	owl:Class
+OBI:0001162	validation by reverse transcription PCR design@en	owl:Class
+OBI:0001163	age since eclosion measurement datum@en	owl:Class
+OBI:0001164	age since sowing measurement datum@en	owl:Class
+OBI:0001165	age since coitus measurement datum@en	owl:Class
+OBI:0001166	validation by real time PCR design@en	owl:Class
+OBI:0001167	age measurement datum@en	owl:Class
+OBI:0001168	age since fertilization measurement datum@en	owl:Class
+OBI:0001169	age since birth measurement datum@en	owl:Class
+OBI:0001170	reverse transcription polymerase chain reaction assay@en	owl:Class
+OBI:0001171	half life datum (t 1/2)	owl:Class
+OBI:0001172	dose response curve	owl:Class
+OBI:0001173	service	owl:Class
+OBI:0001174	passive immunization	owl:Class
+OBI:0001175	selective organism creation objective@en	owl:Class
+OBI:0001176	Individual epitope immunization in vivo	owl:Class
+OBI:0001177	RNA sequencing	owl:Class
+OBI:0001178	efficacy of epitope intervention experiment	owl:Class
+OBI:0001179	epitope protection from infectious challenge experiment	owl:Class
+OBI:0001180	half maximal effective concentration (EC50)	owl:Class
+OBI:0001181	binding datum	owl:Class
+OBI:0001182	negative binding datum	owl:Class
+OBI:0001183	epitope protection from tumor challenge experiment	owl:Class
+OBI:0001184	epitope protection experiment	owl:Class
+OBI:0001185	selectively maintained organism@en	owl:Class
+OBI:0001186	epitope protection from infectious challenge experiment based on pathogen burden 	owl:Class
+OBI:0001187	infectious agent detection assay	owl:Class
+OBI:0001188	epitope disease exacerbation experiment	owl:Class
+OBI:0001189	epitope protection experiment based on survival	owl:Class
+OBI:0001190	epitope treatment experiment	owl:Class
+OBI:0001191	half maximal inhibitory concentration (IC50)	owl:Class
+OBI:0001192	epitope specific immune intervention	owl:Class
+OBI:0001193	epitope specific cytokine production by T cells	owl:Class
+OBI:0001194	ELISPOT assay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001195	operator variation design@en	owl:Class
+OBI:0001196	cytometric bead array assay measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001197	comparative genome hybridization by array design@en	owl:Class
+OBI:0001198	biological activity assay measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001199	in vivo design@en	owl:Class
+OBI:0001200	genotyping by high throughput sequencing design@en	owl:Class
+OBI:0001201	epitope specific tolerance induction by T cells	owl:Class
+OBI:0001202	innate behavior design@en	owl:Class
+OBI:0001203	detection of specific nucleic acids with complementary probes assay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001204	SNP microarray@en	owl:Class
+OBI:0001205	cell component comparison design@en	owl:Class
+OBI:0001206	ELISPOT assay measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:0001207	epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001208	epitope specific T cell activation	owl:Class
+OBI:0001209	biological activity assay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:0001210	cytometric bead array assay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001211	ex vivo design@en	owl:Class
+OBI:0001212	epitope specific type IV hypersensitivity by T cells	owl:Class
+OBI:0001213	eBioscience	owl:NamedIndividual
+OBI:0001214	normalization testing design@en	owl:Class
+OBI:0001215	intracellular material detection assay measuring epitope specific perforin release	owl:Class
+OBI:0001216	cell culture analyte detection bioassay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:0001217	biological activity assay measuring epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001218	biological activity assay measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001219	epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001220	cell culture analyte detection bioassay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:0001221	ChIP-chip by SNP array assay@en	owl:Class
+OBI:0001222	ELISA measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001223	cytometric bead array assay measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:0001224	Cytopeia	owl:NamedIndividual
+OBI:0001225	genetic population background information@en	owl:Class
+OBI:0001226	environmental history design@en	owl:Class
+OBI:0001227	ELISPOT assay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001228	biological activity assay measuring epitope specific helper T cell enhancement of a B cell mediated immune response	owl:Class
+OBI:0001229	plasmon resonance assay measuring the dissociation constant [KD] of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:0001230	biological activity assay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001231	ELISA measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001232	biological activity assay measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001233	biological activity assay measuring epitope specific granulocyte macrophage colony stimulating factor production by T cells	owl:Class
+OBI:0001234	epigenetic modification identification objective@en	owl:Class
+OBI:0001235	transcription profiling by tiling array assay@en	owl:Class
+OBI:0001236	ELISA measuring epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001237	biological activity assay measuring epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001238	ELISA measuring epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001239	transcription profiling by high throughput sequencing design@en	owl:Class
+OBI:0001240	intracellular cytokine staining assay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001241	cell culture analyte detection bioassay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:0001242	detection of specific nucleic acids with complementary probes assay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:0001243	cytometric bead array assay measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001244	ELISA measuring epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001245	detection of specific nucleic acids with complementary probes assay measuring epitope specific perforin release	owl:Class
+OBI:0001246	ELISA measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001247	genotyping by high throughput sequencing assay@en	owl:Class
+OBI:0001248	ChIP-chip assay@en	owl:Class
+OBI:0001249	epitope specific T cell tolerance induction	owl:Class
+OBI:0001250	obsolete intracellular material detection by flow cytometry assay  of epitope specific cytotoxic T cell degranulation	owl:Class
+OBI:0001251	biological activity assay measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:0001252	array platform variation design@en	owl:Class
+OBI:0001253	biological activity assay measuring interleukin-9 production by T cells	owl:Class
+OBI:0001254	epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001255	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001256	epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001257	epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001258	ChIP-seq design@en	owl:Class
+OBI:0001259	translational bias design@en	owl:Class
+OBI:0001260	ELISA measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001261	ELISA measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001262	epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001263	biological activity assay measuring epitope specific helper T cell enhancement of a T cell mediated immune response	owl:Class
+OBI:0001264	biological activity assay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001265	FWER adjusted p-value	owl:Class
+OBI:0001266	DNA methylation profiling by high throughput sequencing assay@en	owl:Class
+OBI:0001267	epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001268	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:0001269	biological activity assay measuring epitope specific cytotoxic T cell degranulation	owl:Class
+OBI:0001270	cell culture analyte detection bioassay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001271	RNA-seq assay@en	owl:Class
+OBI:0001272	ELISPOT assay measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001273	cell culture analyte detection bioassay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001274	genotyping by array assay@en	owl:Class
+OBI:0001275	epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001276	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001277	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:0001278	DNA methylation profiling by array design@en	owl:Class
+OBI:0001279	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001280	biological activity assay measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001281	ELISA measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001282	translation profiling assay@en	owl:Class
+OBI:0001283	ELISA measuring epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001284	cytometric bead array assay measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:0001285	in vitro design@en	owl:Class
+OBI:0001286	RNAi profiling by array design@en	owl:Class
+OBI:0001287	Exalpha Biological	owl:NamedIndividual
+OBI:0001288	ELISA measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001289	cytometric bead array assay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001290	transcription profiling by array design@en	owl:Class
+OBI:0001291	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:0001292	biological activity assay measuring epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001293	disease state design@en	owl:Class
+OBI:0001294	wild type organism genotype information@en	owl:Class
+OBI:0001295	biological activity assay measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:0001296	cytometric bead array assay measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:0001297	cytometric bead array assay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:0001298	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001299	intracellular cytokine staining assay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001300	cytometric bead array assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:0001301	cell culture analyte detection bioassay measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001302	ELISA measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001303	intracellular cytokine staining assay measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:0001304	RNAi profiling by array assay@en	owl:Class
+OBI:0001305	genotype information@en	owl:Class
+OBI:0001306	RNA stability design@en	owl:Class
+OBI:0001307	tiling microarray@en	owl:Class
+OBI:0001308	biological activity assay measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001309	intracellular cytokine staining assay measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:0001310	species comparison design@en	owl:Class
+OBI:0001311	X-ray crystallography assay determining the 3D structure of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:0001312	Apogee Flow Systems	owl:NamedIndividual
+OBI:0001313	transcription profiling by RT-PCR design@en	owl:Class
+OBI:0001314	epitope specific T cell enhancement of B cell mediated immune response	owl:Class
+OBI:0001315	ELISA measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001316	epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001317	flow cytometry assay measuring cell-cell binding of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:0001318	proteomic profiling by array assay@en	owl:Class
+OBI:0001319	cell culture analyte detection bioassay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:0001320	Exbio Antibodies	owl:NamedIndividual
+OBI:0001321	Becton Dickinson (BD Biosciences)	owl:NamedIndividual
+OBI:0001322	ELISPOT assay measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0001323	microRNA profiling by array design@en	owl:Class
+OBI:0001324	in vivo assay measuring T cell epitope specific tolerance induction	owl:Class
+OBI:0001325	detection of specific nucleic acids with complementary probes assay measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001326	cytometric bead array assay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:0001327	biological activity assay measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001328	organism development design@en	owl:Class
+OBI:0001329	family history design@en	owl:Class
+OBI:0001330	ELISA measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001331	transcription profiling identification objective@en	owl:Class
+OBI:0001332	DNA methylation profiling by array assay@en	owl:Class
+OBI:0001333	biological activity assay measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001334	epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001335	microRNA profiling by array assay@en	owl:Class
+OBI:0001336	quality control testing design@en	owl:Class
+OBI:0001337	clinical history design@en	owl:Class
+OBI:0001338	Dako Cytomation	owl:NamedIndividual
+OBI:0001339	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:0001340	Millipore	owl:NamedIndividual
+OBI:0001341	cell culture analyte detection bioassay measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:0001342	intracellular cytokine staining assay measuring epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001343	detection of specific nucleic acids with complementary probes assay measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001344	ELISA measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001345	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001346	ELISA measuring epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001347	Antigenix	owl:NamedIndividual
+OBI:0001348	in vivo skin test assay measuring T cell epitope specific type IV hypersensitivity	owl:Class
+OBI:0001349	cytometric bead array assay measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:0001350	detection of specific nucleic acids with complementary probes assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:0001351	epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001352	allele information@en	owl:Class
+OBI:0001353	cytometric bead array assay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:0001354	ELISPOT assay measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:0001355	Partec	owl:NamedIndividual
+OBI:0001356	detection of specific nucleic acids with complementary probes assay measuring epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001357	detection of specific nucleic acids with complementary probes assay measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:0001358	post-transcriptional modification design@en	owl:Class
+OBI:0001359	ELISA measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001360	cytometric bead array assay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001361	transcription profiling by RT-PCR assay@en	owl:Class
+OBI:0001362	epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001363	biological activity assay measuring epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001364	genetic alteration information@en	owl:Class
+OBI:0001365	cellular process design@en	owl:Class
+OBI:0001366	epitope specific RANTES production by T cells	owl:Class
+OBI:0001367	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:0001368	cytometric bead array assay measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001369	wild type allele information@en	owl:Class
+OBI:0001370	intracellular cytokine staining assay measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001371	epitope specific granzyme B production by T cells	owl:Class
+OBI:0001372	Beckman Coulter	owl:NamedIndividual
+OBI:0001373	epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001374	injury design@en	owl:Class
+OBI:0001375	Advanced Instruments Inc. (AI Companies)	owl:NamedIndividual
+OBI:0001376	intracellular cytokine staining assay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001377	organism status comparison design@en	owl:Class
+OBI:0001378	ELISA measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001379	cytometric bead array assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:0001380	biological activity assay measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:0001381	epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001382	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001383	detection of specific nucleic acids with complementary probes assay measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001384	cell culture analyte detection bioassay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001385	intracellular cytokine staining assay measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001386	epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001387	genotyping by array design@en	owl:Class
+OBI:0001388	biological activity assay measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001389	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001390	biological activity assay measuring epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001391	biological activity assay measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:0001392	in vivo assay measuring epitope specific T cell killing	owl:Class
+OBI:0001393	comparative genomic hybridization by array assay@en	owl:Class
+OBI:0001394	epitope specific cytotoxic T cell degranulation	owl:Class
+OBI:0001395	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001396	stimulus or stress design@en	owl:Class
+OBI:0001397	cytometric bead array assay measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001398	protein and DNA interaction identification objective@en	owl:Class
+OBI:0001399	epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001400	biological activity assay measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001401	protocol optimization design@en	owl:Class
+OBI:0001402	promoter activity detection by reporter gene assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:0001403	ChIP-chip design@en	owl:Class
+OBI:0001404	genetic characteristics information@en	owl:Class
+OBI:0001405	cytometric bead array assay measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001406	biological activity assay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001407	biological activity assay measuring epitope specific T cell activation	owl:Class
+OBI:0001408	imprinting design@en	owl:Class
+OBI:0001409	cell cycle design@en	owl:Class
+OBI:0001410	translation profiling design@en	owl:Class
+OBI:0001411	cell type comparison design@en	owl:Class
+OBI:0001412	cytometric bead array assay measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001413	cell culture analyte detection bioassay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001414	biological activity assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:0001415	epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001416	biological activity assay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:0001417	ChIP-chip by tiling array design@en	owl:Class
+OBI:0001418	dose response design@en	owl:Class
+OBI:0001419	ChIP-chip by tiling array assay@en	owl:Class
+OBI:0001420	epitope specific helper T cell enhancement of T cell mediated immune response	owl:Class
+OBI:0001421	epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001422	organism part comparison design@en	owl:Class
+OBI:0001423	intracellular material detection measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0001424	Miltenyi Biotec	owl:NamedIndividual
+OBI:0001425	protein binding site identification design@en	owl:Class
+OBI:0001426	sex comparison design@en	owl:Class
+OBI:0001427	transcription profiling by tiling array design@en	owl:Class
+OBI:0001428	AES Chemunex	owl:NamedIndividual
+OBI:0001429	cell differentiation design@en	owl:Class
+OBI:0001430	transcription profiling design@en	owl:Class
+OBI:0001431	Bentley Instruments	owl:NamedIndividual
+OBI:0001432	operon identification design@en	owl:Class
+OBI:0001433	radio immuno assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:0001434	Invitrogen	owl:NamedIndividual
+OBI:0001435	DNA methylation profiling by high throughput sequencing design@en	owl:Class
+OBI:0001436	biological activity assay measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0001437	intracellular cytokine staining assay measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001438	ELISA measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001439	epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001440	all pairs design@en	owl:Class
+OBI:0001441	proteomic profiling by array design@en	owl:Class
+OBI:0001442	q-value	owl:Class
+OBI:0001443	Luminex	owl:NamedIndividual
+OBI:0001444	genotyping design@en	owl:Class
+OBI:0001445	biological activity assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:0001446	epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001447	epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001448	individual genetic characteristics comparison design@en	owl:Class
+OBI:0001449	biological activity assay measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:0001450	biological activity assay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:0001451	biological activity assay measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:0001452	cell culture analyte detection bioassay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:0001453	intracellular cytokine staining assay measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001454	pathogenicity design@en	owl:Class
+OBI:0001455	ELISPOT assay measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:0001456	biological activity assay measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001457	cytometric bead array assay measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001458	CytoBuoy	owl:NamedIndividual
+OBI:0001459	biological activity assay measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001460	genetic modification design@en	owl:Class
+OBI:0001461	ELISA measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0001462	epitope specific IP-10 production by T cells	owl:Class
+OBI:0001463	transcription profiling by array assay@en	owl:Class
+OBI:0001464	strain comparison design@en	owl:Class
+OBI:0001465	biological activity assay measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001466	intracellular cytokine staining assay measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:0001467	in vivo assay measuring T cell epitope specific disease exacerbation	owl:Class
+OBI:0001468	cell specimen@en	owl:Class
+OBI:0001469	monospecific T cell recognition assay measuring MHC ligand processing and presentation	owl:Class
+OBI:0001470	epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001471	T cell epitope specific immune intervention	owl:Class
+OBI:0001472	specimen with known storage state@en	owl:Class
+OBI:0001473	in vivo assay measuring T cell epitope specific protection from tumor challenge	owl:Class
+OBI:0001474	lowess group transformation@en	owl:Class
+OBI:0001475	in vivo assay measuring T cell epitope specific protection from infectious challenge based on pathogen burden	owl:Class
+OBI:0001476	phage display binding assay	owl:Class
+OBI:0001477	lowess transformation@en	owl:Class
+OBI:0001478	mass spectrometry assay measuring MHC ligand processing and presentation	owl:Class
+OBI:0001479	tissue specimen@en	owl:Class
+OBI:0001480	phage display library panning	owl:Class
+OBI:0001481	lowess global transformation@en	owl:Class
+OBI:0001482	intracellular cytokine staining assay measuring epitope specific transforming growth factor-beta production by T cells	owl:Class
+OBI:0001483	cell collecting@en	owl:Class
+OBI:0001484	biological activity assay measuring T cell epitope specific in vivo activity	owl:Class
+OBI:0001485	purified MHC molecule preparation	owl:Class
+OBI:0001486	disposition to be bound by an MHC protein complex	owl:Class
+OBI:0001487	B cell epitope specific immune intervention	owl:Class
+OBI:0001488	epitope tolerance induction experiment	owl:Class
+OBI:0001489	mass spectrometry assay measuring MHC ligand processing and presentation of MHC ligands eluted from cellular MHC	owl:Class
+OBI:0001490	cytometric bead array measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:0001491	radioactivity detection binding assay	owl:Class
+OBI:0001492	in vivo assay measuring T cell epitope specific protection based on survival	owl:Class
+OBI:0001493	cell bound MHC competitive binding assay of a MHC:ligand complex using T cell epitope recognition	owl:Class
+OBI:0001494	linear amplification@en	owl:Class
+OBI:0001495	biological activity assay measuring epitope specific T cell helper activity	owl:Class
+OBI:0001496	intracellular cytokine staining assay measuring epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001497	biological activity assay measuring epitope specific perforin release by T cells	owl:Class
+OBI:0001498	atmosphere@en	owl:Class
+OBI:0001499	fluorescence detection binding assay	owl:Class
+OBI:0001500	coelution assay measuring MHC ligand processing and presentation using T cell recognition of HPLC fractionated eluate compared to synthetic ligand	owl:Class
+OBI:0001501	fluorescence detection assay	owl:Class
+OBI:0001502	epitope specific perforin production by T cells	owl:Class
+OBI:0001503	MHC protein complex binding to ligand	owl:Class
+OBI:0001504	dissection@en	owl:Class
+OBI:0001505	purification@en	owl:Class
+OBI:0001506	specimen with pre- or post-mortem status@en	owl:Class
+OBI:0001507	in vivo assay measuring T cell epitope specific treatment of disease	owl:Class
+OBI:0001508	sampling time measurement datum@en	owl:Class
+OBI:0001509	Edman degradation assay measuring MHC ligand processing and presentation	owl:Class
+OBI:0001510	mass spectrometry assay measuring MHC ligand processing and presentation of MHC ligands eluted from secreted MHC	owl:Class
+OBI:0001511	disposition to be a product of antigen processing and presentation	owl:Class
+OBI:0001512	cytometric bead array assay measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001513	purified MHC competitive binding assay of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001514	minimal inhibitory concentration	owl:Class
+OBI:0001515	material maintenance service	owl:Class
+OBI:0001516	cell lysate MHC direct binding assay measuring half maximal effective concentration [EC50] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001517	cell bound MHC competitive binding assay measuring half maximal inhibitory concentration [IC50] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001518	epitope specific tumor necrosis factor (ligand) superfamily member 11 production by T cells	owl:Class
+OBI:0001519	cell lysate MHC direct binding assay of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001520	cell bound MHC competitive binding assay measuring half maximal inhibitory concentration [IC50] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001521	ELISA measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001522	sequence assembly algorithm@en	owl:Class
+OBI:0001523	cytometric bead array assay measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001524	cell bound MHC direct binding assay measuring equilibrium association constant [KA] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001525	PDB file	owl:Class
+OBI:0001526	epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001527	support service	owl:Class
+OBI:0001528	material service	owl:Class
+OBI:0001529	data analysis service	owl:Class
+OBI:0001530	data service	owl:Class
+OBI:0001531	purified MHC direct binding assay measuring half life of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001532	cytometric bead array assay measuring epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001533	data storage service	owl:Class
+OBI:0001534	purified MHC competitive binding assay measuring binding of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001535	epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001536	equilibrium dissociation constant (KD)	owl:Class
+OBI:0001537	purified MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001538	training service	owl:Class
+OBI:0001539	cell bound MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001540	obsolete T cell recognition of eluted MHC ligand assay	owl:Class
+OBI:0001541	purified MHC direct binding assay measuring binding on rate [kon] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001542	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:0001543	purified MHC direct binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex approximated by EC50 using fluorescence detection	owl:Class
+OBI:0001544	cell lysate MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001545	intracellular cytokine staining assay measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001546	comparative phenotypic assessment	owl:Class
+OBI:0001547	material analysis service	owl:Class
+OBI:0001548	equilibrium association constant (KA)	owl:Class
+OBI:0001549	cell bound MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001550	cell bound MHC binding assay measuring binding of a MHC:ligand complex	owl:Class
+OBI:0001551	access service	owl:Class
+OBI:0001552	intracellular cytokine staining assay measuring epitope specific tumor necrosis factor (ligand) superfamily member 11 production by T cells	owl:Class
+OBI:0001553	assay measuring a binding constant of a MHC:ligand complex	owl:Class
+OBI:0001554	rate measurement datum	owl:Class
+OBI:0001555	purified MHC binding assay measuring binding of a MHC:ligand complex	owl:Class
+OBI:0001556	cell lysate MHC direct binding assay of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001557	material storage service	owl:Class
+OBI:0001558	cell bound MHC direct binding assay measuring half life of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001559	cell bound MHC direct binding assay measuring half life of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001560	obsolete cell lysate MHC binding constant determination assay	owl:Class
+OBI:0001561	cell bound MHC direct binding assay measuring half maximal effective concentration [EC50] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001562	intracellular cytokine staining assay measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001563	material processing service	owl:Class
+OBI:0001564	purified MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex approximated by IC50 using radioactivity detection	owl:Class
+OBI:0001565	cell lysate MHC direct binding assay measuring half life of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001566	50% dissociation of binding temperature (Tm)	owl:Class
+OBI:0001567	cell lysate MHC direct binding assay measuring binding off rate [koff] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001568	purified MHC competitive binding assay measuring half maximal inhibitory concentration [IC50] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001569	purified MHC direct binding assay measuring binding off rate [koff] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001570	biological activity assay measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001571	equilibrium dissociation constant (KD) approximated by IC50	owl:Class
+OBI:0001572	obsolete cell bound MHC binding constant determination assay	owl:Class
+OBI:0001573	DNA sequence data	owl:Class
+OBI:0001574	obsolete cell lysate MHC competitive binding assay using radioactivity detection	owl:Class
+OBI:0001575	assigning gene property based on phenotypic assessment	owl:Class
+OBI:0001576	obsolete purified MHC binding constant determination assay	owl:Class
+OBI:0001577	cytometric bead array assay measuring epitope specific intracellular cytokine staining (ICS) IL-22 production by T cells	owl:Class
+OBI:0001578	ELISA measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001579	cell lysate MHC binding assay measuring binding of a MHC:ligand complex	owl:Class
+OBI:0001580	material transport service	owl:Class
+OBI:0001581	equilibrium dissociation constant (KD) approximated by EC50	owl:Class
+OBI:0001582	obsolete cell bound MHC direct binding assay	owl:Class
+OBI:0001583	half life of binding datum	owl:Class
+OBI:0001584	purified MHC direct binding assay measuring binding of a MHC:ligand complex using phage display	owl:Class
+OBI:0001585	cytometric bead array assay measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001586	purified MHC direct binding assay measuring half life of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001587	biological activity assay measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001588	binding	owl:Class
+OBI:0001589	intracellular cytokine staining assay measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001590	purified MHC direct binding assay measuring binding of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001591	direct binding assay	owl:Class
+OBI:0001592	purified MHC direct binding assay measuring half maximal effective concentration [EC50] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001593	competitive inhibition of binding assay	owl:Class
+OBI:0001594	cell bound MHC competitive binding assay of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001595	X-ray crystallography assay determining the 3D structure of a MHC:ligand complex	owl:Class
+OBI:0001596	PDB file chain	owl:Class
+OBI:0001597	cell bound MHC competitive binding assay measuring half maximal inhibitory concentration [IC50] of a MHC:ligand complex using T cell epitope recognition	owl:Class
+OBI:0001598	data maintenance service	owl:Class
+OBI:0001599	cell bound MHC competitive binding assay of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001600	biological activity assay measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001601	cytometric bead array assay measuring epitope specific intracellular cytokine staining (ICS) IL-21 production by T cells	owl:Class
+OBI:0001602	cell bound MHC direct binding assay of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001603	binding off rate measurement datum (koff)	owl:Class
+OBI:0001604	purified MHC direct binding assay measuring 50% dissociation of binding temperature [Tm] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001605	binding on rate measurement datum (kon)	owl:Class
+OBI:0001606	cell bound MHC direct binding assay of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001607	biological activity assay measuring epitope specific tumor necrosis factor (ligand) superfamily member 11 production by T cells	owl:Class
+OBI:0001608	purified MHC direct binding assay of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001609	intracellular cytokine staining assay measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001610	cytometric bead array assay measuring epitope specific intracellular cytokine staining (ICS) IL-223 production by T cells	owl:Class
+OBI:0001611	obsolete purified MHC direct binding assay	owl:Class
+OBI:0001612	epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001613	purified MHC competitive binding assay measuring half maximal inhibitory concentration [IC50] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001614	GenBank ID@en	owl:Class
+OBI:0001615	investigation description@en	owl:Class
+OBI:0001616	specimen identifier@en	owl:Class
+OBI:0001617	PubMed ID@en	owl:Class
+OBI:0001618	average depth of sequence coverage@en	owl:Class
+OBI:0001619	specimen collection time measurement datum@en	owl:Class
+OBI:0001620	latitude coordinate measurement datum@en	owl:Class
+OBI:0001621	longitude coordinate measurement datum@en	owl:Class
+OBI:0001622	investigation title@en	owl:Class
+OBI:0001623	organism identification objective@en	owl:Class
+OBI:0001624	organism identification assay@en	owl:Class
+OBI:0001625	sequence annotation algorithm@en	owl:Class
+OBI:0001626	Bioinformatics Resource Center@en	owl:Class
+OBI:0001627	country name@en	owl:Class
+OBI:0001628	investigation identifier@en	owl:Class
+OBI:0001629	grant identifier@en	owl:Class
+OBI:0001630	analytical chromatography	owl:Class
+OBI:0001631	electron microscopy imaging assay	owl:Class
+OBI:0001632	immuno staining assay	owl:Class
+OBI:0001633	purified material	owl:Class
+OBI:0001634	calorimetric binding assay	owl:Class
+OBI:0001635	antibody binding detection by fluorescence quenching	owl:Class
+OBI:0001636	grant@en	owl:Class
+OBI:0001637	has disposition to bind	owl:ObjectProperty
+OBI:0001638	antigen inhibition assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex approximated by IC50	owl:Class
+OBI:0001639	biological activity assay measuring epitope specific Ig-mediated histamine release	owl:Class
+OBI:0001640	biological activity assay measuring epitope specific immunoglobulin-mediated antigen activation	owl:Class
+OBI:0001641	biological activity assay measuring epitope specific complement-dependent cytotoxicity	owl:Class
+OBI:0001642	biological activity assay measuring epitope specific antibody-dependent cellular cytotoxicity	owl:Class
+OBI:0001643	biological activity assay measuring epitope specific immunoglobulin-mediated neutralization	owl:Class
+OBI:0001644	biological activity assay measuring epitope specific opsonization	owl:Class
+OBI:0001645	calorimetry assay measuring binding of a B cell epitope:antibody complex 	owl:Class
+OBI:0001646	electron microscopy assay determining the 3D structure of a B cell epitope:antibody complex	owl:Class
+OBI:0001647	NMR assay determining the 3D structure of a B cell epitope:antibody complex	owl:Class
+OBI:0001648	cross blocking assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001649	RIA measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001650	immunoblot assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001651	plasmon resonance assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001652	immuno staining assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001653	immunoprecipitation assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001654	mass spectrometry assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001655	phage display assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001656	electron microscopy assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001657	ELISA measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001658	ELISPOT assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001659	flow cytometry assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001660	intracellular material detection assay measuring epitope specific granzyme A release by T cells	owl:Class
+OBI:0001661	chromatography assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001662	NMR assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001663	ELISA measuring epitope specific granulysin release by T cells	owl:Class
+OBI:0001664	intracellular material detection assay measuring epitope specific granulysin release by T cells	owl:Class
+OBI:0001665	cell bound MHC direct binding assay measuring the off rate [koff] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001666	cell bound MHC direct binding assay measuring binding on rate [kon] of a MHC:ligand complex using fluorescence detection	owl:Class
+OBI:0001667	purified MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex approximated by IC50 using fluorescence detection	owl:Class
+OBI:0001668	split-ubiquitin assay @en	owl:Class
+OBI:0001669	far-Western blot@en	owl:Class
+OBI:0001670	RNA protection assay@en	owl:Class
+OBI:0001671	electrophoretic mobility shift assay @en	owl:Class
+OBI:0001672	gene knock-down assay@en	owl:Class
+OBI:0001673	nano-cap analysis of gene expression @en	owl:Class
+OBI:0001674	cap analysis of gene expression @en	owl:Class
+OBI:0001675	ELISA measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001676	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001677	epitope specific granulysin production by T cells	owl:Class
+OBI:0001678	epitope specific granzyme A production by T cells	owl:Class
+OBI:0001679	yeast 2-hybrid @en	owl:Class
+OBI:0001680	Sos-recruitment assay @en	owl:Class
+OBI:0001681	yeast one-hybrid @en	owl:Class
+OBI:0001682	bacterial one-hybrid @en	owl:Class
+OBI:0001683	chromosome organization assay by fluorescence in-situ hybridization@en	owl:Class
+OBI:0001684	methylation-specific polymerase chain reaction @en	owl:Class
+OBI:0001685	amplification of intermethylated sites (AIMS) assay @en	owl:Class
+OBI:0001686	in-situ hybridization@en	owl:Class
+OBI:0001687	contact representative role@en	owl:Class
+OBI:0001688	has organization member@en	owl:ObjectProperty
+OBI:0001689	cytochalasin-induced inhibition of actin polymerization assay@en	owl:Class
+OBI:0001690	molecular function identification objective@en	owl:Class
+OBI:0001691	cellular structure feature identification objective@en	owl:Class
+OBI:0001692	in vivo assay measuring B cell epitope specific protection from fertility	owl:Class
+OBI:0001693	in vivo assay measuring B cell epitope specific tolerance induction	owl:Class
+OBI:0001694	in vivo assay measuring B cell epitope specific induction of hypersensitivity	owl:Class
+OBI:0001695	biological activity assay measuring epitope specific immune complex formation	owl:Class
+OBI:0001696	in vivo assay measuring B cell epitope specific protection based on survival	owl:Class
+OBI:0001697	in vivo assay measuring B cell epitope specific treatment of disease	owl:Class
+OBI:0001698	biological activity assay measuring B cell epitope specific in vivo activity	owl:Class
+OBI:0001699	antibody cross-blocking assay	owl:Class
+OBI:0001700	immunoprecipitation assay	owl:Class
+OBI:0001701	antigen inhibition assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001702	immunoglobulin binding to epitope	owl:Class
+OBI:0001703	assay measuring qualitiative binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001704	biological activity assay measuring epitope specific activation of additional immune response in vitro	owl:Class
+OBI:0001705	biological activity assay measuring epitope specific antigen inhibition of antibody activity	owl:Class
+OBI:0001706	assay measuring B cell epitope specific biological activity	owl:Class
+OBI:0001707	immunoglobulin mediated histamine release	owl:Class
+OBI:0001708	assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001709	assay measuring a binding constant of a B cell epitope:antibody complex	owl:Class
+OBI:0001710	in vivo assay measuring B cell epitope specific protection from challenge	owl:Class
+OBI:0001711	in vivo assay measuring B cell epitope specific disease exacerbation	owl:Class
+OBI:0001712	obsolete B cell epitope direct binding assay	owl:Class
+OBI:0001713	B cell epitope specific opsonization	owl:Class
+OBI:0001714	B cell epitope specific immunoglobulin-mediated neutralization	owl:Class
+OBI:0001715	obsolete B cell epitope competitive binding assay	owl:Class
+OBI:0001716	B cell epitope specific complement-dependent cytotoxicity	owl:Class
+OBI:0001717	B cell epitope specific antibody-dependent cellular cytotoxicity	owl:Class
+OBI:0001718	assay measuring the on rate [kon] of a B cell epitope:antibody complex	owl:Class
+OBI:0001719	assay measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001720	B cell epitope specific immune complex formation	owl:Class
+OBI:0001721	3D structure determining assay of a 3D B cell epitope:antibody complex	owl:Class
+OBI:0001722	B cell epitope specific hypersensitivity	owl:Class
+OBI:0001723	assay measuring the off rate [koff] of a B cell epitope:antibody complex	owl:Class
+OBI:0001724	biological activity assay measuring epitope specific hemagglutination inhibition	owl:Class
+OBI:0001725	B cell epitope specific histamine secretion mediated by immunoglobulin	owl:Class
+OBI:0001726	quenching assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001727	RIA measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001728	ELISA measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001729	quenching assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001730	surface plasmon resonance assay measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001731	surface plasmon resonance assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001732	quenching assay measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001733	calorimetry assay measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001734	calorimetry assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex 	owl:Class
+OBI:0001735	ELISA measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001736	RIA measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001737	obsolete B cell epitope specific X-ray crystallography assay	owl:Class
+OBI:0001738	X-ray crystallography assay determining the 3D structure of a B cell epitope:antibody complex	owl:Class
+OBI:0001739	surface plasmon resonance assay measuring the off rate [koff] of a B cell epitope:antibody complex	owl:Class
+OBI:0001740	quenching assay measuring the off rate [koff] of a B cell epitope:antibody complex	owl:Class
+OBI:0001741	surface plasmon resonance assay measuring the on rate [kon] of a B cell epitope:antibody complex	owl:Class
+OBI:0001742	quenching assay measuring the on rate [kon] of a B cell epitope:antibody complex	owl:Class
+OBI:0001743	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:0001744	intracellular cytokine staining assay measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001745	ELISPOT assay measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001746	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001747	cytometric bead array assay measuring epitope specific interleukin-1 alpha production by T cells	owl:Class
+OBI:0001748	ELISPOT assay measuring epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001749	intracellular cytokine staining assay measuring epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001750	intracellular cytokine staining assay measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001751	ELISA measuring epitope specific interferon-beta production by T cells	owl:Class
+OBI:0001752	detection of specific nucleic acids with complementary probes assay measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001753	ELISPOT assay measuring epitope specific granulocyte colony stimulating factor production by T cells	owl:Class
+OBI:0001754	cytometric bead array assay measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001755	selection criterion@en	owl:Class
+OBI:0001756	ELISPOT assay measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001757	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-X-C motif) ligand 9 production by T cells	owl:Class
+OBI:0001758	ELISPOT assay measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001759	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-X-C motif) ligand 12 production by T cells	owl:Class
+OBI:0001760	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-X-C motif) ligand 13 production by T cells	owl:Class
+OBI:0001761	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-X-C motif) ligand 16 production by T cells	owl:Class
+OBI:0001762	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 21 production by T cells	owl:Class
+OBI:0001763	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 22 production by T cells	owl:Class
+OBI:0001764	cytometric bead array assay measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001765	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 4 production by T cells	owl:Class
+OBI:0001766	detection of specific nucleic acids with complementary probes assay measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001767	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 19 production by T cells	owl:Class
+OBI:0001768	intracellular cytokine staining assay measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001769	specimen collector role@en	owl:Class
+OBI:0001770	intracellular cytokine staining assay measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001771	ELISPOT assay measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001772	biological activity assay measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001773	biological activity assay measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001774	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 21 production by T cells	owl:Class
+OBI:0001775	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 19 production by T cells	owl:Class
+OBI:0001776	biological activity assay measuring epitope specific chemokine (C-X-C motif) ligand 12 production by T cells	owl:Class
+OBI:0001777	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 22 production by T cells	owl:Class
+OBI:0001778	biological activity assay measuring epitope specific chemokine (C-X-C motif) ligand 16 production by T cells	owl:Class
+OBI:0001779	biological activity assay measuring epitope specific chemokine (C-X-C motif) ligand 13 production by T cells	owl:Class
+OBI:0001780	ELISPOT assay measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001781	cytometric bead array assay measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001782	detection of specific nucleic acids with complementary probes assay measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001783	intracellular cytokine staining assay measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001784	ELISPOT assay measuring epitope specific monocyte chemotactic protein-1 production by T cells	owl:Class
+OBI:0001785	intracellular cytokine staining assay measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001786	ELISPOT assay measuring epitope specific macrophage inflammatory protein-1 gamma production by T cells	owl:Class
+OBI:0001787	cytometric bead array assay measuring epitope specific vascular endothelial growth factor production by T cells	owl:Class
+OBI:0001788	detection of specific nucleic acids with complementary probes assay measuring epitope specific tumor necrosis factor superfamily cytokine production by T cells	owl:Class
+OBI:0001789	intracellular cytokine staining assay measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001790	ELISPOT assay measuring epitope specific RANTES production by T cells	owl:Class
+OBI:0001791	ELISPOT assay measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001792	detection of specific nucleic acids with complementary probes assay measuring epitope specific macrophage inflammatory protein-1 alpha production by T cells	owl:Class
+OBI:0001793	cytometric bead array assay measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001794	detection of specific nucleic acids with complementary probes assay measuring epitope specific lymphotoxin A production by T cells	owl:Class
+OBI:0001795	ELISPOT assay measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001796	intracellular cytokine staining assay measuring epitope specific IP-10 production by T cells	owl:Class
+OBI:0001797	ELISPOT assay measuring epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001798	intracellular cytokine staining assay measuring epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001799	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-9 production by T cells	owl:Class
+OBI:0001800	ELISPOT assay measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001801	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-8 production by T cells	owl:Class
+OBI:0001802	ELISPOT assay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001803	ELISA measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001804	ELISPOT assay measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001805	intracellular cytokine staining assay measuring epitope specific interleukin-7 production by T cells	owl:Class
+OBI:0001806	intracellular cytokine staining assay measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001807	cytometric bead array assay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001808	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-3 production by T cells	owl:Class
+OBI:0001809	biological activity assay measuring epitope specific granzyme A release by T cells	owl:Class
+OBI:0001810	biological activity assay measuring epitope specific granulysin release by T cells	owl:Class
+OBI:0001811	cytometric bead array assay measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001812	intracellular cytokine staining assay measuring epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001813	ELISPOT assay measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001814	ELISA measuring epitope specific interleukin-27 production by T cells	owl:Class
+OBI:0001815	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:0001816	epitope specific chemokine (C-X-C motif) ligand 13 production by T cells	owl:Class
+OBI:0001817	ELISPOT assay measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:0001818	epitope specific chemokine (C-X-C motif) ligand 12 production by T cells	owl:Class
+OBI:0001819	epitope specific chemokine (C-C motif) ligand 22 production by T cells	owl:Class
+OBI:0001820	epitope specific chemokine (C-X-C motif) ligand 16 production by T cells	owl:Class
+OBI:0001821	ELISPOT assay measuring epitope specific interleukin-22 production by T cells	owl:Class
+OBI:0001822	ELISPOT assay measuring epitope specific interleukin-23 production by T cells	owl:Class
+OBI:0001823	epitope specific chemokine (C-C motif) ligand 21 production by T cells	owl:Class
+OBI:0001824	intracellular cytokine staining assay measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:0001825	epitope specific chemokine (C-C motif) ligand 19 production by T cells	owl:Class
+OBI:0001826	ELISPOT assay measuring epitope specific interleukin-21 production by T cells	owl:Class
+OBI:0001827	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001828	cytometric bead array assay measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001829	ELISPOT assay measuring epitope specific chemokine (C-C motif) ligand 1 production by T cells	owl:Class
+OBI:0001830	ELISPOT assay measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001831	ELISA measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001832	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-17F production by T cells	owl:Class
+OBI:0001833	ELISPOT assay measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001834	drawing a conclusion	owl:Class
+OBI:0001835	cytometric bead array assay measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:0001836	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001837	ELISA measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001838	ELISPOT assay measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001839	intracellular cytokine staining assay measuring epitope specific interleukin-16 production by T cells	owl:Class
+OBI:0001840	detection of specific nucleic acids with complementary probes assay measuring epitope specific interleukin-17A production by T cells	owl:Class
+OBI:0001841	intracellular cytokine staining assay measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:0001842	ELISPOT assay measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:0001843	detection of specific nucleic acids with complementary probes measuring epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001844	ELISPOT assay measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:0001845	intracellular cytokine staining assay measuring epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001846	ELISPOT assay measuring epitope specific interleukin-15 production by T cells	owl:Class
+OBI:0001847	ISA alternative term@en	owl:AnnotationProperty
+OBI:0001848	chromatin interaction analysis by paired-end tag sequencing@en	owl:Class
+OBI:0001849	structural analysis by paired-end tag sequencing@en	owl:Class
+OBI:0001850	transcript analysis by paired-end tag sequencing@en	owl:Class
+OBI:0001851	transcription start site identification objective@en	owl:Class
+OBI:0001852	paired-end library preparation@en	owl:Class
+OBI:0001853	DNase I hypersensitive sites sequencing assay@en	owl:Class
+OBI:0001854	protein and RNA interaction identification objective@en	owl:Class
+OBI:0001855	Nimblegen@en	owl:NamedIndividual
+OBI:0001856	Pacific Biosciences@en	owl:NamedIndividual
+OBI:0001857	RNP (ribonuclear particle) immunoprecipitation high- throughput sequencing assay@en	owl:Class
+OBI:0001858	cross-linking immunoprecipitation high-throughput sequencing assay@en	owl:Class
+OBI:0001859	formaldehyde-assisted isolation of regulatory elements assay@en	owl:Class
+OBI:0001860	NanoString Technologies@en	owl:NamedIndividual
+OBI:0001861	methylation-sensitive restriction enzyme sequencing assay@en	owl:Class
+OBI:0001862	reduced representation bisulfite sequencing assay@en	owl:Class
+OBI:0001863	shotgun bisulfite-seq assay@en	owl:Class
+OBI:0001864	RNA Annotation and Mapping of Promoters for the Analysis of Gene Expression assay@en	owl:Class
+OBI:0001865	assay array@en	owl:Class
+OBI:0001866	secondary cultured cell	owl:Class
+OBI:0001867	establishing cell line	owl:Class
+OBI:0001868	genetic material	owl:Class
+OBI:0001869	Illumina BeadChip@en	owl:Class
+OBI:0001870	Illumina methylation BeadChip@en	owl:Class
+OBI:0001871	LSRFortessa X-20@en	owl:Class
+OBI:0001872	sequence assembly process@en	owl:Class
+OBI:0001873	number of errors@en	owl:Class
+OBI:0001874	random access memory size@en	owl:Class
+OBI:0001875	cultured immune cell population@en	owl:Class
+OBI:0001876	cell culture	owl:Class
+OBI:0001877	random access memory@en	owl:Class
+OBI:0001878	establishing primary cell culture@en	owl:Class
+OBI:0001879	reagent@en	owl:Class
+OBI:0001880	organization of specimen provider principal investigator@en	owl:Class
+OBI:0001881	organization of Bioinformatics Resource Center contact person@en	owl:Class
+OBI:0001882	target material in specimen specification@en	owl:Class
+OBI:0001883	Bioinformatics Resource Center contact person@en	owl:Class
+OBI:0001884	specimen-based scope of investigation specification@en	owl:Class
+OBI:0001885	specimen repository organization@en	owl:Class
+OBI:0001886	NIAID GSCID-BRC alternative term@en	owl:AnnotationProperty
+OBI:0001887	email address of Bioinformatics Resource Center contact person@en	owl:Class
+OBI:0001888	sequencing facility contact person@en	owl:Class
+OBI:0001889	specimen provider principal investigator@en	owl:Class
+OBI:0001890	email address of specimen collector@en	owl:Class
+OBI:0001891	sequencing facility organization@en	owl:Class
+OBI:0001892	specification of data to be generated in an investigation@en	owl:Class
+OBI:0001893	organization of specimen collector@en	owl:Class
+OBI:0001894	email address of sequencing facility contact person@en	owl:Class
+OBI:0001895	specimen collector@en	owl:Class
+OBI:0001896	investigation assay specification@en	owl:Class
+OBI:0001897	organization of sequencing facility contact person@en	owl:Class
+OBI:0001898	comment on investigation@en	owl:Class
+OBI:0001899	target capture specification@en	owl:Class
+OBI:0001900	specimen identifier assigned by specimen repository@en	owl:Class
+OBI:0001901	specimen identifier assigned by sequencing facility@en	owl:Class
+OBI:0001902	sample preparation for sequencing assay@en	owl:Class
+OBI:0001903	email address of specimen provider principal investigator@en	owl:Class
+OBI:0001904	sequencing service@en	owl:Class
+OBI:0001905	secondary cultured cell population	owl:Class
+OBI:0001906	cancer cell line	owl:Class
+OBI:0001907	immortalizing cell line transformation	owl:Class
+OBI:0001908	testable hypothesis	owl:Class
+OBI:0001909	conclusion based on data	owl:Class
+OBI:0001910	primary cell culture@en	owl:Class
+OBI:0001911	cell line culture@en	owl:Class
+OBI:0001912	cell freezing medium@en	owl:Class
+OBI:0001913	computation run time@en	owl:Class
+OBI:0001914	multiplex ligation-mediated amplification@en	owl:Class
+OBI:0001915	DNA replication timing by array assay@en	owl:Class
+OBI:0001916	DNA replication identification objective@en	owl:Class
+OBI:0001917	chromosome conformation identification objective@en	owl:Class
+OBI:0001918	RNA-binding protein immunoprecipitation array profiling assay@en	owl:Class
+OBI:0001919	Carbon-copy chromosome conformation capture assay@en	owl:Class
+OBI:0001920	DNA replication timing by sequencing assay@en	owl:Class
+OBI:0001921	RNA-binding protein immunoprecipitation tiling array profiling	owl:Class
+OBI:0001922	microRNA profiling by high throughput sequencing assay	owl:Class
+OBI:0001923	protein sequencing by tandem mass spectrometry assay	owl:Class
+OBI:0001924	micrococcal nuclease digestion followed by high throughput sequencing assay	owl:Class
+OBI:0001925	chromatin immunoprecipitation with exonuclease sequencing assay	owl:Class
+OBI:0001926	microRNA profiling assay	owl:Class
+OBI:0001927	specifies value of	owl:ObjectProperty
+OBI:0001928	selection@en	owl:Class
+OBI:0001929	mass value specification	owl:Class
+OBI:0001930	categorical value specification	owl:Class
+OBI:0001931	scalar value specification	owl:Class
+OBI:0001932	comparing prediction to measurement	owl:Class
+OBI:0001933	value specification	owl:Class
+OBI:0001934	predicted value	owl:Class
+OBI:0001935	predicted mass value	owl:Class
+OBI:0001936	molecular-labeled material	owl:Class
+OBI:0001938	has value specification	owl:ObjectProperty
+OBI:0001939	genome coverage	owl:Class
+OBI:0001940	N50@en	owl:Class
+OBI:0001941	contig N50@en	owl:Class
+OBI:0001942	grant agency@en	owl:Class
+OBI:0001943	software pipeline@en	owl:Class
+OBI:0001944	sequence annotation@en	owl:Class
+OBI:0001945	scaffold N50@en	owl:Class
+OBI:0001946	forward PCR primer@en	owl:Class
+OBI:0001947	sequence annotation provider@en	owl:Class
+OBI:0001948	sequence assembly name@en	owl:Class
+OBI:0001949	sequence annotation reporting role@en	owl:Class
+OBI:0001950	has performer@en	owl:ObjectProperty
+OBI:0001951	reverse PCR primer@en	owl:Class
+OBI:0001952	flash freezing@en	owl:Class
+OBI:0001953	freezing@en	owl:Class
+OBI:0001954	ChIP assay@en	owl:Class
+OBI:0001955	competitive binding reference ligand role	owl:Class
+OBI:0001956	assay using chromatin immunoprecipitation@en	owl:Class
+OBI:0001957	hardware testing design@en	owl:Class
+OBI:0001958	systematic review study design	owl:Class
+OBI:0001959	sequencing library multiplexing@en	owl:Class
+OBI:0001960	taxonomic diversity assessment by targeted gene survey@en	owl:Class
+OBI:0001961	PCR program@en	owl:Class
+OBI:0001962	target gene specification@en	owl:Class
+OBI:0001963	target subfragment specification@en	owl:Class
+OBI:0001964	decision-theoretic analysis objective	owl:Class
+OBI:0001965	decision analysis study design	owl:Class
+OBI:0001966	sequence library deconvolution@en	owl:Class
+OBI:0001967	multiplexing sequence identifier@en	owl:Class
+OBI:0001968	operational taxonomic unit matrix@en	owl:Class
+OBI:0001969	biodiversity assessment objective@en	owl:Class
+OBI:0001970	multiplexed sequencing library@en	owl:Class
+OBI:0001971	Ion 316 Chip v2@en	owl:Class
+OBI:0001972	Ion 318 Chip v2@en	owl:Class
+OBI:0001973	ion semiconductor chip@en	owl:Class
+OBI:0001974	Ion 314 Chip v2@en	owl:Class
+OBI:0001976	hydrogen/deuterium exchange assay	owl:Class
+OBI:0001977	cytometry assay	owl:Class
+OBI:0001978	immunoblot assay	owl:Class
+OBI:0001979	fluorescence quenching binding assay	owl:Class
+OBI:0001980	in vivo intervention experiment	owl:Class
+OBI:0001981	disease exacerbation in vivo intervention experiment	owl:Class
+OBI:0001982	protection from challenge in vivo intervention experiment	owl:Class
+OBI:0001983	tolerance induction intervention experiment	owl:Class
+OBI:0001984	treatment intervention experiment	owl:Class
+OBI:0001985	microarray assay	owl:Class
+OBI:0001986	immunohistochemistry	owl:Class
+OBI:0001987	assay measuring the association constant [KA] of a MHC:ligand complex	owl:Class
+OBI:0001988	assay measuring the dissociation constant [KD] of a MHC:ligand complex	owl:Class
+OBI:0001989	purified MHC competitive binding assay measuring equilibrium dissociation constant [KD] of a MHC:ligand complex using radioactivity detection	owl:Class
+OBI:0001990	assay measuring the half life of a MHC:ligand complex	owl:Class
+OBI:0001991	assay measuring the half maximal effective concentration [EC50] of a MHC:ligand complex	owl:Class
+OBI:0001992	assay measuring the half maximal inhibitory concentration [IC50] of a MHC:ligand complex	owl:Class
+OBI:0001993	assay measuring the off rate measurement [koff] of a MHC:ligand complex	owl:Class
+OBI:0001994	assay measuring the MHC ligand binding on rate [kon] of a MHC:ligand complex	owl:Class
+OBI:0001995	chromatography assay measuring the association constant [KA] of a B cell epitope:antibody complex	owl:Class
+OBI:0001996	chromatography assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0001997	hydrogen/deuterium exchange assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001998	immunohistochemistry assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0001999	3D structure determining assay of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:0002000	Genome Analyzer IIx	owl:Class
+OBI:0002001	Illumina HiSeq 2000	owl:Class
+OBI:0002002	Illumina HiSeq 2500	owl:Class
+OBI:0002003	MiSeq	owl:Class
+OBI:0002004	Methylation 450K BeadChip	owl:Class
+OBI:0002005	Methylation 27K BeadChip	owl:Class
+OBI:0002006	1M-Duo Infinium HD BeadChip	owl:Class
+OBI:0002007	SOLiD 3 Plus System	owl:Class
+OBI:0002008	Mouse 385K Whole Genome CGH Tiling Array	owl:Class
+OBI:0002009	Mouse 3x720K Whole Genome CGH Tiling Array	owl:Class
+OBI:0002010	Human 3x720K Whole Genome CGH Tiling Array	owl:Class
+OBI:0002011	Human 2.1M Whole-Genome CGH Tiling Array v2.0	owl:Class
+OBI:0002012	PacBio RS II	owl:Class
+OBI:0002013	nCounter Human V2 miRNA Expression array	owl:Class
+OBI:0002014	DNA methylation profiling by ChIP-chip assay	owl:Class
+OBI:0002015	transcription profiling by MPSS assay	owl:Class
+OBI:0002016	histone modification identification by ChIP-chip assay	owl:Class
+OBI:0002017	histone modification identification by ChIP-Seq assay	owl:Class
+OBI:0002018	transcription factor binding site identification by ChIP-chip assay	owl:Class
+OBI:0002019	transcription factor binding site identification by ChIP-Seq assay	owl:Class
+OBI:0002020	epigenetic modification assay	owl:Class
+OBI:0002021	NextSeq 500	owl:Class
+OBI:0002022	Illumina HiSeq 1000	owl:Class
+OBI:0002023	Human Genome U133 Plus 2.0 tiling array	owl:Class
+OBI:0002024	SOLiD 4 System	owl:Class
+OBI:0002025	Human Exon 1.0 ST tilling array	owl:Class
+OBI:0002026	Human Genome U133 tiling array	owl:Class
+OBI:0002027	Genome Analyzer IIe	owl:Class
+OBI:0002028	SAGE ditag library preparation@en	owl:Class
+OBI:0002029	serial analysis of gene expression@en	owl:Class
+OBI:0002030	genotyping by tiling array@en	owl:Class
+OBI:0002031	genotyping by SNP array@en	owl:Class
+OBI:0002032	parallel analysis of RNA structure	owl:Class
+OBI:0002033	translation-associated transcript leader sequencing	owl:Class
+OBI:0002034	transcript leader sequencing	owl:Class
+OBI:0002035	peptide mass fingerprinting	owl:Class
+OBI:0002036	array based nucleic acid structure mapping assay	owl:Class
+OBI:0002037	micrococcal nuclease digestion followed by tiling array assay	owl:Class
+OBI:0002038	ribosomal profiling by sequencing assay	owl:Class
+OBI:0002039	assay for transposase-accessible chromatin using sequencing	owl:Class
+OBI:0002040	chromatin isolation by RNA purification sequencing assay	owl:Class
+OBI:0002041	self-transcribing active regulatory region sequencing assay	owl:Class
+OBI:0002042	carbon-copy chromosome conformation capture assay followed by sequencing assay	owl:Class
+OBI:0002043	individual-nucleotide resolution cross-linking and immunoprecipitation sequencing assay	owl:Class
+OBI:0002044	RNA Bind-n-Seq assay	owl:Class
+OBI:0002045	poly(A)-site sequencing assay	owl:Class
+OBI:0002046	surface plasmon resonance sensor chip	owl:Class
+OBI:0002047	enzyme-linked antibody	owl:Class
+OBI:0002048	Illumina HiSeq 3000	owl:Class
+OBI:0002049	Illumina HiSeq 4000	owl:Class
+OBI:0002050	3D structure determining assay of a MHC:ligand complex	owl:Class
+OBI:0002051	in vivo assay measuring B cell epitope specific protection from infectious challenge based on pathogen burden	owl:Class
+OBI:0002052	in vivo assay measuring B cell epitope specific protection from tumor challenge	owl:Class
+OBI:0002053	microarray assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:0002054	NMR assay measuring the dissociation constant [KD] of a B cell epitope:antibody complex	owl:Class
+OBI:0002055	assay measuring T cell epitope specific biological activity	owl:Class
+OBI:0002056	biological activity assay measuring epitope specific chemokine (C-C motif) ligand 17 production by T cells	owl:Class
+OBI:0002057	biological activity assay measuring epitope specific macrophage migration inhibitory factor (MIF) production by T cells	owl:Class
+OBI:0002058	biological activity assay measuring epitope specific oncostatin M production by T cells	owl:Class
+OBI:0002059	assay measuring a binding constant of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:0002060	detection of specific nucleic acids with complementary probes assay measuring epitope specific chemokine (C-C motif) ligand 17 production by T cells	owl:Class
+OBI:0002061	cytometric bead array assay measuring epitope specific chemokine (C-C motif) ligand 22 production by T cells	owl:Class
+OBI:0002062	in vitro assay measuring epitope specific T cell killing	owl:Class
+OBI:0002063	cytometric bead array assay measuring epitope specific granzyme A release by T cells	owl:Class
+OBI:0002064	detection of specific nucleic acids with complementary probes assay measuring epitope specific granzyme A release by T cells	owl:Class
+OBI:0002065	cytometric bead array assay measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0002066	detection of specific nucleic acids with complementary probes assay measuring epitope specific granzyme B release by T cells	owl:Class
+OBI:0002067	cytometric bead array assay measuring epitope specific macrophage migration inhibitory factor (MIF) production by T cells	owl:Class
+OBI:0002068	cytometric bead array assay measuring epitope specific oncostatin M production by T cells	owl:Class
+OBI:0002069	ELISPOT assay measuring epitope specific perforin release by T cells	owl:Class
+OBI:0002070	in vivo assay measuring epitope specific proliferation of T cells	owl:Class
+OBI:0002071	in vitro assay measuring epitope specific proliferation of T cells	owl:Class
+OBI:0002072	assay measuring qualitiative binding of a MHC:ligand complex	owl:Class
+OBI:0002073	in vivo assay measuring T cell epitope specific protection from challenge	owl:Class
+OBI:0002074	in vitro assay measuring T cell epitope specific suppression	owl:Class
+OBI:0002075	MHC ligand assay	owl:Class
+OBI:0002076	collection of specimens@en	owl:Class
+OBI:0002077	specimens derived from shared ancestor@en	owl:Class
+OBI:0002078	specimen set collection process@en	owl:Class
+OBI:0002079	specimens collected in one encounter@en	owl:Class
+OBI:0002080	human specimen set@en	owl:Class
+OBI:0002081	specimens collected longitudinally@en	owl:Class
+OBI:0002082	reporter gene assay@en	owl:Class
+OBI:0002083	enhancer activity detection by reporter gene assay@en	owl:Class
+OBI:0002084	transcription cofactor activity region identification by ChIP-Seq assay@en	owl:Class
+OBI:0002085	transcript expression location detection by hybridization chain reaction@en	owl:Class
+OBI:0005246	injection function	owl:Class
+OBI:0100010	Epstein Barr virus transformed B cell@en	owl:Class
+OBI:0100014	chimera@en	owl:Class
+OBI:0100015	obsolete_anatomical entity@en	owl:Class
+OBI:0100016	blood plasma specimen@en	owl:Class
+OBI:0100017	blood serum specimen@en	owl:Class
+OBI:0100026	organism@en	owl:Class
+OBI:0100035	obsolete_immortal cell@en	owl:Class
+OBI:0100039	obsolete_fragment derived from protein@en	owl:Class
+OBI:0100046	phosphate buffered saline solution@en	owl:Class
+OBI:0100051	specimen@en	owl:Class
+OBI:0100055	obsolete_cell line cell@en	owl:Class
+OBI:0100056	obsolete_immortal cell line culture@en	owl:Class
+OBI:0100058	xenograft@en	owl:Class
+OBI:0100060	cultured cell population	owl:Class
+OBI:0100061	primary cultured cell population@en	owl:Class
+OBI:0100062	obsolete_cell line@en	owl:Class
+OBI:0100063	cultured clonal cell population@en	owl:Class
+OBI:0100064	screening library@en	owl:Class
+OBI:0100065	synthetic peptide@en	owl:Class
+OBI:0100066	organ section@en	owl:Class
+OBI:0100067	bronchial alveolar lavage@en	owl:Class
+OBI:0100069	obsolete_polymer@en	owl:Class
+OBI:0100086	glucose in solution	owl:Class
+OBI:0200000	data transformation@en	owl:Class
+OBI:0200002	logistic-log curve fitting@en	owl:Class
+OBI:0200003	logit-log curve fitting@en	owl:Class
+OBI:0200004	log-log curve fitting@en	owl:Class
+OBI:0200005	feature extraction objective@en	owl:Class
+OBI:0200006	biexponential transformation@en	owl:Class
+OBI:0200007	box-cox transformation@en	owl:Class
+OBI:0200008	hyperlog transformation@en	owl:Class
+OBI:0200010	loess scale group transformation one-channel@en	owl:Class
+OBI:0200011	logical transformation@en	owl:Class
+OBI:0200012	loess scale group transformation two-channel@en	owl:Class
+OBI:0200013	loess global transformation one-channel@en	owl:Class
+OBI:0200014	split-scale transformation@en	owl:Class
+OBI:0200015	loess global transformation two-channel@en	owl:Class
+OBI:0200016	sine transformation@en	owl:Class
+OBI:0200017	cosine transformation@en	owl:Class
+OBI:0200018	loess group transformation one-channel@en	owl:Class
+OBI:0200019	loess group transformation two-channel@en	owl:Class
+OBI:0200020	homogeneous polynomial transformation@en	owl:Class
+OBI:0200021	linlog transformation@en	owl:Class
+OBI:0200022	variance stabilizing transformation@en	owl:Class
+OBI:0200023	loess global transformation@en	owl:Class
+OBI:0200024	loess group transformation@en	owl:Class
+OBI:0200025	loess scale group transformation@en	owl:Class
+OBI:0200026	total intensity transformation single@en	owl:Class
+OBI:0200027	total intensity transformation paired@en	owl:Class
+OBI:0200028	quantile transformation@en	owl:Class
+OBI:0200029	mean centering@en	owl:Class
+OBI:0200030	median centering@en	owl:Class
+OBI:0200031	differential expression analysis objective@en	owl:Class
+OBI:0200032	K-fold cross validation method@en	owl:Class
+OBI:0200033	leave one out cross validation method@en	owl:Class
+OBI:0200034	jackknifing method@en	owl:Class
+OBI:0200035	boostrapping@en	owl:Class
+OBI:0200036	Benjamini and Hochberg false discovery rate correction method@en	owl:Class
+OBI:0200037	pareto scaling@en	owl:Class
+OBI:0200040	modular decomposition@en	owl:Class
+OBI:0200041	k-means clustering@en	owl:Class
+OBI:0200042	hierarchical clustering@en	owl:Class
+OBI:0200043	average linkage hierarchical clustering@en	owl:Class
+OBI:0200044	complete linkage hierarchical clustering@en	owl:Class
+OBI:0200045	single linkage hierarchical clustering@en	owl:Class
+OBI:0200049	Benjamini and Yekutieli false discovery rate correction method@en	owl:Class
+OBI:0200050	dimensionality reduction@en	owl:Class
+OBI:0200051	principal components analysis dimensionality reduction@en	owl:Class
+OBI:0200052	probabilistic algorithm@en	owl:Class
+OBI:0200053	expectation maximization@en	owl:Class
+OBI:0200054	global modularity calculation@en	owl:Class
+OBI:0200055	dye swap merge@en	owl:Class
+OBI:0200056	moving average@en	owl:Class
+OBI:0200057	replicate analysis@en	owl:Class
+OBI:0200058	b cell epitope prediction@en	owl:Class
+OBI:0200059	mhc binding prediction@en	owl:Class
+OBI:0200060	t cell epitope prediction@en	owl:Class
+OBI:0200061	data imputation@en	owl:Class
+OBI:0200062	continuum mass spectrum@en	owl:Class
+OBI:0200063	characteristic path length calculation@en	owl:Class
+OBI:0200064	centroid mass spectrum@en	owl:Class
+OBI:0200066	Holm-Bonferroni family-wise error rate correction method@en	owl:Class
+OBI:0200070	edge weighting@en	owl:Class
+OBI:0200071	loess transformation@en	owl:Class
+OBI:0200072	curve fitting data transformation@en	owl:Class
+OBI:0200073	family wise error rate correction method@en	owl:Class
+OBI:0200074	submatrix extraction@en	owl:Class
+OBI:0200075	row submatrix extraction@en	owl:Class
+OBI:0200076	column submatrix extraction@en	owl:Class
+OBI:0200077	gating@en	owl:Class
+OBI:0200078	descriptive statistical calculation objective@en	owl:Class
+OBI:0200079	mean calculation@en	owl:Class
+OBI:0200080	network analysis@en	owl:Class
+OBI:0200081	sequence analysis objective@en	owl:Class
+OBI:0200082	longitudinal data analysis@en	owl:Class
+OBI:0200083	survival analysis objective@en	owl:Class
+OBI:0200085	mass spectrometry analysis@en	owl:Class
+OBI:0200086	spread calculation data transformation@en	owl:Class
+OBI:0200088	Kaplan Meier@en	owl:Class
+OBI:0200089	multiple testing correction method@en	owl:Class
+OBI:0200091	inter-rater reliability objective@en	owl:Class
+OBI:0200092	Westfall and Young family wise error rate correction@en	owl:Class
+OBI:0200093	polynomial transformation@en	owl:Class
+OBI:0200094	logarithmic transformation@en	owl:Class
+OBI:0200095	exponential transformation@en	owl:Class
+OBI:0200097	non-negative matrix factorization@en	owl:Class
+OBI:0200098	soft independent modeling of class analogy analysis@en	owl:Class
+OBI:0200099	discriminant function analysis@en	owl:Class
+OBI:0200100	canonical variate analysis@en	owl:Class
+OBI:0200101	linear discriminant functional analysis@en	owl:Class
+OBI:0200102	regression analysis method@en	owl:Class
+OBI:0200103	multiple linear regression analysis@en	owl:Class
+OBI:0200104	principal component regression@en	owl:Class
+OBI:0200105	partial least square regression analysis@en	owl:Class
+OBI:0200106	discriminant analysis@en	owl:Class
+OBI:0200107	partial least square discriminant analysis@en	owl:Class
+OBI:0200108	eh transformation@en	owl:Class
+OBI:0200109	b transformation@en	owl:Class
+OBI:0200110	s transformation@en	owl:Class
+OBI:0200111	data visualization@en	owl:Class
+OBI:0200113	similarity calculation@en	owl:Class
+OBI:0200114	euclidean distance calculation@en	owl:Class
+OBI:0200115	pearson correlation coefficient calculation@en	owl:Class
+OBI:0200116	loess fitting@en	owl:Class
+OBI:0200117	mode calculation@en	owl:Class
+OBI:0200118	quantile calculation@en	owl:Class
+OBI:0200119	median calculation@en	owl:Class
+OBI:0200120	variance calculation@en	owl:Class
+OBI:0200121	standard deviation calculation@en	owl:Class
+OBI:0200122	interquartile-range calculation@en	owl:Class
+OBI:0200123	skewness calculation@en	owl:Class
+OBI:0200124	kurtosis calculation@en	owl:Class
+OBI:0200125	data combination@en	owl:Class
+OBI:0200126	network graph construction@en	owl:Class
+OBI:0200127	weighted network graph construction@en	owl:Class
+OBI:0200128	directed network graph construction@en	owl:Class
+OBI:0200129	node quality calculation@en	owl:Class
+OBI:0200130	node degree calculation@en	owl:Class
+OBI:0200131	quantitative node degree calculation@en	owl:Class
+OBI:0200132	node in-degree calculation@en	owl:Class
+OBI:0200133	node out-degree calculation@en	owl:Class
+OBI:0200134	node shortest path identification@en	owl:Class
+OBI:0200135	edge quality calculation@en	owl:Class
+OBI:0200136	edge betweenness calculation@en	owl:Class
+OBI:0200137	network subgraph quality calculation@en	owl:Class
+OBI:0200138	subgraph degree calculation@en	owl:Class
+OBI:0200139	quantitative subgraph degree calculation@en	owl:Class
+OBI:0200140	mathematical feature@en	owl:Class
+OBI:0200141	log base@en	owl:Class
+OBI:0200143	subgraph in-degree calculation@en	owl:Class
+OBI:0200144	subgraph out-degree calculation@en	owl:Class
+OBI:0200145	intra subgraph connectivity calculation@en	owl:Class
+OBI:0200146	subgraph modularity calculation@en	owl:Class
+OBI:0200147	network graph quality calculation@en	owl:Class
+OBI:0200149	unit-variance scaling@en	owl:Class
+OBI:0200150	MA transformation	owl:Class
+OBI:0200151	exponential base@en	owl:Class
+OBI:0200152	polynomial degree@en	owl:Class
+OBI:0200153	number of variables@en	owl:Class
+OBI:0200154	agglomerative hierarchical clustering@en	owl:Class
+OBI:0200155	divisive hierarchical clustering@en	owl:Class
+OBI:0200156	data partitioning@en	owl:Class
+OBI:0200157	data vector reduction objective@en	owl:Class
+OBI:0200160	generalized family wise error rate correction method@en	owl:Class
+OBI:0200161	quantile number of false positives correction method@en	owl:Class
+OBI:0200162	tail probability for the proportion of false positives correction method@en	owl:Class
+OBI:0200163	false discovery rate correction method@en	owl:Class
+OBI:0200164	proportion of expected false positives correction method@en	owl:Class
+OBI:0200165	quantile proportion of false positives correction method@en	owl:Class
+OBI:0200166	data transformation objective@en	owl:Class
+OBI:0200167	data normalization objective@en	owl:Class
+OBI:0200168	correction objective@en	owl:Class
+OBI:0200169	normalization data transformation@en	owl:Class
+OBI:0200170	averaging data transformation@en	owl:Class
+OBI:0200171	partitioning data transformation@en	owl:Class
+OBI:0200172	partitioning objective@en	owl:Class
+OBI:0200173	background correction objective@en	owl:Class
+OBI:0200174	curve fitting objective@en	owl:Class
+OBI:0200175	class discovery data transformation@en	owl:Class
+OBI:0200176	Fisher's exact test	owl:Class
+OBI:0200177	center calculation objective@en	owl:Class
+OBI:0200178	class discovery objective@en	owl:Class
+OBI:0200179	class prediction objective@en	owl:Class
+OBI:0200180	spread calculation objective@en	owl:Class
+OBI:0200181	center calculation data transformation@en	owl:Class
+OBI:0200182	data vector reduction data transformation@en	owl:Class
+OBI:0200183	scaling objective@en	owl:Class
+OBI:0200184	descriptive statistical calculation data transformation@en	owl:Class
+OBI:0200185	scaling data transformation@en	owl:Class
+OBI:0200186	error correction objective@en	owl:Class
+OBI:0200187	sequence analysis data transformation@en	owl:Class
+OBI:0200188	cross validation objective@en	owl:Class
+OBI:0200189	merging objective@en	owl:Class
+OBI:0200190	clustered data visualization	owl:Class
+OBI:0200191	gene list visualization	owl:Class
+OBI:0200192	classified data visualization	owl:Class
+OBI:0200193	background corrected data visualization	owl:Class
+OBI:0200194	survival analysis data transformation	owl:Class
+OBI:0200195	proportional hazards model estimation	owl:Class
+OBI:0200196	correlation study objective	owl:Class
+OBI:0200197	spectrum analysis objective	owl:Class
+OBI:0200198	tandem mass spectrometry	owl:Class
+OBI:0200199	gas chromatography mass spectrometry	owl:Class
+OBI:0200200	chi square test	owl:Class
+OBI:0200201	ANOVA	owl:Class
+OBI:0300310	sequential design@en	owl:Class
+OBI:0300311	observation design@en	owl:Class
+OBI:0302714	obsolete_collection (of entities of organismal origin)@en	owl:Class
+OBI:0302716	pool of specimens@en	owl:Class
+OBI:0302729	chemical solution@en	owl:Class
+OBI:0302731	buffer role@en	owl:Class
+OBI:0302732	solvent role@en	owl:Class
+OBI:0302733	solute role@en	owl:Class
+OBI:0302736	comet assay@en	owl:Class
+OBI:0302737	PCR-SSCP assay@en	owl:Class
+OBI:0302743	obsolete_liver@en	owl:Class
+OBI:0302745	obsolete_adipose tissue@en	owl:Class
+OBI:0302835	denatured polymer@en	owl:Class
+OBI:0302837	decapitated organism@en	owl:Class
+OBI:0302838	validated information@en	owl:Class
+OBI:0302840	curated information@en	owl:Class
+OBI:0302846	randomized group participant role@en	owl:Class
+OBI:0302847	methylated polymer@en	owl:Class
+OBI:0302859	genetically modified organism@en	owl:Class
+OBI:0302867	predicted data item@en	owl:Class
+OBI:0302868	mean-centered data@en	owl:Class
+OBI:0302874	edited document@en	owl:Class
+OBI:0302876	dissolved material entity@en	owl:Class
+OBI:0302884	extraction@en	owl:Class
+OBI:0302885	filtration@en	owl:Class
+OBI:0302886	centrifugation@en	owl:Class
+OBI:0302887	staining@en	owl:Class
+OBI:0302888	washing@en	owl:Class
+OBI:0302889	irradiation@en	owl:Class
+OBI:0302890	polymerization@en	owl:Class
+OBI:0302891	trypsination@en	owl:Class
+OBI:0302892	enzymatic ligation@en	owl:Class
+OBI:0302893	storage@en	owl:Class
+OBI:0302894	cell lysis@en	owl:Class
+OBI:0302895	electrocution@en	owl:Class
+OBI:0302896	cervical dislocation@en	owl:Class
+OBI:0302897	asphyxiation@en	owl:Class
+OBI:0302898	intentional overdosing@en	owl:Class
+OBI:0302899	decapitation@en	owl:Class
+OBI:0302900	group randomization@en	owl:Class
+OBI:0302901	obsolete_activation@en	owl:Class
+OBI:0302902	immobilization@en	owl:Class
+OBI:0302903	nucleic acid hybridization@en	owl:Class
+OBI:0302905	elution@en	owl:Class
+OBI:0302906	DNA Subtraction@en	owl:Class
+OBI:0302908	document editing@en	owl:Class
+OBI:0302910	prediction@en	owl:Class
+OBI:0302911	validation@en	owl:Class
+OBI:0302912	electroporation@en	owl:Class
+OBI:0302914	digital curation@en	owl:Class
+OBI:0400005	A10-Analyzer@en	owl:Class
+OBI:0400006	A40-MiniFCM@en	owl:Class
+OBI:0400007	analog-to-digital converter@en	owl:Class
+OBI:0400008	flow cytometer analyzer@en	owl:Class
+OBI:0400009	arc lamp@en	owl:Class
+OBI:0400010	argon ion laser@en	owl:Class
+OBI:0400011	avalanche photodiode@en	owl:Class
+OBI:0400012	Bactiflow@en	owl:Class
+OBI:0400013	band pass filter@en	owl:Class
+OBI:0400014	BioSorter1000@en	owl:Class
+OBI:0400015	BioSorter2000@en	owl:Class
+OBI:0400016	BioSorter250@en	owl:Class
+OBI:0400017	BioSorter500@en	owl:Class
+OBI:0400018	Cell Lab Quanta SC@en	owl:Class
+OBI:0400019	charge plate@en	owl:Class
+OBI:0400020	cell sorter collection tube@en	owl:Class
+OBI:0400022	Cyan@en	owl:Class
+OBI:0400023	CYFlow ML@en	owl:Class
+OBI:0400024	CyFlow SL@en	owl:Class
+OBI:0400025	CyFlow SL3@en	owl:Class
+OBI:0400026	CyFlow Space@en	owl:Class
+OBI:0400027	CytoBuoy flow cytometer analyzer@en	owl:Class
+OBI:0400028	CytoSence@en	owl:Class
+OBI:0400029	CytoSub@en	owl:Class
+OBI:0400030	dichroic filter@en	owl:Class
+OBI:0400031	dichroic mirror@en	owl:Class
+OBI:0400032	differential pressure gauge@en	owl:Class
+OBI:0400033	diode laser@en	owl:Class
+OBI:0400034	dye laser@en	owl:Class
+OBI:0400036	FACS Calibur@en	owl:Class
+OBI:0400037	FACS Canto@en	owl:Class
+OBI:0400038	FACS Canto2@en	owl:Class
+OBI:0400039	FACS Scan@en	owl:Class
+OBI:0400040	FACSAria@en	owl:Class
+OBI:0400041	FACSvantage@en	owl:Class
+OBI:0400042	FC 500@en	owl:Class
+OBI:0400043	flow cell@en	owl:Class
+OBI:0400044	flow cytometer@en	owl:Class
+OBI:0400045	fluid pressure regulator@en	owl:Class
+OBI:0400047	gas laser@en	owl:Class
+OBI:0400048	Guava EasyCyte Mini@en	owl:Class
+OBI:0400049	Guava EasyCyte Plus@en	owl:Class
+OBI:0400050	Guava Personal Cell Analysis@en	owl:Class
+OBI:0400051	Guava Personal Cell Analysis-96@en	owl:Class
+OBI:0400052	helium cadmium ion laser@en	owl:Class
+OBI:0400053	helium neon ion laser@en	owl:Class
+OBI:0400054	Amnis ImageStream@en	owl:Class
+OBI:0400055	inFlux Analyzer@en	owl:Class
+OBI:0400056	Influx Cell Sorter@en	owl:Class
+OBI:0400059	interrogation_point@en	owl:Class
+OBI:0400060	ion laser@en	owl:Class
+OBI:0400061	jet_in_air_flow_chamber@en	owl:Class
+OBI:0400062	krypton ion laser@en	owl:Class
+OBI:0400063	LactoScope C4@en	owl:Class
+OBI:0400064	laser@en	owl:Class
+OBI:0400065	light source@en	owl:Class
+OBI:0400066	logarithmic voltage amplifier@en	owl:Class
+OBI:0400067	long pass filter@en	owl:Class
+OBI:0400068	LSR2@en	owl:Class
+OBI:0400069	Luminex 100@en	owl:Class
+OBI:0400070	Luminex 200@en	owl:Class
+OBI:0400071	MACS Quant@en	owl:Class
+OBI:0400073	metal vapor laser@en	owl:Class
+OBI:0400074	mixed argon-krypton gas laser@en	owl:Class
+OBI:0400075	MoFlo@en	owl:Class
+OBI:0400076	multi-well plate@en	owl:Class
+OBI:0400077	neodymium-YAG laser@en	owl:Class
+OBI:0400078	obscuration bar@en	owl:Class
+OBI:0400079	optical filter@en	owl:Class
+OBI:0400080	optical subsystem@en	owl:Class
+OBI:0400081	particle delivery vessel@en	owl:Class
+OBI:0400082	photodetector@en	owl:Class
+OBI:0400083	photodiode@en	owl:Class
+OBI:0400084	photomultiplier tube@en	owl:Class
+OBI:0400085	piezo electric crystal@en	owl:Class
+OBI:0400086	plate loader@en	owl:Class
+OBI:0400087	preamplifier@en	owl:Class
+OBI:0400088	quartz cuvette flow chamber@en	owl:Class
+OBI:0400089	Reflection@en	owl:Class
+OBI:0400091	cytometer sample tube@en	owl:Class
+OBI:0400094	sheath tank@en	owl:Class
+OBI:0400095	short pass filter@en	owl:Class
+OBI:0400096	solid state laser@en	owl:Class
+OBI:0400097	Somacount@en	owl:Class
+OBI:0400098	SomaScope@en	owl:Class
+OBI:0400099	flow cytometer sorter@en	owl:Class
+OBI:0400100	syringe pump@en	owl:Class
+OBI:0400101	voltage amplifier@en	owl:Class
+OBI:0400102	waste tank@en	owl:Class
+OBI:0400103	DNA sequencer@en	owl:Class
+OBI:0400104	array scanner@en	owl:Class
+OBI:0400105	arrayer@en	owl:Class
+OBI:0400106	centrifuge@en	owl:Class
+OBI:0400107	computer@en	owl:Class
+OBI:0400108	heating block@en	owl:Class
+OBI:0400109	homogenizer@en	owl:Class
+OBI:0400110	hybridization chamber@en	owl:Class
+OBI:0400111	hybridization station@en	owl:Class
+OBI:0400112	liquid handler@en	owl:Class
+OBI:0400113	oligonucleotide synthesizer@en	owl:Class
+OBI:0400114	sonicator@en	owl:Class
+OBI:0400115	spectrophotometer@en	owl:Class
+OBI:0400116	thermal cycler@en	owl:Class
+OBI:0400117	vacuum dryer@en	owl:Class
+OBI:0400118	vortexer@en	owl:Class
+OBI:0400119	microarray wash station@en	owl:Class
+OBI:0400120	temperature control bath@en	owl:Class
+OBI:0400121	molecular crosslinker@en	owl:Class
+OBI:0400135	image cytometer@en	owl:Class
+OBI:0400137	cytometer@en	owl:Class
+OBI:0400140	gel tank@en	owl:Class
+OBI:0400142	power supply@en	owl:Class
+OBI:0400143	fluorometer@en	owl:Class
+OBI:0400146	multispectral imaging flow cytometer@en	owl:Class
+OBI:0400147	microarray@en	owl:Class
+OBI:0400148	DNA microarray@en	owl:Class
+OBI:0400149	protein microarray@en	owl:Class
+OBI:0400153	droplet sorter@en	owl:Class
+OBI:0400155	water bath@en	owl:Class
+OBI:0400157	oil bath@en	owl:Class
+OBI:0400158	digital-to-analog converter@en	owl:Class
+OBI:0400168	microtome@en	owl:Class
+OBI:0400169	microscope@en	owl:Class
+OBI:0400170	microscope slide@en	owl:Class
+OBI:0400171	animal cage@en	owl:Class
+OBI:0500000	study design@en	owl:Class
+OBI:0500001	clinical study design@en	owl:Class
+OBI:0500002	repeated measure design@en	owl:Class
+OBI:0500003	cross over design@en	owl:Class
+OBI:0500004	n-to-1 design@en	owl:Class
+OBI:0500005	matched pairs design@en	owl:Class
+OBI:0500006	parallel group design@en	owl:Class
+OBI:0500007	randomized complete block design@en	owl:Class
+OBI:0500008	balanced incomplete block design@en	owl:Class
+OBI:0500009	loop design@en	owl:Class
+OBI:0500010	reference design@en	owl:Class
+OBI:0500011	latin square design@en	owl:Class
+OBI:0500012	graeco latin square design@en	owl:Class
+OBI:0500013	hyper graeco latin square design@en	owl:Class
+OBI:0500014	factorial design@en	owl:Class
+OBI:0500015	2x2 factorial design@en	owl:Class
+OBI:0500016	fractional factorial design@en	owl:Class
+OBI:0500017	dye swap design@en	owl:Class
+OBI:0500018	replicate design@en	owl:Class
+OBI:0500019	self vs self design@en	owl:Class
+OBI:0500020	time series design@en	owl:Class
+OBI:0500022	stopping rule@en	owl:Class
+OBI:0500023	compliance rule@en	owl:Class
+OBI:0500024	standard compliance rule@en	owl:Class
+OBI:0500025	ethical standard compliance rule@en	owl:Class
+OBI:0500026	eligibility criterion@en	owl:Class
+OBI:0500027	inclusion criteria@en	owl:Class
+OBI:0500028	exclusion criterion@en	owl:Class
+OBI:0600000	adding substance to cell culture@en	owl:Class
+OBI:0600002	tumor grading@en	owl:Class
+OBI:0600003	performing a clinical assessment@en	owl:Class
+OBI:0600004	human subject enrollment@en	owl:Class
+OBI:0600005	collecting specimen from organism@en	owl:Class
+OBI:0600006	killing@en	owl:Class
+OBI:0600007	administering substance in vivo@en	owl:Class
+OBI:0600008	acquisition@en	owl:Class
+OBI:0600009	exposure of material to environment@en	owl:Class
+OBI:0600010	material acquisition@en	owl:Class
+OBI:0600011	acclimatization@en	owl:Class
+OBI:0600012	environmental material collection process@en	owl:Class
+OBI:0600013	information acquisition@en	owl:Class
+OBI:0600014	material component separation@en	owl:Class
+OBI:0600015	group assignment@en	owl:Class
+OBI:0600016	pooling specimens@en	owl:Class
+OBI:0600017	detection of molecular label@en	owl:Class
+OBI:0600018	material portioning@en	owl:Class
+OBI:0600019	non-specific labeling@en	owl:Class
+OBI:0600020	histology@en	owl:Class
+OBI:0600021	cell fixation@en	owl:Class
+OBI:0600022	excision@en	owl:Class
+OBI:0600023	non specific enzymatic cleavage@en	owl:Class
+OBI:0600024	maintaining cell culture@en	owl:Class
+OBI:0600025	substance detection@en	owl:Class
+OBI:0600026	longitudinal mass measurement assay@en	owl:Class
+OBI:0600027	artificially induced cell membrane lysis@en	owl:Class
+OBI:0600028	artificially induced reverse transcription@en	owl:Class
+OBI:0600029	isolation of cell culture supernatant@en	owl:Class
+OBI:0600030	experimental disease induction@en	owl:Class
+OBI:0600031	enzyme-linked immunospot assay	owl:Class
+OBI:0600032	artificially induced DNA repair@en	owl:Class
+OBI:0600033	cell permeabilization@en	owl:Class
+OBI:0600034	precipitation@en	owl:Class
+OBI:0600036	establishing cell culture	owl:Class
+OBI:0600037	cell culture splitting@en	owl:Class
+OBI:0600038	addition of molecular label@en	owl:Class
+OBI:0600039	artificially induced methylation@en	owl:Class
+OBI:0600040	synthesis@en	owl:Class
+OBI:0600041	concentrate@en	owl:Class
+OBI:0600042	recombinant plasmid cloning@en	owl:Class
+OBI:0600043	genetic transformation@en	owl:Class
+OBI:0600044	lavage@en	owl:Class
+OBI:0600045	3D structure determination assay	owl:Class
+OBI:0600046	preparative chromatography@en	owl:Class
+OBI:0600047	sequencing assay@en	owl:Class
+OBI:0600048	vector mediated amplification@en	owl:Class
+OBI:0600049	DNA polymerase amplification@en	owl:Class
+OBI:0600050	specific enzymatic cleavage@en	owl:Class
+OBI:0600051	gradient separation@en	owl:Class
+OBI:0600052	dialysis@en	owl:Class
+OBI:0600053	electrophoresis@en	owl:Class
+OBI:0600054	selection by survival@en	owl:Class
+OBI:0600055	DNA cleavage, restriction analysis@en	owl:Class
+OBI:0600056	protease cleavage@en	owl:Class
+OBI:0600057	enzymatic DNA replication@en	owl:Class
+OBI:0600058	enzymatic amplification@en	owl:Class
+OBI:0600059	DNA transduction@en	owl:Class
+OBI:0600060	DNA transfection@en	owl:Class
+OBI:0600063	vector mediated expression@en	owl:Class
+OBI:0600064	recombinant vector cloning@en	owl:Class
+OBI:0600065	obsolete_defined processes@en	owl:Class
+OBI:0600067	specific labeling@en	owl:Class
+OBI:0666666	RNA extraction@en	owl:Class
+OBI:0666667	nucleic acid extraction@en	owl:Class
+OBI:1000023	cell culture supernatant@en	owl:Class
+OBI:1000024	cell pellet@en	owl:Class
+OBI:1000029	phage display library@en	owl:Class
+OBI:1000036	cell lysate@en	owl:Class
+OBI:1000042	peptide construct@en	owl:Class
+OBI:1000048	transgenic organism@en	owl:Class
+OBI:1000049	whole mount tissue@en	owl:Class
+OBI:1000207	assay bead@en	owl:Class
+OBI:1110001	epitope@en	owl:Class
+OBI:1110002	obsolete_occurrence of disease@en	owl:Class
+OBI:1110003	host exposure to infectious agent@en	owl:Class
+OBI:1110007	administration in vivo with infectious agent@en	owl:Class
+OBI:1110008	occurrence of infectious disease@en	owl:Class
+OBI:1110010	disposition to cause an allergic reaction@en	owl:Class
+OBI:1110011	allergic reaction@en	owl:Class
+OBI:1110012	occurrence of allergy@en	owl:Class
+OBI:1110013	ELISPOT assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:1110014	epitope binding by adaptive immune receptor@en	owl:Class
+OBI:1110015	Immunization in vivo@en	owl:Class
+OBI:1110016	adaptive immune effector function@en	owl:Class
+OBI:1110017	living with infected household contact@en	owl:Class
+OBI:1110018	living in endemic area@en	owl:Class
+OBI:1110019	pathogen release in laboratory accident@en	owl:Class
+OBI:1110020	Immunization in vitro@en	owl:Class
+OBI:1110021	infection process@en	owl:Class
+OBI:1110022	adaptive immune receptor@en	owl:Class
+OBI:1110023	immunogen@en	owl:Class
+OBI:1110024	environmental exposure to infectious agent@en	owl:Class
+OBI:1110026	host of immune response@en	owl:Class
+OBI:1110028	293-T cell line@en	owl:Class
+OBI:1110029	C1R cell line@en	owl:Class
+OBI:1110030	experimental infection of cell culture@en	owl:Class
+OBI:1110031	EL-4 cell line@en	owl:Class
+OBI:1110032	HeLa cell line@en	owl:Class
+OBI:1110033	JAWS II cell line@en	owl:Class
+OBI:1110034	antigen@en	owl:Class
+OBI:1110035	Jurkat cell line@en	owl:Class
+OBI:1110036	JY cell line@en	owl:Class
+OBI:1110037	assay measuring binding of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:1110038	RMA cell line@en	owl:Class
+OBI:1110039	T2 cell line@en	owl:Class
+OBI:1110040	infectious disease@en	owl:Class
+OBI:1110041	lymph node cell specimen@en	owl:Class
+OBI:1110043	cultured adherent cell populaiton@en	owl:Class
+OBI:1110044	cultured PBMC cell population@en	owl:Class
+OBI:1110045	disposition to be bound by an adaptive immune receptor@en	owl:Class
+OBI:1110046	organ harvesting@en	owl:Class
+OBI:1110047	cultured CD3+ T cell population@en	owl:Class
+OBI:1110048	cultured CD3- T cell population@en	owl:Class
+OBI:1110049	allergy@en	owl:Class
+OBI:1110050	cultured CD4- T cell population@en	owl:Class
+OBI:1110051	cultured CD8- T cell population@en	owl:Class
+OBI:1110052	cultured CD4-/CD8- T cell population@en	owl:Class
+OBI:1110053	cancer@en	owl:Class
+OBI:1110054	autoimmune disease@en	owl:Class
+OBI:1110055	obsolete_disease@en	owl:Class
+OBI:1110056	epitope specific IL-2 release by T cells@en	owl:Class
+OBI:1110057	MHC:epitope complex binding to TCR@en	owl:Class
+OBI:1110059	ELISPOT assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:1110060	process is result of	owl:ObjectProperty
+OBI:1110061	exposure resulting in immune reactivity@en	owl:Class
+OBI:1110082	immunogen role@en	owl:Class
+OBI:1110083	host of immune response role@en	owl:Class
+OBI:1110084	effector T cell function@en	owl:Class
+OBI:1110085	antigen presentation function@en	owl:Class
+OBI:1110086	restricting MHC role@en	owl:Class
+OBI:1110087	donor@en	owl:Class
+OBI:1110091	immune epitope carrier role@en	owl:Class
+OBI:1110092	adjuvant role@en	owl:Class
+OBI:1110093	disposition to infect an organism@en	owl:Class
+OBI:1110094	immunization@en	owl:Class
+OBI:1110095	blood harvesting@en	owl:Class
+OBI:1110099	L cell line@en	owl:Class
+OBI:1110106	cultured antigen presenting cell population	owl:Class
+OBI:1110107	cultured effector T cell population	owl:Class
+OBI:1110108	material to be added	owl:Class
+OBI:1110109	target of material addition	owl:Class
+OBI:1110111	environmental proximity to infectious agent@en	owl:Class
+OBI:1110112	obsolete_is_described_by	owl:ObjectProperty
+OBI:1110114	contact to pathogen carrying biological vector@en	owl:Class
+OBI:1110116	splenocyte specimen@en	owl:Class
+OBI:1110118	P815 cell line@en	owl:Class
+OBI:1110119	bound_to	owl:ObjectProperty
+OBI:1110120	assay antigen role@en	owl:Class
+OBI:1110122	pathologic process@en	owl:Class
+OBI:1110124	assay measuring qualitiative binding of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:1110125	assay measuring MHC ligand processing and presentation	owl:Class
+OBI:1110126	assay measuring binding of a MHC:ligand complex	owl:Class
+OBI:1110127	assay measuring binding of a B cell epitope:antibody complex	owl:Class
+OBI:1110128	immune epitope assay	owl:Class
+OBI:1110129	biological activity assay measuring epitope specific cytokine production by T cells	owl:Class
+OBI:1110130	biological activity assay measuring epitope specific T cell killing	owl:Class
+OBI:1110131	biological activity assay measuring epitope specific proliferation of T cells	owl:Class
+OBI:1110132	CD8 receptor	owl:Class
+OBI:1110150	51 chromium assay measuring epitope specific T cell killing	owl:Class
+OBI:1110151	ELISA measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:1110152	ELISA measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:1110153	ELISA measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:1110154	ELISA measuring epitope specific interleukin-5 production by T cells	owl:Class
+OBI:1110155	ELISA measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:1110156	ELISA measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:1110157	ELISA measuring epitope specific granulocyte macrophage colony-stimulating factor production by T cells	owl:Class
+OBI:1110158	ELISA measuring epitope specific interleukin-6 production by T cells	owl:Class
+OBI:1110159	ELISA measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:1110160	ELISA measuring epitope specific interleukin-12 production by T cells	owl:Class
+OBI:1110161	ELISA measuring epitope specific interleukin-1 beta production by T cells	owl:Class
+OBI:1110162	ELISA measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:1110163	ELISA measuring epitope specific interleukin-18 production by T cells	owl:Class
+OBI:1110167	ELISPOT assay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:1110168	ELISPOT assay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:1110170	ELISPOT assay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:1110171	ELISPOT assay measuring epitope specific interleukin-13 production by T cells	owl:Class
+OBI:1110172	intracellular cytokine staining assay measuring epitope specific interferon-gamma production by T cells	owl:Class
+OBI:1110173	intracellular cytokine staining assay measuring epitope specific interleukin-2 production by T cells	owl:Class
+OBI:1110174	intracellular cytokine staining assay measuring epitope specific tumor necrosis factor production by T cells	owl:Class
+OBI:1110175	intracellular cytokine staining assay measuring epitope specific interleukin-4 production by T cells	owl:Class
+OBI:1110177	intracellular cytokine staining assay measuring epitope specific interleukin-10 production by T cells	owl:Class
+OBI:1110178	intracellular cytokine staining assay measuring epitope specific interleukin-17 production by T cells	owl:Class
+OBI:1110179	MHC tetramer/multimer assay measuring binding of a T cell epitope:MHC:TCR complex	owl:Class
+OBI:1110180	3H-thymidine assay measuring epitope specific proliferation of T cells	owl:Class
+OBI:1110181	BrdU assay measuring epitope specific proliferation of T cells	owl:Class
+OBI:1110182	epitope specific T cell proliferation@en	owl:Class
+OBI:1110184	epitope specific GM-CSF release by T cells@en	owl:Class
+OBI:1110185	epitope specific IFN-g release by T cells@en	owl:Class
+OBI:1110187	epitope specific IL-10 release by T cells@en	owl:Class
+OBI:1110190	epitope specific IL-12 release by T cells@en	owl:Class
+OBI:1110191	epitope specific IL-13 release by T cells@en	owl:Class
+OBI:1110193	epitope specific IL-17 release by T cells@en	owl:Class
+OBI:1110195	epitope specific IL-18 release by T cells@en	owl:Class
+OBI:1110196	epitope specific IL-1b release by T cells@en	owl:Class
+OBI:1110199	epitope specific IL-4 release by T cells@en	owl:Class
+OBI:1110201	allergen	owl:Class
+OBI:1110202	epitope specific IL-5 release by T cells@en	owl:Class
+OBI:1110203	epitope specific IL-6 release by T cells@en	owl:Class
+OBI:1110204	epitope specific killing by T cells@en	owl:Class
+OBI:1110206	epitope specific TNF release by T cells@en	owl:Class
+OBI:1110207	assay detecting IFN-gamma production	owl:Class
+OBI:1110300	direct submission to IEDB	owl:Class
+OBI:9991118	IEDB alternative term	owl:AnnotationProperty
+OBI:9991119	FGED alternative term	owl:AnnotationProperty
+OBI:9999994	chromium release assay	owl:Class
+OGMS:0000015	clinical history	owl:Class
+OGMS:0000023	phenotype	owl:Class
+OGMS:0000031	disease	owl:Class
+OGMS:0000063	disease course	owl:Class
+OGMS:0000090	treatment	owl:Class
+PATO:0000011	age	owl:Class
+PATO:0000018	fluorescence	owl:Class
+PATO:0000047	biological sex	owl:Class
+PATO:0000122	length	owl:Class
+PATO:0000125	mass	owl:Class
+PATO:0000146	temperature	owl:Class
+PATO:0000186	behavioral quality	owl:Class
+PATO:0000383	female	owl:Class
+PATO:0000384	male	owl:Class
+PATO:0000918	volume	owl:Class
+PATO:0001025	pressure	owl:Class
+PATO:0001161	diluted	owl:Class
+PATO:0001167	damaged	owl:Class
+PATO:0001193	lateral to	owl:Class
+PATO:0001196	ventral to	owl:Class
+PATO:0001233	dorsal to	owl:Class
+PATO:0001237	quality of a single physical entity@en	owl:Class
+PATO:0001238	quality of related physical entities@en	owl:Class
+PATO:0001338	mixed sex	owl:Class
+PATO:0001339	biomaterial purity	owl:Class
+PATO:0001340	hermaphrodite	owl:Class
+PATO:0001341	a mating type (yeast)	owl:Class
+PATO:0001344	alpha mating type (yeast)	owl:Class
+PATO:0001345	h minus	owl:Class
+PATO:0001346	h plus	owl:Class
+PATO:0001347	F mating type	owl:Class
+PATO:0001348	F minus mating type	owl:Class
+PATO:0001374	ploidy	owl:Class
+PATO:0001375	haploid	owl:Class
+PATO:0001377	polyploid	owl:Class
+PATO:0001385	aneuploid	owl:Class
+PATO:0001394	diploid	owl:Class
+PATO:0001396	cellular quality	owl:Class
+PATO:0001421	alive	owl:Class
+PATO:0001422	dead	owl:Class
+PATO:0001546	quality of a solid	owl:Class
+PATO:0001547	quality of a gas	owl:Class
+PATO:0001548	quality of a liquid	owl:Class
+PATO:0001631	relational spatial quality@en	owl:Class
+PATO:0001632	anterior to	owl:Class
+PATO:0001741	radioactive	owl:Class
+PATO:0001792	left side of	owl:Class
+PATO:0001793	right side of	owl:Class
+PATO:0001985	frozen	owl:Class
+PATO:0001995	organismal quality	owl:Class
+PATO:0002201	handedness	owl:Class
+PATO:0002202	left handedness	owl:Class
+PATO:0002203	right handedness	owl:Class
+PATO:0002204	ambidextrous handedness	owl:Class
+PATO:0002243	fluid flow rate	owl:Class
+PR:000000001	protein	owl:Class
+PR:000001004	CD4 molecule	owl:Class
+PR:000001018	CD3 subunit with immunoglobulin domain	owl:Class
+PR:000003252	antithrombin-III	owl:Class
+PR:000003745	double-stranded RNA-specific adenosine deaminase	owl:Class
+PR:000006592	deoxyribonuclease-1	owl:Class
+PR:000007928	glial cell line-derived neurotrophic factor	owl:Class
+PR:000014060	ribonuclease T2	owl:Class
+PR:000023089	DNA ligase	owl:Class
+PR:000025402	T cell receptor co-receptor CD8	owl:Class
+PR:000025467	guanyl-specific ribonuclease T1	owl:Class
+PR:000025471	nuclease S1	owl:Class
+PR:000025475	ribonuclease U2	owl:Class
+PR:000025477	ribonuclease V1	owl:Class
+PR:000025478	ribonuclease CL3	owl:Class
+REO:0000171	molecular label role@en	owl:Class
+REO:0000280	molecular label	owl:Class
+RO:0000052	inheres in@en	owl:ObjectProperty
+RO:0000053	bearer of@en	owl:ObjectProperty
+RO:0000056	participates in@en	owl:ObjectProperty
+RO:0000057	has participant@en	owl:ObjectProperty
+RO:0000058	is concretized as@en	owl:ObjectProperty
+RO:0000059	concretizes@en	owl:ObjectProperty
+RO:0000079	function of@en	owl:ObjectProperty
+RO:0000080	quality of@en	owl:ObjectProperty
+RO:0000081	role of@en	owl:ObjectProperty
+RO:0000085	has function@en	owl:ObjectProperty
+RO:0000086	has quality@en	owl:ObjectProperty
+RO:0000087	has role@en	owl:ObjectProperty
+RO:0001000	derives from@en	owl:ObjectProperty
+RO:0001001	derives into@en	owl:ObjectProperty
+RO:0001015	location of@en	owl:ObjectProperty
+RO:0001025	located in@en	owl:ObjectProperty
+RO:0001900	temporal interpretation@en	owl:AnnotationProperty
+RO:0001901	axiom holds for all times@en	owl:NamedIndividual
+RO:0001902	relation has no temporal argument@en	owl:NamedIndividual
+RO:0002000	2D boundary of@en	owl:ObjectProperty
+RO:0002002	has 2D boundary@en	owl:ObjectProperty
+RO:0002087	immediately preceded by@en	owl:ObjectProperty
+RO:0002090	immediately precedes@en	owl:ObjectProperty
+RO:0002219	surrounded by@en	owl:ObjectProperty
+RO:0002220	adjacent to	owl:ObjectProperty
+RO:0002222	temporal relation@en	owl:ObjectProperty
+RO:0002223	starts@en	owl:ObjectProperty
+RO:0002350	member of@en	owl:ObjectProperty
+RO:0002351	has member@en	owl:ObjectProperty
+SO:0000001	region	owl:Class
+SO:0000104	polypeptide	owl:Class
+SO:0000148	supercontig	owl:Class
+SO:0000149	contig	owl:Class
+SO:0000276	miRNA	owl:Class
+SO:0000353	sequence_assembly	owl:Class
+SO:0000988	circular	owl:Class
+SO:0001248	assembly	owl:Class
+UBERON:0000029	lymph node	owl:Class
+UBERON:0000105	life cycle stage	owl:Class
+UBERON:0000165	mouth	owl:Class
+UBERON:0000178	blood	owl:Class
+UBERON:0000955	brain	owl:Class
+UBERON:0001013	adipose tissue	owl:Class
+UBERON:0001088	urine	owl:Class
+UBERON:0001134	skeletal muscle tissue	owl:Class
+UBERON:0001638	vein	owl:Class
+UBERON:0001873	caudate nucleus	owl:Class
+UBERON:0001874	putamen	owl:Class
+UBERON:0002067	dermis	owl:Class
+UBERON:0002072	hypodermis	owl:Class
+UBERON:0002106	spleen	owl:Class
+UBERON:0002107	liver	owl:Class
+UBERON:0002358	peritoneum	owl:Class
+UBERON:0002812	left cerebral hemisphere	owl:Class
+UBERON:0002813	right cerebral hemisphere	owl:Class
+UBERON:0005022	mucosa of nasopharynx	owl:Class
+UBERON:0005023	mucosa of oropharynx	owl:Class
+UO:0000001	length unit	owl:Class
+UO:0000002	mass unit	owl:Class
+UO:0000003	time unit	owl:Class
+UO:0000005	temperature unit	owl:Class
+UO:0000006	substance unit	owl:Class
+UO:0000008	meter	owl:NamedIndividual
+UO:0000009	kilogram	owl:NamedIndividual
+UO:0000010	second	owl:NamedIndividual
+UO:0000015	centimeter	owl:NamedIndividual
+UO:0000016	millimeter	owl:NamedIndividual
+UO:0000017	micrometer	owl:NamedIndividual
+UO:0000018	nanometer	owl:NamedIndividual
+UO:0000019	angstrom	owl:NamedIndividual
+UO:0000021	gram	owl:NamedIndividual
+UO:0000022	milligram	owl:NamedIndividual
+UO:0000023	microgram	owl:NamedIndividual
+UO:0000024	nanogram	owl:NamedIndividual
+UO:0000025	picogram	owl:NamedIndividual
+UO:0000027	degree Celsius	owl:NamedIndividual
+UO:0000031	minute	owl:NamedIndividual
+UO:0000032	hour	owl:NamedIndividual
+UO:0000033	day	owl:NamedIndividual
+UO:0000034	week	owl:NamedIndividual
+UO:0000035	month	owl:NamedIndividual
+UO:0000036	year	owl:NamedIndividual
+UO:0000039	micromole	owl:NamedIndividual
+UO:0000041	nanomole	owl:NamedIndividual
+UO:0000042	picomole	owl:NamedIndividual
+UO:0000051	concentration unit	owl:Class
+UO:0000062	molar	owl:NamedIndividual
+UO:0000063	millimolar	owl:NamedIndividual
+UO:0000064	micromolar	owl:NamedIndividual
+UO:0000065	nanomolar	owl:NamedIndividual
+UO:0000066	picomolar	owl:NamedIndividual
+UO:0000095	volume unit	owl:Class
+UO:0000097	cubic centimeter	owl:NamedIndividual
+UO:0000098	milliliter	owl:NamedIndividual
+UO:0000099	liter	owl:NamedIndividual
+UO:0000100	cubic decimeter	owl:NamedIndividual
+UO:0000101	microliter	owl:NamedIndividual
+UO:0000102	nanoliter	owl:NamedIndividual
+UO:0000103	picoliter	owl:NamedIndividual
+UO:0000105	frequency unit	owl:Class
+UO:0000106	hertz	owl:NamedIndividual
+UO:0000109	pressure unit	owl:Class
+UO:0000163	mass percentage	owl:NamedIndividual
+UO:0000164	mass volume percentage	owl:NamedIndividual
+UO:0000165	volume percentage	owl:NamedIndividual
+UO:0000175	gram per liter	owl:NamedIndividual
+UO:0000176	milligram per milliliter	owl:NamedIndividual
+UO:0000196	pH	owl:NamedIndividual
+UO:0000207	milliliter per liter	owl:NamedIndividual
+UO:0000208	gram per deciliter	owl:NamedIndividual
+UO:0000212	colony forming unit per volume	owl:NamedIndividual
+UO:0000270	volumetric flow rate unit	owl:Class
+UO:0000271	microliters per minute	owl:NamedIndividual
+UO:0000280	rate unit	owl:Class
+UO:0000281	count per nanomolar second	owl:NamedIndividual
+UO:0000282	count per molar second	owl:NamedIndividual
+UO:0000284	count per nanomolar	owl:NamedIndividual
+UO:0000285	count per molar	owl:NamedIndividual
+UO:0000301	microgram per liter	owl:NamedIndividual
+VO:0000001	vaccine	owl:Class
+VO:0000002	vaccination	owl:Class
+dc:contributor	Contributor	owl:AnnotationProperty
+dc:contributor	Contributor@en-us	owl:AnnotationProperty
+dc:coverage	Coverage	owl:AnnotationProperty
+dc:coverage	Coverage@en-us	owl:AnnotationProperty
+dc:creator	Creator	owl:AnnotationProperty
+dc:creator	Creator@en-us	owl:AnnotationProperty
+dc:date	Date	owl:AnnotationProperty
+dc:date	Date@en-us	owl:AnnotationProperty
+dc:description	Description	owl:AnnotationProperty
+dc:description	Description@en-us	owl:AnnotationProperty
+dc:format	Format	owl:AnnotationProperty
+dc:format	Format@en-us	owl:AnnotationProperty
+dc:identifier	Resource Identifier	owl:AnnotationProperty
+dc:identifier	Resource Identifier@en-us	owl:AnnotationProperty
+dc:language	Language	owl:AnnotationProperty
+dc:language	Language@en-us	owl:AnnotationProperty
+dc:publisher	Publisher	owl:AnnotationProperty
+dc:publisher	Publisher@en-us	owl:AnnotationProperty
+dc:relation	Relation	owl:AnnotationProperty
+dc:relation	Relation@en-us	owl:AnnotationProperty
+dc:rights	Rights Management	owl:AnnotationProperty
+dc:rights	Rights Management@en-us	owl:AnnotationProperty
+dc:source	Source	owl:AnnotationProperty
+dc:source	Source@en-us	owl:AnnotationProperty
+dc:subject	Subject and Keywords	owl:AnnotationProperty
+dc:subject	Subject and Keywords@en-us	owl:AnnotationProperty
+dc:title	Title	owl:AnnotationProperty
+dc:title	Title@en-us	owl:AnnotationProperty
+dc:type	Resource Type	owl:AnnotationProperty
+dc:type	Resource Type@en-us	owl:AnnotationProperty
+rdfs:label	label	owl:AnnotationProperty

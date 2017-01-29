@@ -48,22 +48,25 @@
       (is (= howl (api/nquads-to-howl options (api/howl-to-environment context) nquads))))))
 
 ;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
+;;   (api/howl-to-environment (slurp "test/obi/context.howl"))
+;;   (slurp "test/obi/obi_core.nt")))
+
+;; (println
 ;;  (api/howl-to-nquads
 ;;   {:options {:sequential-blank-nodes true}}
-;;   (slurp "test/laika-context/context.howl")
-;;   (slurp "test/laika-context/test1.howl")))
+;;   (api/howl-to-environment
+;;    (slurp "test/obi/context.howl")
+;;    (string/join \newline (tsv-to-howl "test/obi/terms.tsv")))
+;;   (slurp "test/obi/obi.howl")))
+
 
 ;; (println
 ;;  (api/nquads-to-howl
 ;;   {:options {:sequential-blank-nodes true}}
 ;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
 ;;   (slurp "test/nquads/manchester1.nq")))
-
-;; (println
-;;  (api/nquads-to-howl
-;;   {:options {:sequential-blank-nodes true}}
-;;   (api/howl-to-environment (slurp "test/laika-context/context.howl"))
-;;   (slurp "test/laika-context/test1.nq")))
 
 (deftest test-howl<->nquads
   (compare-howl<->nquads
