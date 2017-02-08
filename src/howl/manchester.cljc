@@ -227,6 +227,15 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
            [:LABEL label]))
        res))])
 
+(defmethod make-processed-object :manchester-sequence
+  [env subject-map subject]
+  (let [predicates (get subject-map subject)
+        left (get-object-in predicates [rdf/first])
+        right (get-object-in predicates [rdf/rest])]
+    (make-processed-object
+      env subject-map
+      (get-object-in (get subject-map right) [rdf/first]))))
+
 (defmethod make-processed-object :manchester-negation
   [env subject-map subject]
   [:CLASS_EXPRESSION
@@ -257,6 +266,7 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 (defmethod make-processed-object :manchester-conjunction
   [env subject-map subject]
+  (println "Processing conjunction...")
   (combination->processed-object env "and" rdf/intersection-of subject-map subject))
 
 (defmethod make-processed-object :manchester-disjunction

@@ -1,0 +1,793 @@
+entity
+type: owl:Class
+owl:disjointWith: Obsolete Class
+
+has part
+type: owl:ObjectProperty
+type: owl:TransitiveProperty
+
+biotin
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+molecular entity
+type: owl:Class
+editor note: We are assuming that every molecular entity has to be completely connected by chemical bonds. This excludes protein complexes, which are comprised of minimally two separate molecular entities. We will follow up with Chebi to ensure this is their understanding as well@en
+
+fluorescein
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+macromolecule
+type: owl:Class
+alternative term: polymer@en
+
+phosphorus-32 atom
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+phosphorus-33 atom
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+Cy3 dye
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+Cy5 dye
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+digoxigenin
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+Alexa Fluor 532
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+Alexa Fluor 546
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+Alexa Fluor 555
+type: owl:Class
+subclass of: 'has role' some 'molecular label role'
+
+cell line cell
+subclass of: (is_specified_output_of some 'establishing cell line') AND ('derives from' some (is_specified_output_of some 'establishing cell line'))
+subclass of: 'derives from' some 'primary cultured cell'
+> editor note: 'derives from' is transitive, so even cell line cells created through modification of an existing cell line cell have derived_from some initial primary cultured cell that existed at some point in time.
+
+cell line
+subclass of: 'has grain' some 'cell line cell'
+subclass of: 'has grain' only 'cell line cell'
+
+immortal cell line
+type: owl:Class
+subclass of: 'has grain' some 'immortal cell line cell'
+subclass of: 'has grain' only 'immortal cell line cell'
+
+mortal cell line
+type: owl:Class
+subclass of: 'has grain' some 'mortal cell line cell'
+subclass of: 'has grain' only 'mortal cell line cell'
+subclass of: _:-16e09f08:154b7ac013d:-6bdc
+
+cell
+type: owl:Class
+example of usage: PMID:18089833.Cancer Res. 2007 Dec 15;67(24):12018-25. "...Epithelial cells were harvested from histologically confirmed adenocarcinomas .."@en
+
+primary cultured cell
+type: owl:Class
+subclass of: not (is_specified_output_of some 'cell culture splitting')
+subclass of: not ('derives from' some ('cultured cell' AND (is_specified_output_of some 'cell culture splitting')))
+
+cultured cell
+type: owl:Class
+subclass of: (is_specified_output_of some 'establishing cell culture') AND ('derives from' some (is_specified_output_of some 'establishing cell culture'))
+
+experimentally modified cell in vitro
+type: owl:Class
+subclass of: is_specified_output_of some 'material processing'
+
+biological_process
+type: owl:Class
+owl:disjointWith: planned process
+
+tumor necrosis factor production
+type: owl:Class
+alternative term: TNF alpha production
+
+lymphotoxin A production
+alternative term: TNF beta production
+
+immunoglobulin complex, circulating
+type: owl:Class
+alternative term: antibody
+IEDB alternative term: antibody
+
+DNA polymerase complex
+type: owl:Class
+subclass of: 'has function' some 'DNA polymerase activity'
+
+protein complex
+type: owl:Class
+example of usage: A ribosome is a protein complex
+subclass of: 'has part' some protein
+
+example to be eventually removed
+type: owl:NamedIndividual
+type: curation status specification
+
+IAO:0000004
+type: owl:DatatypeProperty
+
+scalar measurement datum
+type: owl:Class
+subclass of: 'has value specification' some 'scalar value specification'
+
+measurement datum
+type: owl:Class
+subclass of: 'has value specification' some 'value specification'
+
+metadata complete
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+
+organizational term
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+term editor: PERSON:Alan Ruttenberg
+
+ready for release
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+
+metadata incomplete
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+
+uncurated
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+
+pending final vetting
+type: owl:Thing
+type: owl:NamedIndividual
+type: curation status specification
+
+conclusion textual entity
+type: owl:Class
+subclass of: is_supported_by_data some 'data item'
+subclass of: is_specified_output_of some 'drawing a conclusion based on data'
+
+Homo sapiens
+type: owl:Class
+alternative term: human being
+
+role of being consumer safety officer
+label: role of being consumer safety officer@en
+type: owl:Class
+textual definition: the role of a human being that is realized by enforcing regulations to ensure consumer safety
+definition source: OBI, CDISC@en
+example of usage: Consumer safety officer; Consumer Safety Officer Positions at FDA http://69.20.19.211/jobs/cso.htm@en
+example of usage: Person charged with serving as CSO, FDA official who coordinates the review@en
+subclass of: role of regulator of consumables and medical devices
+editor preferred term~editor preferred label: role of being consumer safety officer
+has curation status: metadata complete
+term editor: Jennifer Fostel@en
+term editor: Person:Helen Parkinson
+
+fluorescent reporter intensity
+label: fluorescent reporter intensity@en
+type: owl:Class
+textual definition: A measurement datum that represents the output of a scanner measuring the intensity value for each fluorescent reporter.@en
+definition source: group:OBI
+subclass of: measurement datum
+editor preferred term~editor preferred label: fluorescent reporter intensity@en
+has curation status: pending final vetting
+term editor: person:Chris Stoeckert@en
+curator note: From the DT branch: This term and definition were originally submitted by the community to our branch, but we thought they best fit DENRIE. However we see several issues with this. First of all the name 'probe' might not be used in OBI. Instead we have a 'reporter' role. Also, albeit the term 'probe intensity' is often used in communities such as the microarray one, the name 'probe' is ambiguous (some use it to refer to what's on the array, some use it to refer to what's hybed to the array). Furthermore, this concept could possibly be encompassed by combining different OBI terms, such as the roles of analyte, detector and reporter (you need something hybed to a probe on the array to get an intensity) and maybe a more general term for 'measuring intensities'. We need to find the right balance between what is consistent with OBI and combinations of its terms and what is user-friendly. Finally, note that 'intensity' is already in the OBI .owl file and is also in PATO. Why didn't OBI import it from PATO? This might be a problem.@en
+
+planned process
+label: planned process@en
+type: owl:Class
+textual definition: A processual entity that realizes a plan which is the concretization of a plan specification.@en
+definition source: branch derived
+example of usage: Injecting mice with a vaccine in order to test its efficacy
+equivalent to: realizes some (concretizes some 'plan specification')
+editor preferred term~editor preferred label: planned process
+has curation status: ready for release
+editor note: 'Plan' includes a future direction sense. That can be problematic if plans are changed during their execution. There are however implicit contingencies for protocols that an agent has in his mind that can be considered part of the plan, even if the agent didn't have them in mind before. Therefore, a planned process can diverge from what the agent would have said the plan was before executing it, by adjusting to problems encountered during execution (e.g. choosing another reagent with equivalent properties, if the originally planned one has run out.)
+editor note: We are only considering successfully completed planned processes. A plan may be modified, and details added during execution. For a given planned process, the associated realized plan specification is the one encompassing all changes made during execution. This means that all processes in which an agent acts towards achieving some 
+  objectives is a planned process.
+term editor: Bjoern Peters
+curator note: 6/11/9: Edited at workshop. Used to include: is initiated by an agent
+curator note: This class merges the previously separated objective driven process and planned process, as they the separation proved hard to maintain. (1/22/09, branch call)@en
+
+regulator role
+label: regulator role@en
+type: owl:Class
+textual definition: a regulatory role involved with making and/or enforcing relevant legislation and governmental orders@en
+definition source: OBI@en
+example of usage: Fact sheet - Regulating the companies The role of the regulator. Ofwat is the economic regulator of the water and sewerage industry in England and Wales.  http://www.ofwat.gov.uk/aptrix/ofwat/publish.nsf/Content/roleofregulator_factsheet170805@en
+subclass of: regulatory role
+alternative term: regulator
+editor preferred term~editor preferred label: regulator role
+has curation status: metadata complete
+term editor: Person:Jennifer Fostel@en
+
+biological feature identification objective
+label: biological feature identification objective@en
+type: owl:Class
+textual definition: Biological_feature_identification_objective is an objective role carried out by the proposition defining the aim of a study designed to examine or characterize a particular biological feature.@en
+subclass of: objective specification
+editor preferred term~editor preferred label: biological feature identification objective@en
+has curation status: metadata incomplete
+term editor: Jennifer Fostel@en
+
+regulation-assigned role
+label: regulation-assigned role@en
+type: owl:Class
+textual definition: Regulation-assigned role is a regulatory role defined by legislation or governmental orders@en
+example of usage: Approval letter@en
+subclass of: regulatory role
+editor preferred term~editor preferred label: regulation-assigned role@en
+has curation status: metadata incomplete
+term editor: Person: Jennifer Fostel@en
+
+regulatory role
+label: regulatory role@en
+type: owl:Class
+textual definition: a role which inheres in material entities and is realized in the processes of making, enforcing or being defined by legislation or orders issued by a governmental body.@en
+definition source: OBI, CDISC@en
+example of usage: Regulatory agency, Ethics committee, Approval letter; example:  Browse these EPA Regulatory Role subtopics  http://www.epa.gov/ebtpages/enviregulatoryrole.html  Feb 29, 2008@en
+subclass of: role
+editor preferred term~editor preferred label: regulatory role@en
+has curation status: metadata complete
+term editor: GROUP:  Role branch@en
+curator note: govt agents responsible for creating regulations; proxies for enforcing regulations.  CDISC definition:  regulatory authorities. Bodies having the power to regulate. NOTE: In the ICH GCP guideline the term includes the authorities that review submitted clinical data and those that conduct inspections. These bodies are sometimes referred to as competent@en
+
+material supplier role
+label: material supplier role@en
+type: owl:Class
+textual definition: a role realized through the process of supplying materials such as animal subjects, reagents or other materials used in an investigation.@en
+example of usage: Jackson Labs is an organization which provide mice as experimental material
+subclass of: service provider role
+alternative term: material provider role
+alternative term: supplier
+editor preferred term~editor preferred label: material supplier role
+has curation status: metadata complete
+editor note: Supplier role is a special kind of service, e.g. biobank
+term editor: PERSON:Jennifer Fostel@en
+
+contract research organization role
+label: contract research organization role@en
+type: owl:Class
+textual definition: a worker role of carrying out the study according to the protocol document or study plan delivered by the PI, under the control of the study director.  This role cannot make decisions about the study execution@en
+subclass of: worker role
+alternative term: contract research organization
+editor preferred term~editor preferred label: contract research organization role
+has curation status: metadata incomplete
+term editor: Person: Jennifer Fostel@en
+
+list-mode data file
+label: list-mode data file@en
+type: owl:Class
+textual definition: A list-mode data file is a binary digital entity where events are stored sequentially, parameter by parameter.@en
+definition source: group:Flow Cytometry community
+example of usage: An example of a list-mode data file is a file following list-mode Flow Cytometry Standard (FCS) format. Since FCS files can be in histogram mode or  list-mode we have to specify which data format specifically. List-mode format in the overwhelming (even universal) option used.@en
+subclass of: information content entity
+editor preferred term~editor preferred label: list-mode data file@en
+has curation status: pending final vetting
+editor note: One example of usage is in the context of flow cytometry, however is not restricted to this community and is more widely used, e.g. by imaging people.@en
+term editor: person:Chris Stoeckert@en
+
+classified data set
+label: classified data set@en
+type: owl:Class
+textual definition: A data set that is produced as the output of a class prediction data transformation and consists of a data set with assigned class labels.@en
+equivalent to: is_specified_output_of some 'class prediction data transformation'
+subclass of: data set
+alternative term: data set with assigned class labels
+editor preferred term~editor preferred label: classified data set
+has curation status: pending final vetting
+term editor: PERSON: James Malone
+term editor: PERSON: Monnie McGee
+
+reference substance role
+label: reference substance role@en
+type: owl:Class
+textual definition: a role inhering in a material entity that is realized when  characteristics or responses elicited by the substance are used for comparison or reference.@en
+definition source: OBI@en
+example of usage: Calibration standard, positive control substance, vehicle   Good Laboratory Practices: Questions and Answers - Test Control and Reference Substance Characterization  http://www.epa.gov/enforcement/monitoring/programs/fifra/glpqanda-character.html@en
+subclass of: role
+subclass of: 'inheres in' some 'material entity'
+alternative term: reference substance
+editor preferred term~editor preferred label: reference substance role
+has curation status: metadata complete
+term editor: Person:Jennifer Fostel@en
+
+cytological stain role
+label: cytological stain role@en
+type: owl:Class
+textual definition: A dye role that is realized when the stain is used to colour cells and or cellular components for the purposes of visualization
+example of usage: haemotoxylin is a general purpose nuclear stain extracted from the wood of the logwood tree WEB: http://en.wikipedia.org/wiki/Haematoxylin
+subclass of: dye role
+alternative term: cytological stain
+editor preferred term~editor preferred label: cytological stain role
+has curation status: metadata complete
+term editor: Person:Helen Parkinson
+term editor: Person:Jennifer Fostel@en
+
+centrifuge pellet role
+label: centrifuge pellet role@en
+type: owl:Class
+textual definition: pellet role is a role which inheres in a material entity and is realized by a material separation process using gravitational force generated by a centrifuge in which the material bearing the pellet role is the heavier or heaviest component of the output material..@en
+definition source: OBI
+example of usage: Definition of pellet :the material concentrated at the bottom of a centrifuge tube after centrifugation. http://www.everythingbio.com/glos/definition.php?word=pellet
+subclass of: role
+subclass of: 'inheres in' some 'material entity'
+subclass of: 'realized in' only centrifugation
+editor preferred term~editor preferred label: centrifuge pellet role
+has curation status: pending final vetting
+term editor: GROUP:  Role branch
+curator note: 9Mar09 after discussion with process branch changed definition to include use of centrifuge;
+
+clinical research coordinator role
+label: clinical research coordinator role@en
+type: owl:Class
+textual definition: a worker role comprised of handling the administrative duties of a trial or study.@en
+subclass of: worker role
+alternative term: clinical research coordinator
+editor preferred term~editor preferred label: clinical research coordinator role
+has curation status: metadata incomplete
+term editor: Person:Jennifer Fostel@en
+
+supernatant role
+label: supernatant role@en
+type: owl:Class
+textual definition: supernatant role is a role which inheres in a material entity and is realized by a material separation process using gravitational force in which the material bearing the supernatant role is the liquid component of the output material.
+definition source: OBI
+example of usage: Precipitation is the formation of a solid in a solution during a chemical reaction. When the reaction occurs, the solid formed is called the precipitate, and the liquid remaining above the solid is called the supernate.  Wikipedia
+subclass of: role
+subclass of: 'inheres in' some 'material entity'
+subclass of: 'realized in' only 'material component separation'
+editor preferred term~editor preferred label: supernatant role
+has curation status: metadata complete
+term editor: GROUP: Role branch
+
+chromatography column
+label: chromatography column@en
+type: owl:Class
+textual definition: Chromatography column in chemistry is a tube and contents (typically glass) used to purify individual chemical compounds from mixtures of compounds. It is often used for preparative applications on scales from micrograms up to kilograms.@en
+definition source: http://en.wikipedia.org/wiki/Column_chromatography@en
+subclass of: device
+subclass of: 'has part' some container
+subclass of: 'has function' some ('material separation function' AND ('realized in' only 'preparative chromatography'))
+editor preferred term~editor preferred label: chromatography column@en
+has curation status: metadata incomplete
+term editor: Frank Gibson@en
+curator note: open tracker https://sourceforge.net/tracker/index.php?func=detail&aid=2881353&group_id=177891&atid=886178
+
+drug role
+label: drug role@en
+type: owl:Class
+textual definition: a role borne by a molecular entity and is realized in a process of absorption by an organism  alters, or effects  (or is assumed to effect) a function(s) which inhere in an organism@en
+definition source: OBI, CDISC@en
+example of usage: http://www.answers.com/topic/drug
+     1. A substance used in the diagnosis, treatment, or prevention of a disease or as a component of a medication.
+     2. Such a substance as recognized or defined by the U.S. Food, Drug, and Cosmetic Act.
+subclass of: role
+subclass of: 'inheres in' some 'molecular entity'
+alternative term: drug
+editor preferred term~editor preferred label: drug role@en
+has curation status: metadata complete
+term editor: Role Branch@en
+
+pump valve switch
+label: pump valve switch@en
+type: owl:Class
+textual definition: A pump valve switch is a cardinal part of a liquid chromatography instrument that controls the flow.@en
+definition source: OBI@en
+subclass of: device
+subclass of: 'has function' some 'mechanical function'
+editor preferred term~editor preferred label: pump valve switch@en
+has curation status: metadata incomplete
+editor note: FG:I would assume this should be a pump valve control switch and it would not be specific to a liquid chromatography instrument@en
+term editor: OBI Instrument branch@en
+
+xenotransplantation
+label: xenotransplantation@en
+type: owl:Class
+textual definition: is the transplantation of living cells, tissues or \norgans from one species to another such as from pigs to humans@en
+definition source: OBI branch derived@en
+subclass of: transplantation
+editor preferred term~editor preferred label: xenotransplantation@en
+has curation status: pending final vetting
+term editor: PlanAndPlannedProcess Branch@en
+
+physical document
+label: physical document@en
+type: owl:Class
+textual definition: A physical document is an object serving as a record of information by means of symbolic marks.@en
+definition source: GROUP: OBI
+example of usage: a book is a physical document@en
+subclass of: processed material
+editor preferred term~editor preferred label: physical document@en
+has curation status: metadata complete
+term editor: PERSON: Bjoern Peters
+
+waiting
+label: waiting@en
+type: owl:Class
+textual definition: not actively doing anything to a material for a duration of time.@en
+definition source: OBI branch derived@en
+subclass of: exposure of material to environment
+editor preferred term~editor preferred label: waiting@en
+has curation status: pending final vetting
+term editor: PERSON:Alan Ruttenberg@en
+curator note: BP: I have doubts about the utility of this.@en
+curator note: We need a better handling/modeling of time (January 2008)@en
+
+processed material
+label: processed material@en
+type: owl:Class
+textual definition: Is a material entity that is created or changed during material processing.@en
+example of usage: Examples include gel matrices, filter paper, parafilm and buffer solutions, mass spectrometer, tissue samples@en
+equivalent to: 'material entity' AND (is_specified_output_of some 'material processing')
+editor preferred term~editor preferred label: processed material@en
+has curation status: ready for release
+term editor: PERSON: Alan Ruttenberg@en
+
+chromatography device
+label: chromatography device@en
+type: owl:Class
+textual definition: a device that facilitates the separation of mixtures. The function of a chromatography device involves passing a mixture dissolved in a "mobile phase" through a stationary phase, which separates the analyte to be measured from other molecules in the mixture and allows it to be isolated.@en
+definition source: http://en.wikipedia.org/wiki/Chromatography@en
+subclass of: device
+subclass of: 'has function' some 'contain function'
+subclass of: 'has function' some 'material separation function'
+subclass of: 'has function' some 'environment control function'
+subclass of: 'has function' some 'measure function'
+alternative term: chromatography instrument@en
+editor preferred term~editor preferred label: chromatography device@en
+has curation status: metadata complete
+term editor: Frank Gibson@en
+curator note: open tracker https://sourceforge.net/tracker/index.php?func=detail&aid=2881353&group_id=177891&atid=886178
+
+mass spectrometer
+label: mass spectrometer@en
+type: owl:Class
+textual definition: A mass spectrometer is an instrument which is used to measure the mass to charge ratio of ions. All mass spectrometers consist of three basic parts: an ion source, a mass analyzer, and a detector system. The stages within the mass spectrometer are: 1. Production of ions from the sample 2. Separation of ions with different masses 3. Detection of the number of ions of each mass produced 4.Collection of data to generate the mass spectrum@en
+definition source: http://en.wikipedia.org/wiki/Mass_spectrometry@en
+example of usage: LCQ Fleet Ion Trap MSn manufactured by thermo fisher scientific@en
+subclass of: device
+subclass of: ('has part' some 'mass analyzer') AND ('has part' some 'ion source') AND ('has part' some 'ion detector')
+subclass of: has_supplier some ('Homo sapiens' AND organization)
+subclass of: 'bearer of' some 'device setting'
+subclass of: 'has function' some 'measure function'
+editor preferred term~editor preferred label: mass spectrometer@en
+has curation status: ready for release
+term editor: Frank Gibson@en
+
+obsolete_platform
+label: obsolete_platform@en
+type: owl:Class
+textual definition: A platform is an object_aggregate that is the set of instruments and software needed to perform a process. definition_source: OBI.@en
+definition source: OBI Instrument branch
+subclass of: Obsolete Class
+editor preferred term~editor preferred label: platform@en
+has curation status: metadata incomplete
+term editor: OBI Instrument branch
+has obsolescence reason: failed exploratory term
+curator note: rem1: We decided at the Philly workshop that consumables do not include reagents.
+  FG: we could actully add a relation to platform which would be "has_part some instrument"
+  DS: Sounds fine to me, with the restriction that I would assume a min. cardinality of 2 to be applicable for this crossproduct, so at least 2 instruments make it a platform... at least one is not  enough
+  AR:has_part is transitive, and transitive properties can't have  cardinality constraints in OWL-DL. We can always put this particular  constraint in the owl-full file.
+
+  We need to make this a defined class when the class software is in the ontology@en
+curator note: suggested for deprecation https://sourceforge.net/tracker/index.php?func=detail&aid=2881353&group_id=177891&atid=886178
+deprecated: true^^ttp://www.w3.org/2001/XMLSchema#boolean
+
+liquid chromatography mass spectrometry platform
+label: liquid chromatography mass spectrometry platform@en
+type: owl:Class
+textual definition: A liquid chromatography mass spectrometry platform is a platform that is the collection of instrument, software and reagents needed to perform a liquid chromatography mass spectrometry protocol. definition_source: OBI.@en
+definition source: OBI Instrument branch
+subclass of: device
+subclass of: 'has part' some 'chromatography device'
+subclass of: 'has part' some 'mass spectrometer'
+subclass of: 'has function' some 'material separation function'
+subclass of: 'has function' some 'measure function'
+editor preferred term~editor preferred label: liquid chromatography mass spectrometry platform@en
+has curation status: metadata incomplete
+term editor: OBI instrument branch
+
+microarray platform
+label: microarray platform@en
+type: owl:Class
+textual definition: A microarray platform is a platform that contains the instruments, software and reagents needed to perform a microarray protocol. definition_source: OBI.@en
+definition source: OBI Instrument branch
+subclass of: device
+subclass of: 'has part' some microarray
+subclass of: 'has function' some 'environment control function'
+editor preferred term~editor preferred label: microarray platform@en
+has curation status: metadata incomplete
+term editor: OBI Instrument branch
+
+ratio of collected to emitted light
+label: ratio of collected to emitted light@en
+type: owl:Class
+textual definition: A measurement datum measuring the amount of light collected s compared to the total amount of emitted light in the detector component of a flow cytometer instrument. The datum has a qualitative role@en
+definition source: Submitted by the Flow Cytometry community in DigitalEntity-FlowCytometry-2007-03-30.txt
+example of usage: 10%@en
+subclass of: measurement datum
+editor preferred term~editor preferred label: ratio of collected to emitted light@en
+has curation status: metadata complete
+term editor: person:Chris Stoeckert@en
+term editor: person:Kevin Clancy@en
+
+software optimization objective
+label: software optimization objective@en
+type: owl:Class
+textual definition: Software_optimization is a software_testing_objective role describing a study designed to identify the best software or parameters of the software.@en
+subclass of: software testing objective
+editor preferred term~editor preferred label: software optimization objective@en
+has curation status: metadata incomplete
+term editor: Jennifer Fostel@en
+
+notified body role
+label: notified body role@en
+type: owl:Class
+textual definition: Notified body is regulator of consumables and medical devices charged by the Competent Authority with verifying compliance of medical devices (not drugs) with the applicable Essential Requirements stated in the Medical Device Directive@en
+definition source: OBI, CDISC@en
+example of usage: The role of notified bodies presentation: http://ec.europa.eu/enterprise/electr_equipment/emc/revision/notified_bodies.pdf@en
+subclass of: role of regulator of consumables and medical devices
+alternative term: notified body
+editor preferred term~editor preferred label: notified body role
+has curation status: metadata complete
+editor note: Notified Body (NB). A private institution charged by the Competent Authority with verifying compliance of medical devices (not drugs) with the applicable Essential Requirements stated in the Medical Device Directive. This process, called Conformity Assessment, has EU-wide validity once completed by the NB.@en
+term editor: Person: Jennifer Fostel@en
+
+allotransplantation
+label: allotransplantation@en
+type: owl:Class
+textual definition: is the transplantation of organs between members of the same species.@en
+definition source: OBI branch derived@en
+subclass of: transplantation
+editor preferred term~editor preferred label: allotransplantation@en
+has curation status: pending final vetting
+term editor: PlanAndPlannedProcess Branch@en
+
+gamma counter
+label: gamma counter@en
+type: owl:Class
+textual definition: A processed material which measures gamma radiation@en
+definition source: http://en.wikipedia.org/wiki/Gamma_counter@en
+example of usage: A Geiger counter
+subclass of: device
+subclass of: 'has function' some 'measure function'
+editor preferred term~editor preferred label: gamma counter@en
+has curation status: ready for release
+term editor: Frank Gibson@en
+
+trial monitor role
+label: trial monitor role@en
+type: owl:Class
+textual definition: a responsible party involved in planning, overseeing the conduct of a study or study component, and interpreting data from a study@en
+subclass of: responsible party role
+alternative term: trial monitor
+editor preferred term~editor preferred label: trial monitor role
+has curation status: metadata incomplete
+term editor: Person:Jennifer Fostel@en
+curator note: CDISC definition:  Person employed by the sponsor or CRO who is responsible for determining that a trial is being conducted in accordance with the protocol and GCP guidance. NOTE: A monitor's duties may include, but are not limited to, helping to plan and initiate a trial, assessing the conduct of trials, and assisting in data analysis, interpretation and extrapolation. Clinical Research Associate:  Primary representative of the sponsor; monitors progress of investigator sites participating in a clinical study.@en
+
+positive reference substance role
+label: positive reference substance role@en
+type: owl:Class
+textual definition: a reference role in which the characteristics or responses elicited by the substance playing the reference substance role are used to establish a "100%" response
+example of usage: MMS mutagen@en
+subclass of: reference substance role
+subclass of: 'realized in' only assay
+alternative term: positive reference substance
+editor preferred term~editor preferred label: positive reference substance role
+has curation status: metadata incomplete
+term editor: Person: Jennifer Fostel@en
+
+polyethylene glycol p-(1,1,3,3-tetramethylbutyl)-phenyl ether
+label: polyethylene glycol p-(1,1,3,3-tetramethylbutyl)-phenyl ether@en
+type: owl:Class
+textual definition: triton X100 is a chemical entity which belongs to the group of The pluronics which are triblock copolymers of ethylene oxide and propylene oxide. Triton x-100 is_used_as detergent due to its non-ionic surfactant properties@en
+definition source: adapted from Wikipedia before possible import from CHEBI@en
+example of usage: PMID: 30799. J Histochem Cytochem. 1978 Sep;26(9):696-712. Acid lipase: a histochemical and biochemical study using triton X100-naphtyl palmitate micelles.@en
+subclass of: molecular entity
+editor preferred term~editor preferred label: polyethylene glycol p-(1,1,3,3-tetramethylbutyl)-phenyl ether@en
+has curation status: metadata incomplete
+term editor: Philippe Rocca-Serra@en
+
+investigation
+label: investigation@en
+type: owl:Class
+textual definition: a planned process that consists of parts: planning, study design execution, documentation and which produce conclusion(s).@en
+definition source: OBI branch derived@en
+example of usage: Lung cancer investigation using expression profiling, a stem cell transplant investigation, biobanking is not an investigation, though it may be part of an investigation
+subclass of: 'has part' some documenting
+subclass of: 'has part' some 'drawing a conclusion based on data'
+subclass of: 'has part' some 'study design execution'
+subclass of: 'has part' some (planning AND (has_specified_output some 'study design'))
+editor preferred term~editor preferred label: investigation@en
+has curation status: ready for release
+term editor: Bjoern Peters@en
+curator note: Could add specific objective specification
+curator note: Following OBI call November 2012,26th: it was decided there was no need for adding "achieves objective of drawing conclusion" as existing relations were providing equivalent ability. this note closes the issue and validates the class definition to be part of the OBI core
+  editor = PRS@en
+ISA alternative term: study
+
+evaluant role
+label: evaluant role@en
+type: owl:Class
+textual definition: a role that inheres in a material entity that is realized in an assay in which data is generated about the bearer of the evaluant role@en
+definition source: OBI
+example of usage: When a specimen of blood is assayed for glucose concentration, the blood has the evaluant role. When measuring the mass of a mouse, the evaluant is the mouse. When measuring the time of DNA replication, the evaluant is the DNA. When measuring the intensity of light on a surface, the evaluant is the light source.@en
+subclass of: role
+subclass of: 'inheres in' some 'material entity'
+subclass of: 'realized in' only assay
+editor preferred term~editor preferred label: evaluant role@en
+has curation status: ready for release
+editor note: Role call - 17nov-08: JF and MC think an evaluant role is always specified input of a process. Even in the case where we have an assay taking blood as evaluant and outputting blood, the blood is not the specified output at the end of the assay (the concentration of glucose in the blood is)@en
+editor note: examples of features that could be described in an evaluant: quality.... e.g. "contains 10 pg/ml IL2", or "no glucose detected")@en
+term editor: GROUP:  Role Branch
+curator note: Feb 10, 2009.  changes after discussion at OBI Consortium Workshop Feb 2-6, 2009.  accepted as core term.
+
+reporting party role
+label: reporting party role@en
+type: owl:Class
+textual definition: a study personnel role played by a party who reports the outcome of a study component@en
+definition source: OBI@en
+example of usage: Person who prepares microarray data in MAGE-TAB format and submits to a database, such as ArrayExpress.
+example of usage: The first section has been pre-designated as the 'Reporting Party' section and should be filled with the Reporting Party's personal information.  http://www.mercedsheriff.com/SelfReporting.htm@en
+subclass of: investigation agent role
+alternative term: reporting party
+alternative term: submitter
+editor preferred term~editor preferred label: reporting party role
+has curation status: metadata complete
+editor note: MO:submitter mapped to this term. So, alternative term 'submitter' was added.
+term editor: Jennifer Fostel@en
+
+assay
+label: assay@en
+type: owl:Class
+textual definition: A planned process with the objective to produce information about the material entity that is the evaluant, by physically examining it or its proxies.@en
+definition source: OBI branch derived@en
+example of usage: Assay the wavelength of light emitted by excited Neon atoms. Count of geese flying over a house.
+equivalent to: achieves_planned_objective some 'assay objective'
+subclass of: planned process
+subclass of: realizes some 'evaluant role'
+subclass of: has_specified_input some ('material entity' AND ('has role' some 'evaluant role'))
+subclass of: has_specified_output some ('information content entity' AND ('is about' some ('material entity' AND ('has role' some 'evaluant role'))))
+alternative term: measuring@en
+alternative term: scientific observation@en
+editor preferred term~editor preferred label: assay@en
+has curation status: ready for release
+editor note: 12/3/12: BP: the reference to the 'physical examination' is included to point out that a prediction is not an assay, as that does not require physical examiniation. 
+term editor: PlanAndPlannedProcess Branch@en
+ISA alternative term: study assay
+IEDB alternative term: any method
+owl:disjointWith: planning
+owl:disjointWith: data transformation
+owl:disjointWith: information acquisition
+
+quantitative confidence value
+label: quantitative confidence value@en
+type: owl:Class
+textual definition: A data item which is used to indicate the degree of uncertainty about a measurement.@en
+definition source: group:OBI
+subclass of: data item
+editor preferred term~editor preferred label: quantitative confidence value@en
+has curation status: pending final vetting
+term editor: person:Chris Stoeckert@en
+
+sample preparation for assay
+label: sample preparation for assay@en
+type: owl:Class
+textual definition: A sample_preparation_for_assay is a protocol_application including material_enrollments and biomaterial_transformations. definition_source: OBI.@en
+definition source: OBI branch derived@en
+subclass of: process
+subclass of: achieves_planned_objective some 'material transformation objective'
+alternative term: study@en
+editor preferred term~editor preferred label: sample preparation for assay@en
+has curation status: pending final vetting
+term editor: PlanAndPlannedProcess Branch@en
+
+diagnosis textual entity
+label: diagnosis textual entity@en
+type: owl:Class
+textual definition: diagnosis is an assessment of a disease or injury, its likely prognosis and treatment.@en
+subclass of: textual entity
+editor preferred term~editor preferred label: diagnosis textual entity@en
+has curation status: metadata incomplete
+term editor: Jennifer Fostel@en
+
+unplanned occurrence effecting an investigation
+label: unplanned occurrence effecting an investigation@en
+type: owl:Class
+textual definition: a process which is external in origin to the investigation that has an impact on the outcome.@en
+definition source: OBI
+example of usage: Earthquake that destroys the lab, an outside investigator discovering an adverse effect of the reagants used@en
+subclass of: process
+editor preferred term~editor preferred label: unplanned occurrence effecting an investigation
+has curation status: metadata complete
+term editor: PERSON: Bjoern Peters
+
+eMedical record
+label: eMedical record@en
+type: owl:Class
+textual definition: An eMedical record is a digital document derived from a computer system used primarily for patient care in a clinical setting.  Not required to be compliant with requirements of 21 CFR Part 11.@en
+definition source: article-without-pmid-or-doi:CDISCglossary
+subclass of: information content entity
+editor preferred term~editor preferred label: eMedical record@en
+has curation status: pending final vetting
+term editor: person:Jennifer Fostel@en
+
+culture medium
+label: culture medium@en
+type: owl:Class
+textual definition: a processed material that provides the needed nourishment for microorganisms or cells grown in vitro.
+definition source: OBI@en
+example of usage: A growth medium or culture medium is a substance in which microorganisms or cells can grow.  Wikipedia, growth medium, Feb 29, 2008@en
+subclass of: processed material
+editor preferred term~editor preferred label: culture medium
+has curation status: ready for release
+editor note: changed from a role to a processed material based on on Aug 22, 2011 dev call. Details see the tracker item: http://sourceforge.net/tracker/?func=detail&aid=3325270&group_id=177891&atid=886178
+  Modification made by JZ.
+term editor: Person: Jennifer Fostel, Jie Zheng@en
+
+electronic case report tabulation
+label: electronic case report tabulation@en
+type: owl:Class
+textual definition: An electronic case report tabulation is a digital document containing tabular data about multiple trial participants which is part of a clinical regulatory submission.  An eCRT has the property that it can be audited and compliant with requirements of 21 CFR Part 11  and has format suited to review by regulators.@en
+definition source: CDISC glossary
+subclass of: information content entity
+editor preferred term~editor preferred label: electronic case report tabulation@en
+has curation status: metadata complete
+term editor: person:Jennifer Fostel@en
+
+polystyrene tube
+label: polystyrene tube@en
+type: owl:Class
+textual definition: a polystyrene tube is a test tube made of polystyrene@en
+definition source: PERSON: Chris Stoeckert@en
+example of usage: Polystyrene tubes can be used  to contain tissue culture cells during centrifgation@en
+subclass of: test tube
+editor preferred term~editor preferred label: polystyrene tube@en
+has curation status: ready for release
+term editor: PERSON: Chris Stoeckert@en
+
+reagent role
+label: reagent role@en
+type: owl:Class
+textual definition: A role inhering in a biological or chemical entity that is intended to be applied in a scientific technique to participate (or have molecular components that participate) in a chemical reaction that facilitates the generation of data about some entity distinct from the bearer, or the generation of some specified material output distinct from the bearer.@en
+definition source: PERSON:Matthew Brush
+example of usage: Buffer, dye, a catalyst, a solvating agent.@en
+subclass of: role
+alternative term: reagent
+editor preferred term~editor preferred label: reagent role
+has curation status: metadata complete
+term editor: PERSON:Matthew Brush@en
+curator note: Feb 10, 2009.  changes after discussion at OBI Consortium Workshop Feb 2-6, 2009.  accepted as core term.
+
+  May 28 2013. Updated definition taken from ReO based on discussions initiated in Philly 2011 workshop.  Former defnition described a narrower view of reagents in chemistry that restricts bearers of the role to be chemical entities ("a role played by a molecular entity used to produce a chemical reaction to detect, measure, or produce other substances").  Updated definition allows for broader view of reagents in the domain of biomedical research to include larger materials that have parts that participate chemically in a molecular reaction or interaction.
+  
+comment: (copied from ReO)
+  Reagents are distinguished from instruments or devices that also participate in scientific techniques by the fact that reagents are chemical or biological in nature and necessarily participate in or have parts that participate in some chemical interaction or reaction during their intended participation in some technique.  By contrast, instruments do not participate in a chemical reaction/interaction during the technique.
+
+  Reagents are distinguished from study subjects/evaluants in that study subjects and evaluants are that about which conclusions are drawn and knowledge is sought in an investigation - while reagents, by definition, are not.  It should be noted, however, that reagent and study subject/evaluant roles can be borne by instances of the same type of material entity - but a given instance will realize only one of these roles in the execution of a given assay or technique. For example, taq polymerase can bear a reagent role or an evaluant role.  In a DNA sequencing assay aimed at generating sequence data about some plasmid, the reagent role of the taq polymerase is realized. In an assay to evaluate the quality of the taq polymerase itself, the evaluant/study subject role of the taq is realized, but not the reagent role since the taq is the subject about which data is generated.
+
+  In regard to the statement that reagents are 'distinct' from the specified outputs of a technique, note that a reagent may be incorporated into a material output of a technique, as long as the IDENTITY of this output is distinct from that of the bearer of the reagent role.  For example, dNTPs input into a PCR are reagents that become part of the material output of this technique, but this output has a new identity (ie that of a 'nucleic acid molecule') that is distinct from the identity of the dNTPs that comprise it.  Similarly, a biotin molecule input into a cell labeling technique are reagents that become part of the specified output, but the identity of the output is that of some modified cell specimen which shares identity with the input unmodified cell specimen, and not with the biotin label. Thus, we see that an important criteria of 'reagent-ness' is that it is a facilitator, and not the primary focus of an investigation or material processing technique (ie not the specified subject/evaluant about which knowledge is sought, or the specified output material of the technique).
