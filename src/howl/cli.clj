@@ -8,6 +8,7 @@
             [howl.core :as core]
             [howl.howl :as howl]
             [howl.json :as json]
+            [howl.table :as table]
             [howl.nquads :as nq]
             [howl.api :as api])
   (:gen-class))
@@ -20,23 +21,6 @@
   [status msg]
   (println msg)
   (System/exit status))
-
-(defn tsv-to-howl
-  "Given a SUBJECT/label/type TSV file, returns the corresponding
-lazy sequence of Howl lines"
-  [filename]
-  (mapcat
-   (fn [[subject label type]]
-     ;; FIXME - sanitize the label properly. (Not doing it now because the _real_ solution
-     ;;         is probably to start up table.cljc, and emit Howl blocks from tabular data
-     ;;         rather than the below table->string hack)
-     (let [l (first (string/split (string/replace label #"[\[\]]" "") #"@"))]
-       [(str "LABEL " l ": " subject)
-        l
-        (str "label: " l)
-        (str "type: " type)
-        ""]))
-   (rest (csv/read-csv (io/reader filename) :separator \tab))))
 
 (defn parse-howl-file
   "Takes a filename, and optionally a starting environment, and parses that
