@@ -15,12 +15,12 @@ lazy sequence of Howl lines"
      (let [l (first (string/split (string/replace label #"[\[\]]" "") #"@"))]
        [[:LABEL_BLOCK
          "LABEL" [:SPACES " "]
-         [:LABEL label]
+         [:LABEL l]
          [:DATATYPES]
          [:COLON "" ":" " "]
          (link/parse-link subject)]
-        [:SUBJECT_BLOCK [:LABEL label]]
-        [:STATEMENT_BLOCK [:ARROWS "" ""] [:LABEL "label"] [:DATATYPES] [:COLON "" ":" " "] label]
+        [:SUBJECT_BLOCK [:LABEL l]]
+        [:STATEMENT_BLOCK [:ARROWS "" ""] [:LABEL "label"] [:DATATYPES] [:COLON "" ":" " "] l]
         [:STATEMENT_BLOCK [:ARROWS "" ""] [:LABEL "type"] [:DATATYPES] [:COLON "" ":" " "]
          (link/parse-link type)]]))
    (rest (csv/read-csv source :separator \tab))))
