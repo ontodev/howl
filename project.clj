@@ -8,7 +8,6 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.8.40"]
                  [com.lucasbradstreet/instaparse-cljs "1.4.1.1"]
-                 [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/test.check "0.9.0"]

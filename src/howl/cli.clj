@@ -1,154 +1,155 @@
 (ns howl.cli
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
-            [clojure.data.csv :as csv]
-            [clojure.tools.cli :refer [parse-opts]]
-            [edn-ld.jena]
             [howl.util :as util]
-            [howl.core :as core]
-            [howl.howl :as howl]
-            [howl.json :as json]
-            [howl.table :as table]
-            [howl.nquads :as nq]
             [howl.api :as api])
   (:gen-class))
 
-(defn file-lines
-  [filename]
-  (line-seq (io/reader filename)))
+(def formats
+  {"howl" :howl
+   "nt"   :ntriples
+   "nq"   :nquads})
 
-(defn exit
-  [status msg]
-  (println msg)
-  (System/exit status))
+(defn detect-format
+  "Given a filepath, use the file extension
+   to determine its format."
+  [path]
+  (let [[_ extension]
+        (re-matches #".*\.(.*)$" (string/lower-case path))]
+    (get formats extension)))
 
-(defn parse-howl-file
-  "Takes a filename, and optionally a starting environment, and parses that
-  file under the given environment."
-  ([filename] (parse-howl-file {:source filename} filename))
-  ([env filename]
-   (api/parse-howl-strings
-    (assoc (core/reset-environment env) :source filename)
-    (file-lines filename))))
+(defn parse-arg
+  "Given a configuration map and an argument string,
+   return the updated configuration map."
+  [coll raw-arg]
+  (let [flag (:flag coll)
+        arg (string/trim raw-arg)
+        file-format (detect-format arg)]
+    (cond
+      ; TODO: handle STDIN/STDOUT
+      (= arg "-")
+      (update-in coll [:errors] conj (str "Unhandled argument: " arg))
 
-(defn parse-rdf-file
-  "Takes a filename, and optionally a starting environment, and parses that
-   file as an NQuad sequence, returning an environment with :blocks being
-   a sequence of HOWL block maps"
-  ([filename] (parse-rdf-file {:source filename} filename))
-  ([env filename]
-   (api/parse-nquads-strings
-    (assoc (core/reset-environment env) :source filename)
-    (file-lines filename))))
+      ; Handle flagged arguments: context, output
+      (= flag :context)
+      (let [coll (dissoc coll :flag)]
+        (if file-format
+          (update-in
+           coll
+           [:inputs]
+           conj
+           {:path arg :format file-format :output false})
+          (update-in
+           coll
+           [:errors]
+           conj
+           (str "Unhandled context file format: " arg))))
 
-(defn parse-file
-  "Given a file name,
-   return an environment with the :blocks key set."
-  ([filename] (parse-file {:source filename} filename))
-  ([env filename]
-   (cond (util/ends-with? filename "howl") (parse-howl-file env filename)
-         :else (parse-rdf-file env filename))))
+      (= flag :output)
+      (let [coll (dissoc coll :flag)]
+        (if file-format
+          (update-in
+           coll
+           [:outputs]
+           conj
+           {:path arg :format file-format})
+          (update-in
+           coll
+           [:errors]
+           conj
+           (str "Unhandled output file format: " arg))))
 
-(defn parse-files
-  "Given a sequence of filenames, and optionally a starting environment,
-   return a lazy sequence of parse results."
-  ([filenames] (parse-files {} filenames))
-  ([starting-env filenames]
-   ((fn rec [env filenames]
-      (when (not (empty? filenames))
-        (let [f (parse-file env (first filenames))]
-          (cons f (lazy-seq (rec (dissoc f :blocks) (rest filenames)))))))
-    starting-env filenames)))
+      flag
+      (update-in coll [:errors] conj (str "Unrecognized flag: " flag))
 
-(defn print-parses
-  "Given a sequence of file names, print HOWL."
-  [options file-names]
-  (->> (parse-files {:options options} file-names)
-       (map :blocks)
-       (apply concat)
-       (map json/block->json-string)
-       (map println)
-       doall))
+      ; Handle options
+      (contains? #{"-c" "--context"} arg)
+      (assoc coll :flag :context)
 
-(defn print-howl
-  "Given a sequence of file names, print HOWL."
-  [options file-names]
-  (->> (parse-files {:options options} file-names)
-       (map :blocks)
-       (apply concat)
-       (map howl/block->howl-string)
-       (map println)
-       doall))
+      (contains? #{"-o" "--ouput"} arg)
+      (assoc coll :flag :output)
 
-(defn print-quads
-  "Given a map of options and a sequence of file names
-  print a sequence of N-Quads."
-  [options file-names]
-  (->> (parse-files {:options options} file-names)
-       (map api/howl-to-nquads)
-       (map println)
-       doall))
+      (contains? #{"-V" "--version"} arg)
+      (assoc-in coll [:options :version] true)
 
-(defn print-triples
-  "Given a map of options and a sequence of file names,
-  print a sequence of N-Triples"
-  [options file-names]
-  (->> (parse-files {:options options} file-names)
-       (map api/howl-to-ntriples)
-       (map println)
-       doall))
+      (contains? #{"-h" "--help"} arg)
+      (assoc-in coll [:options :help] true)
 
-(def format-synonyms
-  {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
-   "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
-   "parses"   ["parse"]
-   "howl"     ["howl"]})
+      ; Handle arguments without options: basic inputs
+      (.startsWith arg "-")
+      (update-in coll [:errors] conj (str "Unrecognized option: " arg))
 
-(def format-map
-  (->> format-synonyms
-       (mapcat
-        (fn [[format synonyms]]
-          (for [synonym (conj synonyms format)]
-            [synonym format])))
-       (into {})))
+      file-format
+      (update-in
+       coll
+       [:inputs]
+       conj
+       {:path arg :format file-format :output true})
 
-(def cli-options
-  [["-o" "--output FORMAT" "Output format: N-Triples(default), N-Quads, parses (JSON)"]
-   ["-V" "--version"]
-   ["-h" "--help"]])
+      ; Unhandled arguments
+      :else
+      (update-in coll [:errors] conj (str "Unhandled argument: " arg)))))
 
-(defn usage [options-summary]
-  (->> ["Process HOWL files, writing to STDOUT."
-        ""
-        "Usage: howl [OPTIONS] INPUT-FILE+"
-        ""
-        "Options:"
-        options-summary
-        ""
-        "WARN: This is an early development version."
-        "Please see https://github.com/ontodev/howl for more information."]
-       (string/join \newline)))
+(defn parse-args
+  "Given a sequence of argument strings,
+   return a map representing options, inputs, and outputs."
+  [args]
+  (reduce
+   parse-arg
+   {:arguments args
+    :options {}
+    :errors []
+    :inputs []
+    :outputs []}
+   args))
 
-(defn version []
+(def usage
+  "howl [OPTIONS] [FILES]
+Input formats:  howl, nquads, ntriples
+Output formats: howl, nquads, ntriples
+Options:
+  -c FILENAME   --context FILENAME
+  -o FILENAME   --output FILENAME
+  -V            --version
+  -h            --help
+
+WARN: This is an early development version.
+Please see https://github.com/ontodev/howl for more information.")
+
+(defn version
+  "Return the version of this code."
+  []
   (-> (eval 'howl.cli)
       .getPackage
       .getImplementationVersion
       (or "DEVELOPMENT")))
 
-(defn error-msg [errors]
+(defn error-msg
+  "Given a sequence of error strings, return a single error string."
+  [errors]
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
 
-(defn -main [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    ; Handle help and error conditions
+(defn handle-args
+  "Given a sequence of argument strings, handle the arguments,
+   then return the pair of a status code and a message (or nil)."
+  [args]
+  (let [{:keys [options arguments errors inputs outputs] :as parsed}
+        (parse-args args)]
     (cond
-      (:help options) (exit 0 (usage summary))
-      (:version options) (exit 0 (version))
-      errors (exit 1 (error-msg errors))
-      :else (case (-> options (get :output "ntriples") string/lower-case format-map)
-              "parses"   (print-parses options arguments)
-              "howl"     (print-howl options arguments)
-              "ntriples" (print-triples options arguments)
-              "nquads"   (print-quads options arguments)
-              (exit 1 (usage summary))))))
+      (:help options) [0 usage]
+      (:version options) [0 (version)]
+      errors [1 (error-msg errors)]
+      :else
+      (try
+        (println parsed) ; TODO: actually handle arguments
+        [0 nil]
+        (catch Exception e
+          [1 "ERROR"])))))
+
+(defn -main
+  "Handle arguments, print any messages, then exit with a status code."
+  [& args]
+  (let [[status message] (handle-args args)]
+    (when message (println message))
+    (System/exit status)))
