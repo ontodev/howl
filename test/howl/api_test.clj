@@ -50,17 +50,20 @@
 ;; (println
 ;;  (api/nquads-to-howl
 ;;   {:options {:sequential-blank-nodes true}}
-;;   (api/howl-to-environment (slurp "test/obi/context.howl"))
+;;   (howl.table/tsv-to-environment
+;;    (api/howl-to-environment
+;;     (slurp "test/obi/context.howl"))
+;;    (io/reader "test/obi/terms.tsv"))
 ;;   (slurp "test/obi/obi_core.nt")))
 
 ;; (println
 ;;  (api/howl-to-nquads
 ;;   {:options {:sequential-blank-nodes true}}
-;;   (api/howl-to-environment
-;;    (slurp "test/obi/context.howl")
-;;    (string/join \newline (tsv-to-howl "test/obi/terms.tsv")))
+;;   (howl.table/tsv-to-environment
+;;    (api/howl-to-environment
+;;     (slurp "test/obi/context.howl"))
+;;    (io/reader "test/obi/terms.tsv"))
 ;;   (slurp "test/obi/obi.howl")))
-
 
 ;; (println
 ;;  (api/nquads-to-howl
