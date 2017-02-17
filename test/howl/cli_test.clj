@@ -16,13 +16,13 @@
            {:arguments ["foo.howl"]
             :options {}
             :errors []
-            :inputs [{:path "foo.howl" :format :howl :output true}]
+            :inputs [{:path "foo.howl" :format :howl}]
             :outputs []}))
     (is (= (cli/parse-args ["-c" "foo.howl"])
            {:arguments ["-c" "foo.howl"]
             :options {}
             :errors []
-            :inputs [{:path "foo.howl" :format :howl :output false}]
+            :inputs [{:path "foo.howl" :format :howl :context true}]
             :outputs []}))
     (is (= (cli/parse-args ["-o" "foo.howl"])
            {:arguments ["-o" "foo.howl"]
@@ -41,6 +41,6 @@
             :options {}
             :errors []
             :inputs
-            [{:path "context.howl" :format :howl :output false}
-             {:path "content.howl" :format :howl :output true}]
+            [{:path "context.howl" :format :howl :context true}
+             {:path "content.howl" :format :howl}]
             :outputs [{:path "data.howl" :format :howl}]}))))

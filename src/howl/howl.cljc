@@ -258,7 +258,7 @@ ARROWS      = #'>*' #'\\s*'"
          (update-annotation env))))
 
 (defn lines->blocks
-  "Given a sequence of lines,
+  "Given an environment and a sequence of lines,
    group them, process them,
    and return a lazy sequence of block maps."
   [{:keys [source] :or {source "interactive"} :as env} lines]
@@ -267,6 +267,24 @@ ARROWS      = #'>*' #'\\s*'"
      (let [block (process-block env (apply str lines))]
        (-> (core/update-environment env block)
            (update-in [:blocks] (fnil conj []) block)
+           (update-in [:line] + (count lines)))))
+   (assoc env :source source :line 1)
+   (group-lines lines)))
+
+(defn process-lines!
+  "Given an environment, a sequence of lines (strings),
+   and a block processing function (probably with side-effects),
+   group the lines, convert them to block maps,
+   call the processing function on each.
+   After processing all lines, return updated environment."
+  [{:keys [source] :or {source "interactive"} :as env}
+   lines
+   process-block!]
+  (reduce
+   (fn [env lines]
+     (let [block (process-block env (apply str lines))]
+       (process-block! block)
+       (-> (core/update-environment env block)
            (update-in [:line] + (count lines)))))
    (assoc env :source source :line 1)
    (group-lines lines)))
