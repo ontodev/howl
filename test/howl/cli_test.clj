@@ -43,4 +43,13 @@
             :inputs
             [{:path "context.howl" :format :howl :context true}
              {:path "content.howl" :format :howl}]
+            :outputs [{:path "data.howl" :format :howl}]}))
+    (is (= (cli/parse-args ["-c" "context.howl" "-c" "context2.howl" "content.howl" "-o" "data.howl"])
+           {:arguments ["-c" "context.howl" "-c""context2.howl" "content.howl" "-o" "data.howl"]
+            :options {}
+            :errors []
+            :inputs
+            [{:path "context.howl" :format :howl :context true}
+             {:path "context2.howl" :format :howl :context true}
+             {:path "content.howl" :format :howl}]
             :outputs [{:path "data.howl" :format :howl}]}))))
