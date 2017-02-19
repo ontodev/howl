@@ -48,6 +48,41 @@
 ;; We use some pure functions to turn the arguments
 ;; into a sensible datastructure.
 
+(defmulti handle-flag
+  "Given command line args with flags, handles the given flag"
+  (fn [coll arg file-format] (coll :flag)))
+
+(defmethod handle-flag :default [coll arg file-format]
+  (update-in coll [:errors] conj (str "Unrecognized flag: " (coll :flag))))
+
+(defmethod handle-flag :context [coll arg file-format]
+  (let [coll (dissoc coll :flag)]
+    (if file-format
+      (update-in
+       coll
+       [:inputs]
+       conj
+       {:path arg :format file-format :context true})
+      (update-in
+       coll
+       [:errors]
+       conj
+       (str "Unhandled context file format: " arg)))))
+
+(defmethod handle-flag :output [coll arg file-format]
+  (let [coll (dissoc coll :flag)]
+    (if file-format
+      (update-in
+       coll
+       [:outputs]
+       conj
+       {:path arg :format file-format})
+      (update-in
+       coll
+       [:errors]
+       conj
+       (str "Unhandled output file format: " arg)))))
+
 (defn parse-arg
   "Given a configuration map and an argument string,
    return the updated configuration map."
@@ -60,37 +95,7 @@
       (= arg "-")
       (update-in coll [:errors] conj (str "Unhandled argument: " arg))
 
-      ; Handle flagged arguments: context, output
-      (= flag :context)
-      (let [coll (dissoc coll :flag)]
-        (if file-format
-          (update-in
-           coll
-           [:inputs]
-           conj
-           {:path arg :format file-format :context true})
-          (update-in
-           coll
-           [:errors]
-           conj
-           (str "Unhandled context file format: " arg))))
-
-      (= flag :output)
-      (let [coll (dissoc coll :flag)]
-        (if file-format
-          (update-in
-           coll
-           [:outputs]
-           conj
-           {:path arg :format file-format})
-          (update-in
-           coll
-           [:errors]
-           conj
-           (str "Unhandled output file format: " arg))))
-
-      flag
-      (update-in coll [:errors] conj (str "Unrecognized flag: " flag))
+      flag (handle-flag coll arg file-format)
 
       ; Handle options
       (contains? #{"-c" "--context"} arg)
