@@ -4,6 +4,7 @@
             [howl.util :as util]
             [howl.howl :as howl]
             [howl.nquads :as nquads]
+            [howl.table :as table]
             [howl.api :as api])
   (:gen-class))
 
@@ -33,7 +34,8 @@
 (def formats
   {"howl" :howl
    "nt"   :ntriples
-   "nq"   :nquads})
+   "nq"   :nquads
+   "tsv"  :tsv})
 
 (defn detect-format
   "Given a filepath, use the file extension
@@ -180,10 +182,16 @@
         (process-block! block))))
   env)
 
+(defn process-tsv-input!
+  [env {:keys [path] :as input} process-block!]
+  (with-open [reader (io/reader path)]
+    (table/process-lines! env (line-seq reader) process-block!)))
+
 (def input-function
   {:howl     process-howl-input!
    :nquads   process-nquads-input!
-   :ntriples process-nquads-input!})
+   :ntriples process-nquads-input!
+   :tsv      process-tsv-input!})
 
 (defn process-input!
   "Given an output function, an environment map, an input description,
