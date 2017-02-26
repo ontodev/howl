@@ -50,6 +50,33 @@
 ;; (println
 ;;  (api/nquads-to-howl
 ;;   {:options {:sequential-blank-nodes true}}
+;;   (howl.table/tsv-to-environment
+;;    (api/howl-to-environment
+;;     (slurp "test/obi/context.howl"))
+;;    (io/reader "test/obi/terms.tsv"))
+;;   (slurp "test/obi/obi_core.nt")))
+
+;; (println
+;;  (api/howl-to-nquads
+;;   {:options {:sequential-blank-nodes true}}
+;;   (howl.table/tsv-to-environment
+;;    (api/howl-to-environment
+;;     (slurp "test/obi/context.howl"))
+;;    (io/reader "test/obi/terms.tsv"))
+;;   (slurp "test/obi/obi-stack-overflow.howl")))
+
+;; (println
+;;  (api/howl-to-nquads
+;;   {:options {:sequential-blank-nodes true}}
+;;   (howl.table/tsv-to-environment
+;;    (api/howl-to-environment
+;;     (slurp "test/obi/context.howl"))
+;;    (io/reader "test/obi/terms.tsv"))
+;;   (slurp "test/obi/obi.howl")))
+
+;; (println
+;;  (api/nquads-to-howl
+;;   {:options {:sequential-blank-nodes true}}
 ;;   (api/howl-to-environment (slurp "test/format-context/context.howl"))
 ;;   (slurp "test/nquads/manchester1.nq")))
 

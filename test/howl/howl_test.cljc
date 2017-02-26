@@ -25,3 +25,13 @@
    "trailing space "
    "trailing colon:"
    "trailing colon arrow:>"])
+
+
+(deftest test-long-statements-work
+  (testing "processing a long statement does not result in a stack overflow"
+    (is
+     (not
+      (empty?
+       (instaparse.core/parses
+        howl.howl/block-parser
+        (str "comment: " (apply str (take 1639 (repeat '\x))))))))))
