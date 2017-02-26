@@ -28,7 +28,7 @@ GRAPH_BLOCK     = 'DEFAULT GRAPH' | 'GRAPH' (SPACES NAME)?
 SUBJECT_BLOCK   = NAME_OR_BLANK
 STATEMENT_BLOCK = ARROWS NAME DATATYPES COLON STATEMENT_LINE
 
-<STATEMENT_LINE> = #'\n*.+' / #'(\n|.)*.+'
+<STATEMENT_LINE> = #'(\n*.+)+'
 
 WHITESPACE  = #'(\\r|\\n|\\s)*'
 COLON       = #' *' ':'  #'(\n| )+'
