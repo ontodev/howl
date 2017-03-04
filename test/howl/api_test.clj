@@ -59,11 +59,18 @@
 ;; (println
 ;;  (api/howl-to-nquads
 ;;   {:options {:sequential-blank-nodes true}}
-;;   (howl.table/tsv-to-environment
+;;   (howl.table/process-lines!
 ;;    (api/howl-to-environment
 ;;     (slurp "test/obi/context.howl"))
-;;    (io/reader "test/obi/terms.tsv"))
+;;    (line-seq (io/reader "test/obi/terms.tsv"))
+;;    :no-op)
 ;;   (slurp "test/obi/obi-stack-overflow.howl")))
+
+;; (do
+;;   (pprint (vec (get-top-fperf 15)))
+;;   (println " ")
+;;   (pprint (vec (get-top-fperf 15 :call-count)))
+;;   nil)
 
 ;; (println
 ;;  (api/howl-to-nquads
