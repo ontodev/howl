@@ -8,12 +8,20 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.8.40"]
                  [com.lucasbradstreet/instaparse-cljs "1.4.1.1"]
-                 [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/data.json "0.2.6"]
-                 [edn-ld "0.2.2"]]
+                 [org.clojure/data.csv "0.1.3"]
+                 [org.clojure/test.check "0.9.0"]
+
+                 ;; profiling functions
+                 [criterium "0.4.4"]
+                 [goat "0.1.0-SNAPSHOT"]
+
+                 [edn-ld "0.2.2"]
+                 [doo "0.1.7-SNAPSHOT"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-project-version "0.1.0"]
-            [lein-cljfmt "0.5.3"]]
+            [lein-cljfmt "0.5.6"]
+            [lein-doo "0.1.7"]]
   :main howl.cli
   :aot [howl.cli]
   :manifest {"Implementation-Version" ~project-version}
@@ -24,4 +32,10 @@
      {:optimizations :advanced
       :output-dir "target"
       :output-to "target/howl.js"
-      :pretty-print true}}]})
+      :pretty-print true}}
+    {:id "cljs-test"
+     :source-paths ["src" "test"]
+     :compiler
+     {:output-to "out/testable.js"
+      :optimizations :none
+      :main howl.runner}}]})

@@ -1,0 +1,15 @@
+Canis lupus familiaris
+has exact synonym: dog
+subclass of: 'Canis lupus'
+
+head
+subclass of: 'part of' some 'craniocervical region'
+
+Laika
+has exact synonym [@ru]: Лайка
+type: Canis lupus familiaris
+
+Laika's head
+type: head
+part of: Laika
+> rdfs:comment: This is an OWL annotation.

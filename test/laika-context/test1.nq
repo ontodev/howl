@@ -1,0 +1,15 @@
+<http://purl.obolibrary.org/obo/NCBITaxon_9615> <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "dog" .
+<http://purl.obolibrary.org/obo/NCBITaxon_9615> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://purl.obolibrary.org/obo/NCBITaxon_9612> .
+<http://purl.obolibrary.org/obo/UBERON_0000033> <http://www.w3.org/2000/01/rdf-schema#subClassOf> _:b1 .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Restriction> .
+_:b1 <http://www.w3.org/2002/07/owl#onProperty> <http://purl.obolibrary.org/obo/BFO_0000050> .
+_:b1 <http://www.w3.org/2002/07/owl#someValuesFrom> <http://purl.obolibrary.org/obo/UBERON_0007811> .
+<https://en.m.wikipedia.org/wiki/Laika> <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "Лайка"@ru .
+<https://en.m.wikipedia.org/wiki/Laika> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.obolibrary.org/obo/NCBITaxon_9615> .
+<http://knotation.org/example-1#laikas-head> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.obolibrary.org/obo/UBERON_0000033> .
+<http://knotation.org/example-1#laikas-head> <http://purl.obolibrary.org/obo/BFO_0000050> <https://en.m.wikipedia.org/wiki/Laika> .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedSource> <http://knotation.org/example-1#laikas-head> .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://purl.obolibrary.org/obo/BFO_0000050> .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedTarget> <https://en.m.wikipedia.org/wiki/Laika> .
+_:b2 <http://www.w3.org/2000/01/rdf-schema#comment> "This is an OWL annotation." .

@@ -1,0 +1,13 @@
+chemical solution
+label: chemical solution@en
+type: owl:Class
+textual definition: A material entity  that is made up of at least 2 scattered molecular aggregates, one playing the role of solvent and the other one playing the role of solute.@en
+definition source: GROUP: OBI Biomaterial Branch
+example of usage: PMID: 18289311.Anesth Analg. 2008 Apr;106(4):1078-86.Less impairment of hemostasis and reduced blood loss in pigs after resuscitation from hemorrhagic shock using the small-volume concept with hypertonic saline/hydroxyethyl starch as compared to administration of 4% gelatin or 6% hydroxyethyl starch solution.@en
+equivalent to: ('has part' some ('scattered molecular aggregate' AND ('has role' some 'solvent role'))) AND ('has part' some ('scattered molecular aggregate' AND ('has role' some 'solute role')))
+subclass of: material entity
+alternative term: liquid chemical solution@en
+editor preferred term~editor preferred label: chemical solution@en
+has curation status: ready for release
+term editor: PERSON: Bjoern Peters
+term editor: PERSON: Philippe Rocca-Serra

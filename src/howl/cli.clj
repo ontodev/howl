@@ -1,164 +1,316 @@
 (ns howl.cli
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
-            [clojure.data.json :as json]
-            [clojure.tools.cli :refer [parse-opts]]
-            [edn-ld.jena]
-            [howl.core :as core]
-            [howl.nquads :as nq])
+            [howl.util :as util]
+            [howl.howl :as howl]
+            [howl.nquads :as nquads]
+            [howl.table :as table]
+            [howl.api :as api])
   (:gen-class))
 
-(defn exit
-  [status msg]
-  (println msg)
-  (System/exit status))
+;; # CLI
+;;
+;; The HOWL command line interface is modelled on Pandoc.
+;; Input files are converted to a sequence of block maps,
+;; updating the environment as we go,
+;; then output the block maps to files.
+;; Some inputs are "context":
+;; they update the environment by do nout output blocks.
+;;
+;; We support streaming as much as possible,
+;; and especially with the default HOWL to NQuads conversion.
+;; Streams of HOWL input lines are converted to block maps,
+;; rendered to NQuad strings, and output.
+;; To accomplish this we use an "inside out" callback style.
+;; First we build a function for outputting strings,
+;; then wrap them with functions to render blocks to strings,
+;; and pass that to the functions that handle each input in turn.
 
-(defn parse-howl-file
-  "Given the name of a HOWL file,
-   return a lazy sequence of HOWL block maps."
-  [file-name]
-  (with-open [reader (io/reader file-name)]
-    (core/lines-to-blocks
-     (fn [state line]
-       (->> (core/merge-line state line)
-            core/parse-block
-            core/preprocess-block
-            core/annotate-block))
-     {:file-name file-name}
-     (line-seq reader))))
+;; # Formats
+;;
+;; We currently support HOWL, NQuads, and NTriples
+;; for input and output.
 
-(defn parse-rdf-file
-  "Given the name of a file that Apache Jena can read,
-   and return a sequence of HOWL block maps."
-  [file-name]
-  (let [[prefixes quads] (edn-ld.jena/read-quads file-name)]
-    (if (seq quads)
-      (nq/quads-to-howl quads)
-      (let [[prefixes triples] (edn-ld.jena/read-triples file-name)]
-        (if (seq triples)
-          (nq/triples-to-howl triples)
-          (exit 1 (str "Could not find quads or triples in file: " file-name)))))))
+(def formats
+  {"howl" :howl
+   "nt"   :ntriples
+   "nq"   :nquads
+   "tsv"  :tsv})
 
-(defn parse-file
-  "Given a file name,
-   return a lazy sequence of HOWL block maps."
-  [file-name]
-  (cond
-    (.endsWith file-name "howl")
-    (parse-howl-file file-name)
-    ; TODO: more formats
-    :else
-    (parse-rdf-file file-name)))
+(defn detect-format
+  "Given a filepath, use the file extension
+   to determine its format."
+  [path]
+  (let [[_ extension]
+        (re-matches #".*\.(.*)$" (string/lower-case path))]
+    (get formats extension)))
 
-(defn parse-files
-  "Given a sequence of file names,
-   return a lazy sequence of parse results."
-  [& file-names]
-  (mapcat parse-file file-names))
+;; # Parsing
+;;
+;; We use some pure functions to turn the arguments
+;; into a sensible datastructure.
 
-(defn get-context
-  "Given an option map,
-   return a state map build from the --context entries."
-  [{:keys [context] :as options}]
+(defmulti handle-flag
+  "Given command line args with flags, handles the given flag"
+  (fn [coll arg file-format] (coll :flag)))
+
+(defmethod handle-flag :default [coll arg file-format]
+  (update-in coll [:errors] conj (str "Unrecognized flag: " (coll :flag))))
+
+(defmethod handle-flag :context [coll arg file-format]
+  (let [coll (dissoc coll :flag)]
+    (if file-format
+      (update-in
+       coll
+       [:inputs]
+       conj
+       {:path arg :format file-format :context true})
+      (update-in
+       coll
+       [:errors]
+       conj
+       (str "Unhandled context file format: " arg)))))
+
+(defmethod handle-flag :output [coll arg file-format]
+  (let [coll (dissoc coll :flag)]
+    (if file-format
+      (update-in
+       coll
+       [:outputs]
+       conj
+       {:path arg :format file-format})
+      (update-in
+       coll
+       [:errors]
+       conj
+       (str "Unhandled output file format: " arg)))))
+
+(defn parse-arg
+  "Given a configuration map and an argument string,
+   return the updated configuration map."
+  [coll raw-arg]
+  (let [flag (:flag coll)
+        arg (string/trim raw-arg)
+        file-format (detect-format arg)]
+    (cond
+      ; TODO: handle STDIN/STDOUT properly
+      (= arg "-")
+      (update-in coll [:errors] conj (str "Unhandled argument: " arg))
+
+      flag (handle-flag coll arg file-format)
+
+      ; Handle options
+      (contains? #{"-c" "--context"} arg)
+      (assoc coll :flag :context)
+
+      (contains? #{"-o" "--ouput"} arg)
+      (assoc coll :flag :output)
+
+      (contains? #{"-V" "--version"} arg)
+      (assoc-in coll [:options :version] true)
+
+      (contains? #{"-h" "--help"} arg)
+      (assoc-in coll [:options :help] true)
+
+      ; Handle arguments without options: basic inputs
+      (.startsWith arg "-")
+      (update-in coll [:errors] conj (str "Unrecognized option: " arg))
+
+      file-format
+      (update-in
+       coll
+       [:inputs]
+       conj
+       {:path arg :format file-format})
+
+      ; Unhandled arguments
+      :else
+      (update-in coll [:errors] conj (str "Unhandled argument: " arg)))))
+
+(defn parse-args
+  "Given a sequence of argument strings,
+   return a map representing options, inputs, and outputs."
+  [args]
   (reduce
-   (fn [state block]
-     (-> state
-         (assoc :block block)
-         core/expand-names
-         (dissoc :block)))
-   {}
-   (apply parse-files context)))
+   parse-arg
+   {:arguments args
+    :options {}
+    :errors []
+    :inputs []
+    :outputs []}
+   args))
 
-(defn print-parses
-  "Given a sequence of file names,
-   print a sequence of JSON parse maps."
-  [file-names]
-  (->> (apply parse-files file-names)
-       (map json/write-str)
-       (map println)
-       doall))
+(defn add-defaults
+  "Given a config map, add any required defaults,
+   such as the default NQuads output to STDOUT."
+  [{:keys [outputs] :as config}]
+  (if (seq outputs)
+    config
+    (assoc config :outputs [{:path "-" :format :nquads}])))
 
-(defn print-howl
-  "Given a sequence of file names, print HOWL."
-  [options file-names]
-  (let [state (get-context options)]
-    (->> (apply parse-files file-names)
-         (map (partial core/rename state))
-         (reduce core/space-blocks [])
-         (map core/block-to-line)
-         (map print)
-         doall)))
+;; # Process Input
+;;
+;; We process each input file into a sequence of block maps,
+;; then call an output function on each block.
+;; Context files do not generate blocks,
+;; the just update the environment map.
+;; NQuads/NTriples input files do not update the environment,
+;; they just output blocks.
+;; So use an NQuads file as a context does nothing.
 
-(defn print-quads
-  "Given a map of options and a sequence of file names
-   print a sequence of N-Quads."
-  [options file-names]
-  (->> (apply parse-files file-names)
-       (nq/lines-to-quads
-        (fn [state block]
-          (->> (assoc state :block block)
-               core/expand-names
-               nq/convert-quads))
-        (get-context options))
-       (map nq/quad-to-string)
-       (map println)
-       doall))
+(defn process-howl-input!
+  "Given an environment map, an input map for a HOWL file,
+   and a block processing function,
+   read the input as a lazy sequence of lines,
+   and process them into blocks,
+   calling the processing function,
+   and return the updated environment."
+  [env {:keys [path] :as input} process-block!]
+  (with-open [reader (io/reader path)]
+    (howl/process-lines! env (line-seq reader) process-block!)))
 
-(defn print-triples
-  "Given a map of options and a sequence of file names
-   print a sequence of N-Triples from the default graph."
-  [options file-names]
-  (->> (apply parse-files file-names)
-       (nq/lines-to-quads
-        (fn [state block]
-          (->> (assoc state :block block)
-               core/expand-names
-               nq/convert-quads))
-        (get-context options))
-       (map #(assoc % 0 nil))
-       (map nq/quad-to-string)
-       (map println)
-       doall))
+(defn process-nquads-input!
+  "Given an environment map, an input map for an NQuads file,
+   and a block-processing function,
+   process the NQuads file,
+   calling the block processing function on each block.
+   Return the environment map unchanged."
+  [env {:keys [context path] :as input} process-block!]
+  (when-not context
+    (with-open [reader (io/reader path)]
+      (doseq [block (nquads/lines->blocks env (line-seq reader))]
+        (process-block! block))))
+  env)
 
-(def format-synonyms
-  {"ntriples" ["nt" "n-triples" "triples" "n-triple" "ntriple" "triple"]
-   "nquads"   ["nq" "n-quads"   "quads"   "n-quad"   "nquad"   "quad"]
-   "parses"   ["parse"]
-   "howl"     ["howl"]})
+(defn process-tsv-input!
+  [env {:keys [path] :as input} process-block!]
+  (with-open [reader (io/reader path)]
+    (table/process-lines! env (line-seq reader) process-block!)))
 
-(def format-map
-  (->> format-synonyms
-       (mapcat
-        (fn [[format synonyms]]
-          (for [synonym (conj synonyms format)]
-            [synonym format])))
-       (into {})))
+(def input-function
+  {:howl     process-howl-input!
+   :nquads   process-nquads-input!
+   :ntriples process-nquads-input!
+   :tsv      process-tsv-input!})
 
-; TODO: replacement character, default "-"
-; TODO: replacement regex, default "\\W"
-; TODO: statement sorting
+(defn process-input!
+  "Given an output function, an environment map, an input description,
+   handle the input using the output function,
+   and return the updated environment.
+   If the input is a context then there is no output,
+   so replace the output function with a no-op."
+  [output-fn! env {:keys [format context] :as input}]
+  (if-let [input-fn! (get input-function format)]
+    (input-fn! env input (if context :no-op output-fn!))
+    (throw
+     (new Exception (str "Unrecognized file format: " format)))))
 
-(def cli-options
-  [["-o" "--output FORMAT" "Output format: N-Triples (default), N-Quads, parses (JSON)"]
-   ["-c" "--context FILE" "A HOWL file to use as context (not printed)"
-    :assoc-fn (fn [m k v] (update-in m [k] (fnil conj []) v))]
-   ["-V" "--version"]
-   ["-h" "--help"]])
+;; # Render Output
+;;
+;; The render functions take a block and render it to a string,
+;; then call the output function on the string.
 
-(defn usage
-  [options-summary]
-  (->> ["Process HOWL files, writing to STDOUT."
-        ""
-        "Usage: howl [OPTIONS] INPUT-FILE+"
-        ""
-        "Options:"
-        options-summary
-        ""
-        "WARN: This is an early development version."
-        "Please see https://github.com/ontodev/howl for more information."]
-       (string/join \newline)))
+(defn render-howl-output!
+  [options block output-fn!]
+  (output-fn! (howl/block->howl-string block)))
+
+(defn render-nquads-output!
+  [options block output-fn!]
+  (doseq [nquad (nquads/block->nquads block)]
+    (output-fn! (nquads/nquad->nquad-string nquad))))
+
+(defn render-ntriples-output!
+  [options block output-fn!]
+  (doseq [nquad (nquads/block->nquads block)]
+    (output-fn! (nquads/nquad->ntriple-string nquad))))
+
+(def output-function
+  {:howl     render-howl-output!
+   :nquads   render-nquads-output!
+   :ntriples render-ntriples-output!})
+
+(defn build-output-fn
+  "Given a config map with one or more output descriptions,
+   return a function that accepts a block and handles the output(s)."
+  [{:keys [options outputs] :as config}]
+  (fn [block]
+    (doseq [{:keys [writer render-fn!] :as output} outputs]
+      (render-fn!
+       options
+       block
+       (if writer #(.write writer (str % "\n")) println)))))
+
+;; # Output
+;;
+;; We allow one or more outputs.
+;; Each output has its own format.
+;; The default is to ouput NQuads to STDOUT.
+;; We open all the required output files,
+;; build an output function that renders blocks and writes to each output,
+;; then handle each input
+;; and finally close each output file.
+
+(defn open-outputs!
+  "Given a config map with zero or more :outputs maps,
+   open a writer for each output,
+   and return the updated config map."
+  [{:keys [outputs] :as config}]
+  (assoc
+   config
+   :outputs
+   (doall
+    (for [{:keys [path format] :as output} outputs]
+      (if-let [render-fn! (get output-function format)]
+        (assoc
+         output
+         :render-fn! render-fn!
+         :writer (when-not (= "-" path) (io/writer path)))
+        (throw
+         (new Exception (str "Unrecognized file format: " format))))))))
+
+(defn close-outputs!
+  "Given a config map with zero or more :outputs maps,
+   close the writer for each output,
+   and return the updated config map."
+  [{:keys [outputs] :as config}]
+  (assoc
+   config
+   :outputs
+   (doall
+    (for [{:keys [writer] :as output} outputs]
+      (do
+        (when writer (.close writer))
+        (dissoc output :writer))))))
+
+(defn process!
+  "Given a config map,
+   open required files,
+   build an output function that handles each output,
+   then process each input (accumulating the environment),
+   finally closing the opened files."
+  [config]
+  (let [config (open-outputs! config)]
+    (reduce
+     (partial process-input! (build-output-fn config))
+     {:config config}
+     (:inputs config))
+    (close-outputs! config)))
+
+(def usage
+  "howl [OPTIONS] [FILES]
+Input formats:  howl, nquads, ntriples
+Output formats: howl, nquads, ntriples
+Options:
+  -c FILENAME   --context FILENAME
+  -o FILENAME   --output FILENAME
+  -V            --version
+  -h            --help
+
+WARN: This is an early development version.
+Please see https://github.com/ontodev/howl for more information.")
 
 (defn version
+  "Return the version of this code."
   []
   (-> (eval 'howl.cli)
       .getPackage
@@ -166,23 +318,31 @@
       (or "DEVELOPMENT")))
 
 (defn error-msg
+  "Given a sequence of error strings, return a single error string."
   [errors]
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
 
-(defn -main
-  [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    ;; Handle help and error conditions
+(defn handle-args!
+  "Given a sequence of argument strings, handle the arguments,
+   then return the pair of a status code and a message (or nil)."
+  [args]
+  (let [{:keys [options errors] :as config} (parse-args args)]
     (cond
-      (:help options) (exit 0 (usage summary))
-      (:version options) (exit 0 (version))
-      (not= (count arguments) 1) (exit 1 (usage summary))
-      errors (exit 1 (error-msg errors)))
-    ;; Execute program with options
-    (case (-> options (get :output "nquads") string/lower-case format-map)
-      "parses"   (print-parses arguments)
-      "howl"     (print-howl options arguments)
-      "nquads"   (print-quads options arguments)
-      "ntriples" (print-triples options arguments)
-      (exit 1 (usage summary)))))
+      (:help options) [0 usage]
+      (:version options) [0 (version)]
+      (seq errors) [1 (error-msg errors)]
+      :else
+      (try
+        (process! (add-defaults config))
+        [0 nil]
+        (catch Exception e
+          (.printStackTrace e)
+          [1 (.getMessage e)])))))
+
+(defn -main
+  "Handle arguments, print any messages, then exit with a status code."
+  [& args]
+  (let [[status message] (handle-args! args)]
+    (when message (println message))
+    (System/exit status)))

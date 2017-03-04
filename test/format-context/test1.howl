@@ -1,0 +1,9 @@
+GRAPH ex:graph
+
+ex:subject
+label: This is a label.
+comment: This English comment
+
+  contains newlines and "quotation marks".
+count: 1234
+ex:link [LINK]: <object>

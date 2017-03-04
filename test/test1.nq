@@ -1,0 +1,34 @@
+<http://example.com/ontology> <http://www.w3.org/2000/01/rdf-schema#label> "Example Ontology"@en .
+<http://example.com/ontology> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Ontology> .
+<http://example.com/foo> <http://www.w3.org/2000/01/rdf-schema#label> "Foo"@en .
+<http://example.com/foo> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.com/foo> <http://www.w3.org/2000/01/rdf-schema#comment> "A comment on 'Foo'."@en .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
+_:b1 <http://www.w3.org/2002/07/owl#annotatedSource> <http://example.com/foo> .
+_:b1 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://www.w3.org/2000/01/rdf-schema#comment> .
+_:b1 <http://www.w3.org/2002/07/owl#annotatedTarget> "A comment on 'Foo'."@en .
+_:b1 <http://www.w3.org/2000/01/rdf-schema#comment> "An annotation on a comment."^^<http://www.w4.org/2001/XMLSchema#string> .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedSource> _:b1 .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://www.w3.org/2000/01/rdf-schema#comment> .
+_:b2 <http://www.w3.org/2002/07/owl#annotatedTarget> "An annotation on a comment."^^<http://www.w4.org/2001/XMLSchema#string> .
+_:b2 <http://www.w3.org/2000/01/rdf-schema#comment> "An annotation on an annotation."^^<http://www.w4.org/2001/XMLSchema#string> .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Axiom> .
+_:b3 <http://www.w3.org/2002/07/owl#annotatedSource> <http://example.com/foo> .
+_:b3 <http://www.w3.org/2002/07/owl#annotatedProperty> <http://www.w3.org/2000/01/rdf-schema#comment> .
+_:b3 <http://www.w3.org/2002/07/owl#annotatedTarget> "A comment on 'Foo'."@en .
+_:b3 <http://www.w3.org/2000/01/rdf-schema#seeAlso> <http://example.com/bat> .
+<http://example.com/foo> <http://www.w3.org/2000/01/rdf-schema#comment> "Values can span multiple lines,\nand include blank lines...\n\nas long as each non-blank line is indented two spaces."^^<http://www.w4.org/2001/XMLSchema#string> .
+<http://purl.obolibrary.org/obo/BFO_0000051> <http://www.w3.org/2000/01/rdf-schema#label> "has part"@en .
+<http://purl.obolibrary.org/obo/OBI_0000299> <http://www.w3.org/2000/01/rdf-schema#label> "has_specified_output"@en .
+<http://purl.obolibrary.org/obo/IAO_0000030> <http://www.w3.org/2000/01/rdf-schema#label> "information content entity"@en .
+<http://purl.obolibrary.org/obo/IAO_0000136> <http://www.w3.org/2000/01/rdf-schema#label> "is about"@en .
+<http://purl.obolibrary.org/obo/BFO_0000040> <http://www.w3.org/2000/01/rdf-schema#label> "material entity"@en .
+<http://purl.obolibrary.org/obo/RO_0000087> <http://www.w3.org/2000/01/rdf-schema#label> "has role"@en .
+<http://purl.obolibrary.org/obo/OBI_0000067> <http://www.w3.org/2000/01/rdf-schema#label> "evaluant role"@en .
+<http://example.com/bar> <http://www.w3.org/2000/01/rdf-schema#label> "Bar"@en .
+<http://example.com/bar> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> .
+<http://example.com/graph> <http://www.w3.org/2000/01/rdf-schema#label> "Named Graph"@en <http://example.com/graph> .
+<http://example.com/subject> <http://www.w3.org/2000/01/rdf-schema#label> "Subject in named graph."@en <http://example.com/graph> .
+<http://example.com/subject-2> <http://www.w3.org/2000/01/rdf-schema#label> "Subject in default graph."@en .
+<http://example.com/subject-3> <http://example.com/label> "Relative IRI" .

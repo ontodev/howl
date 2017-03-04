@@ -1,0 +1,9 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX ex: <http://example.com/>
+LABEL label: rdfs:label
+LABEL comment: rdfs:comment
+LABEL integer: xsd:integer
+LABEL count: ex:count
+BASE <http://base.example.com/>

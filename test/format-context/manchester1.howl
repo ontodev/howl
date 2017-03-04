@@ -1,0 +1,3 @@
+ex:car
+label: Car
+subclass of: 'has part' some engine and 'has part' some wheel

@@ -1,0 +1,3 @@
+ex:bird
+label: Bird
+subclass of: not 'has part' only wheel or engine

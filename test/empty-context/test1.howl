@@ -1,0 +1,9 @@
+GRAPH <http://example.com/graph>
+
+<http://example.com/subject>
+<http://www.w3.org/2000/01/rdf-schema#label>: This is a label.
+<http://www.w3.org/2000/01/rdf-schema#comment> [@en]: This English comment
+
+  contains newlines and "quotation marks".
+<http://example.com/count> [<http://www.w3.org/2001/XMLSchema#integer>]: 1234
+<http://example.com/link> [LINK]: <http://base.example.com/object>

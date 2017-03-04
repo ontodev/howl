@@ -1,0 +1,68 @@
+PREFIX rdf:> <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:> <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:> <http://www.w4.org/2001/XMLSchema#>
+PREFIX owl:> <http://www.w3.org/2002/07/owl#>
+PREFIX obo:> <http://purl.obolibrary.org/obo/>
+PREFIX ex:> <http://example.com/>
+
+LABEL rdf:type: type
+LABEL rdfs:label: label
+LABEL rdfs:comment: comment
+LABEL rdfs:subClassOf: subclass of
+LABEL <http://www.w3.org/TR/owl2-manchester-syntax/>: OMN
+
+DEFAULT label LANGUAGE en
+DEFAULT comment TYPE xsd:string
+
+ex:ontology
+label: Example Ontology
+type:> owl:Ontology
+
+ex:foo
+label: Foo
+type:> owl:Class
+comment LANGUAGE en: A comment on 'Foo'.
+> comment TYPE xsd:string: An annotation on a comment.
+>> comment TYPE xsd:string: An annotation on an annotation.
+> rdfs:seeAlso:> ex:bat
+comment: Values can span multiple lines,
+  and include blank lines...
+
+  as long as each non-blank line is indented two spaces.
+
+obo:BFO_0000051
+label: has part
+
+obo:OBI_0000299
+label: has_specified_output
+
+obo:IAO_0000030
+label: information content entity
+
+obo:IAO_0000136
+label: is about
+
+obo:BFO_0000040
+label: material entity
+
+obo:RO_0000087
+label:  has role
+
+obo:OBI_0000067
+label: evaluant role
+
+GRAPH ex:graph
+label: Named Graph
+
+ex:subject
+label: Subject in named graph.
+
+GRAPH
+
+ex:subject-2
+label: Subject in default graph.
+
+BASE <http://example.com/>
+
+<subject-3>
+<label>: Relative IRI

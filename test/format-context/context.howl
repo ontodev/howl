@@ -1,0 +1,17 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX ex: <http://example.com/>
+LABEL integer: xsd:integer
+LABEL label: rdfs:label
+LABEL comment [@en]: rdfs:comment
+LABEL count [integer]: ex:count
+LABEL Manchester: <http://www.w3.org/TR/owl2-manchester-syntax/>
+LABEL subclass of [LINK / Manchester]: rdfs:subClassOf
+LABEL has part: obo:BFO_0000050
+LABEL engine: ex:engine
+LABEL wheel: ex:wheel
+LABEL has number list [LINK / rdf:List / xsd:integer]: ex:has-number-list
+LABEL has mixed list [LINK / rdf:List]: ex:has-mixed-list
+BASE <http://base.example.com/>

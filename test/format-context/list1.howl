@@ -1,0 +1,11 @@
+ex:subject
+has number list: 
+  -: 1
+  -: 2
+  -: 3
+  -: 4
+has mixed list: 
+  - [integer]: 5
+  - [xsd:string]: string literal
+  -: plain literal
+  - [@en]: English literal

@@ -1,702 +1,475 @@
 (ns howl.nquads
-  "Render parsed HOWL to N-Quads."
+  "Convert HOWL to and from NQuads."
   (:require [clojure.string :as string]
-            [clojure.set]
-            [edn-ld.core :as edn-ld]
-            [howl.util :as util]
-            [howl.core :refer [resolve-name] :as core]))
+            clojure.set
+            [instaparse.core :as insta]
+            [howl.core :as core]
+            [howl.link :as link]
+            [howl.util :as util]))
 
-(def rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-(def rdfs "http://www.w3.org/2000/01/rdf-schema#")
-(def owl "http://www.w3.org/2002/07/owl#")
-(def obo "http://purl.obolibrary.org/obo/")
-(def plain-literal "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
-(def rdfs-label "http://www.w3.org/2000/01/rdf-schema#label")
-(def xsd-string "http://www.w4.org/2001/XMLSchema#string")
+;; ## NQuads
+;
+; NQuads is a line-based concrete syntax for RDF.
+; Each line consists of a subject, predicate, object, and optional graph.
+; The subject is an absolute IRI or blank node.
+; The predicate and graph are always absolute IRIs.
+; The object can be: an IRI, a blank node, or a literal.
+; Literals are quoted strings with an optional language tag or type IRI.
+; The graph is optional, and comes in the final position of the string.
+;
+; Example:
+; <http://example.com/subject> <http://www.w3.org/2000/01/rdf-schema#label> "This is a label." <http://example.com/graph> .
+;
+; We represent NQuads as vectors of strings:
+; [graph subject predicate object datatype]
 
+; TODO: Fix lexical value
+(def nquad-grammar-partial "
+NQUAD = SUBJECT ' ' PREDICATE ' ' OBJECT (' ' GRAPH)? ' .'
+GRAPH = IRIREF
+SUBJECT = IRIREF | BLANK_NODE_LABEL
+PREDICATE = IRIREF
+OBJECT = IRIREF | BLANK_NODE_LABEL | TYPED_LITERAL | LANGUAGE_LITERAL | PLAIN_LITERAL
+TYPED_LITERAL = '\"' LEXICAL_VALUE '\"^^' IRIREF
+LANGUAGE_LITERAL = '\"' LEXICAL_VALUE '\"' LANGUAGE_TAG
+PLAIN_LITERAL = '\"' LEXICAL_VALUE '\"'
+LEXICAL_VALUE = (#'[^\"\\\\]+' | ESCAPED_CHAR)*
+<ESCAPED_CHAR> = #'\\\\.'")
 
-;; We convert HOWL to EDN-LD, then to N-Quads.
-;; EDN-LD quads are vectors [g s p o],
-;; where g, s, and p are absolute IRI strings or blank node strings,
-;; and o is either a IRI/blank string or a map
-;; with :value, :lang, and :type keys.
+(def nquad-grammar
+  (string/join
+   \newline
+   [nquad-grammar-partial
+    link/link-grammar]))
 
-(defn convert-object
-  "Given a state map with a :block that is a literal or link,
-   return an object: an object map for a literal or an IRI string for a link."
-  [{:keys [block] :as state}]
-  (case (:block-type block)
-    :LITERAL_BLOCK
-    (merge
-     (get-in state [:iri-type (get-in state [:block :predicate 1])])
-     (select-keys block [:value :lang :type]))
-    :LINK_BLOCK
-    (get-in state [:block :object 1])
-    ;else
-    nil))
+(def nquad-parser (insta/parser nquad-grammar))
 
-(defn convert-single-statement
-  "Given a state map with :current-subject and :block keys,
-   where the :block has no :arrows,
-   form a single quad,
-   and return the update state."
-  [state]
-  (let [g (:current-graph state)
-        s (:current-subject state)
-        p (get-in state [:block :predicate 1])
-        o (convert-object state)
-        statement [g s p o]]
-   (assoc state :quads [statement] :statements [statement])))
+(def nquad-transformations
+  (merge
+   link/link-transformations
+   {:LEXICAL_VALUE
+    (fn [& xs]
+      [:LEXICAL_VALUE
+       (-> (apply str xs)
+           (string/replace "\\n" "\n")
+           (string/replace "\\\"" "\""))])}))
 
-(defn convert-annotation
-  "Given a state map with :current-subject and :block keys,
-   where the :block has no :arrows,
-   form a single quad,
-   and return the updated state."
-  [state]
-  (let [g (:current-graph state)
-        s (str "_:b" (get state :blank-node-count 0))
-        p (get-in state [:block :predicate 1])
-        o (convert-object state)
-        statement [g s p o]
-        a (count (get-in state [:block :arrows]))
-        annotated (get-in state [:statements (dec a)])]
-   (-> state
-       (update :blank-node-count (fnil inc 0))
-       (assoc
-        :statements
-        (conj (vec (take a (:statements state))) statement))
-       (assoc
-        :quads
-        [[g s (str rdf "type")              (str owl "Axiom")]
-         [g s (str owl "annotatedSource")   (get annotated 1)]
-         [g s (str owl "annotatedProperty") (get annotated 2)]
-         [g s (str owl "annotatedTarget")   (get annotated 3)]
-         statement]))))
+(defn parse-nquad
+  [line]
+  (let [result (nquad-parser line)]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "NQuad parse failure")))
+    (->> result
+         (insta/transform nquad-transformations)
+         vec)))
 
-(defn convert-statement
-  [{:keys [current-graph current-subject block statements] :as state}]
-  (if (string/blank? (:arrows block))
-   (convert-single-statement state)
-   (convert-annotation state)))
+(defn nquad-string->nquad
+  "Given a line from an NQuads file,
+   return an NQuad vector."
+  [line]
+  (let [result (parse-nquad line)]
+    [(when (= 9 (count result)) (get-in result [7 1 2]))
+     (case (get-in result [1 1 0])
+       :IRIREF           (get-in result [1 1 2])
+       :BLANK_NODE_LABEL (str "_:" (get-in result [1 1 2])))
+     (get-in result [3 1 2])
+     (case (get-in result [5 1 0])
+       :IRIREF           (get-in result [5 1 2])
+       :BLANK_NODE_LABEL (str "_:" (get-in result [5 1 2]))
+       :TYPED_LITERAL    (get-in result [5 1 2 1])
+       :LANGUAGE_LITERAL (get-in result [5 1 2 1])
+       :PLAIN_LITERAL    (get-in result [5 1 2 1]))
+     (case (get-in result [5 1 0])
+       :IRIREF           "LINK"
+       :BLANK_NODE_LABEL "LINK"
+       :TYPED_LITERAL    (get-in result [5 1 4 2])
+       :LANGUAGE_LITERAL (str "@" (get-in result [5 1 4 2]))
+       :PLAIN_LITERAL    "PLAIN")]))
 
+; ## Blank Nodes
+;
+; HOWL uses random blank nodes,
+; but sometimes we want them to be predictable.
 
-;; The most complex conversion is the Manchester syntax.
-;; The expression is a tree,
-;; but we represent it in very flat RDF graph.
+(defn sequential-blank-nodes
+  "Given a sequence of NQuads,
+   return a sequence of NQuads with sequential blank nodes."
+  [nquads]
+  (let [counter (atom 0)]
+    (->> nquads
+         (reduce
+          (fn [coll [g s p o d]]
+            (let [[coll s] (link/replace-blank coll s "LINK")
+                  [coll o] (link/replace-blank coll o d)]
+              (update-in coll [:nquads] conj [g s p o d])))
+          {:counter counter
+           :nquads []})
+         :nquads)))
 
-(defn filter-ce
-  "Given a parse vector,
-   remove the elements that don't matter for Manchester."
-  [parse]
-  (->> parse
-       (filter vector?)
-       (remove #(= :SPACE (first %)))
-       (remove #(= :SPACES (first %)))))
+; ## NQuads to Strings
+;
+; To convert an Nquad vector back to an NQuad string,
+; set just have to wrap IRIs and literals properly.
 
-(declare convert-expression)
+(defn subject->string
+  [subject]
+  (if (link/blank? subject)
+    subject
+    (str "<" subject ">")))
 
-;; This is very imperative code that is somewhat awkward in Clojure.
-;; The code is a little cleaner if the nodes are rendered in reverse order,
-;; but this way the results are easier to read.
-
-;; First get a new blank node for the complementOf class.
-;; Then clear the state (s2) and render the negated class expression.
-;; Update that result (s3) with quads for the complement and s3.
-
-(defn convert-negation
-  "Given a state and a parse vector,
-   convert the first elements in the parse vector
-   and update the state with new quads for the
-   complement class and first element."
-  [s1 parse]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))]
-    (assoc
-     s3
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")         (str owl "Class")]
-       [g b1 (str owl "complementOf") (:node s3)]]
-      (:quads s3)))))
-
-;; Like convert-negation, but with two elements:
-;; the object property expression and the class expression.
-
-(defn convert-restriction
-  "Given a state, a parse vector, and a predicate IRI string,
-   convert the first and second elements in the parse vector
-   and update the state with new quads for the:
-   restriction class, and first and second elements."
-  [s1 parse predicate]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        s2 (assoc s1 :blank-node-count (+ bs 1) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))
-        s4 (convert-expression s3 (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")       (str owl "Restriction")]
-       [g b1 (str owl "onProperty") (:node s3)]
-       [g b1 predicate              (:node s4)]]
-      (:quads s4)))))
-
-;; Unions and intersections are trickier because they include an RDF list.
-;; First generate some blank nodes for the combination class and RDF list.
-;; Then clear the state, and render the first and second elements,
-;; storing the results in new states.
-;; Then update the state resulting from the second element (s4)
-;; with previous quads,
-;; the combination element and RDF list,
-;; and the quads from s4, which include the first and second elements.
-
-(defn convert-combination
-  "Given a state, a parse vector, and a predicate IRI string,
-   render the first and second elements in the parse vector
-   and update the state with new quads for the:
-   combination class (i.e. unionOf, intersectionOf),
-   RDF list of elements,
-   first and second elements."
-  [s1 parse predicate]
-  (let [g  (:current-graph s1)
-        bs (get s1 :blank-node-count 0)
-        b1 (str "_:b" (+ bs 1))
-        b2 (str "_:b" (+ bs 2))
-        b3 (str "_:b" (+ bs 3))
-        s2 (assoc s1 :blank-node-count (+ bs 3) :quads [])
-        s3 (convert-expression s2 (->> parse filter-ce first))
-        s4 (convert-expression s3 (->> parse filter-ce second))]
-    (assoc
-     s4
-     :node b1
-     :quads
-     (concat
-      (:quads s1)
-      [[g b1 (str rdf "type")  (str owl "Class")]
-       [g b1 predicate         b2]
-       [g b2 (str rdf "first") (:node s3)]
-       [g b2 (str rdf "rest")  b3]
-       [g b3 (str rdf "first") (:node s4)]
-       [g b3 (str rdf "rest")  (str rdf "nil")]]
-      (:quads s4)))))
-
-(defn convert-expression
-  "Given a state map, and a parse vector with a Manchester expression
-   return an updated state with quads for the expression."
-  [state parse]
-  (case (first parse)
-    :CLASS_EXPRESSION
-    (convert-expression state (->> parse filter-ce first))
-
-    :NEGATION
-    (convert-negation state parse)
-
-    :DISJUNCTION
-    (convert-combination state parse (str owl "unionOf"))
-
-    :CONJUNCTION
-    (convert-combination state parse (str owl "intersectionOf"))
-
-    :OBJECT_PROPERTY_EXPRESSION
-    (convert-expression state (->> parse filter-ce first))
-
-    :SOME
-    (convert-restriction state parse (str owl "someValuesFrom"))
-
-    :ONLY
-    (convert-restriction state parse (str owl "allValuesFrom"))
-
-    :NAME
-    (convert-expression state (->> parse filter-ce first))
-
-    :ABSOLUTE_IRI
-    (assoc state :node (second parse))
-
-    ; else
-    state))
-
-(defn convert-quads
-  "Given a state (usually the output of expand-names),
-   if it has a :block key,
-   return an updated state with a :quads vector (maybe nil)
-   with entries in EDN-LD Quads format."
-  [state]
-  (try
-   (if-let [block (:block state)]
-     (case (:block-type block)
-       :LITERAL_BLOCK
-       (convert-statement state)
-
-       :LINK_BLOCK
-       (convert-statement state)
-
-       :EXPRESSION_BLOCK
-       (let [new-state (convert-expression state (:expression block))
-             g (:current-graph state)
-             s (:current-subject state)
-             p (get-in state [:block :predicate 1])
-             o (:node new-state)
-             statement [g s p o]]
-         (-> new-state
-             (dissoc :node)
-             (assoc :statements [statement])
-             (assoc :quads (concat [statement] (:quads new-state)))))
-
-       ; else
-       (dissoc state :quads))
-     (dissoc state :quads))
-   (catch #?(:clj Exception :cljs :default) e
-     (util/throw-exception e (core/locate state)))))
-
-(defn line-to-quads-transducer
-  "Given a processing function
-   (that takes a state map and a line, and returns updated state with a :quads key),
-   a starting state, and a sequence of lines,
-   return stateful transducer that emits a sequence of quads."
-  [processing-function starting-state]
-  (fn
-    [xf]
-    (let [state (volatile! starting-state)]
-      (fn
-        ([] (xf))
-        ([result] (apply xf result (get (processing-function @state "EOL") :quads [])))
-        ([result line]
-         (let [new-state (processing-function @state line)]
-           (when (:errors new-state)
-             (util/throw-exception
-              (string/join " " (:errors new-state))
-              (core/locate new-state)))
-           (vreset! state new-state)
-           (if (:quads new-state)
-             (apply xf result (:quads new-state))
-             result)))))))
-
-(defn lines-to-quads
-  "Given a processing function
-   (that takes a state map and a line, and returns updated state with a :quads key),
-   a starting state, and a sequence of lines,
-   return a sequence of quads"
-  [processing-function starting-state lines]
-  (transduce
-   (line-to-quads-transducer processing-function starting-state)
-   conj
-   []
-   lines))
-
-
-;; It's easy to convert an EDN-LD quad to an N-Quad:
-
-(defn wrap-iri
-  "Return an IRI string wrapped in arrows (<iri>)
-   or a blank node string unchanged."
-  [iri]
+(defn object->string
+  [object datatype]
   (cond
-   (not (string? iri)) iri
-   (.startsWith iri "_:") iri
-   :else (str "<" iri ">")))
+    (or (nil? datatype) (= "PLAIN" datatype)) (str "\"" object "\"")
+    (= "LINK" datatype) (subject->string object)
+    (util/starts-with? datatype "@") (str "\"" object "\"" datatype)
+    :else (str "\"" object "\"^^<" datatype ">")))
 
-(defn object-to-string
-  "Given an EDN-LD object, return an N-Quads literal or IRI."
-  [o]
-  (let [value (-> (get o :value "NULL")
-                  (string/replace "\n" "\\n")
-                  (string/replace "\"" "\\\""))]
-    (cond
-     (and (map? o) (:lang o)) (str "\"" value "\"@" (:lang o))
-     (and (map? o) (:type o)) (str "\"" value "\"^^" (wrap-iri (:type o)))
-     (map? o) (str "\"" value "\"")
-     (string? o) (wrap-iri o)
-     :else nil)))
-
-(defn quad-to-string
-  "Given an EDN-LD Quad vector return an N-Quads string."
-  [[g s p o]]
-  (->> [(wrap-iri s)
-        (wrap-iri p)
-        (object-to-string o)
-        (when g (wrap-iri g))
+(defn nquad->nquad-string
+  [[graph subject predicate object datatype]]
+  (->> [(subject->string subject)
+        (str "<" predicate ">")
+        (object->string object datatype)
+        (when graph (str "<" graph ">"))
         "."]
        (remove nil?)
        (string/join " ")))
 
+(defn nquad->ntriple-string
+  [[graph subject predicate object datatype]]
+  (nquad->nquad-string [nil subject predicate object datatype]))
 
+; ## Blocks to NQuads
+;
+; Converting blocks to NQuads is straightforward.
+; We're only interested in HOWL statement blocks.
+; If the statement is an annotation,
+; then we generate five nquad vectors.
+; Otherwise we just generate one nquad vector.
 
-(defn render-statement
-  "Given an arrow string (for depth),
-   a predicate IRI, and an object,
-   return a HOWL statement block map."
-  [arrows predicate-iri object]
-  (merge
-   {:arrows
-    (if (string/blank? arrows)
-      arrows
-      (str arrows " "))
-    :predicate [:ABSOLUTE_IRI predicate-iri]
-    :eol "\n"}
-   (cond
-    (map? object)
-    (assoc object :block-type :LITERAL_BLOCK)
-    (vector? object)
-    {:block-type :EXPRESSION_BLOCK
-     :expression object}
-    :else
-    {:block-type :LINK_BLOCK
-     :object [:ABSOLUTE_IRI object]})))
+(defn format-object
+  [object-string]
+  (-> object-string
+      (string/replace "\n" "\\n")
+      (string/replace "\"" "\\\"")))
 
-(declare render-predicates)
+(def rdf:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+(def owl:Axiom "http://www.w3.org/2002/07/owl#Axiom")
+(def annSource "http://www.w3.org/2002/07/owl#annotatedSource")
+(def annProperty "http://www.w3.org/2002/07/owl#annotatedProperty")
+(def annTarget "http://www.w3.org/2002/07/owl#annotatedTarget")
+(def annPredicates #{rdf:type annSource annProperty annTarget})
 
-(defn render-statements
-  "Given an arrow string (for depth),
-   a predicate IRI, and an object map,
-   return a sequence of HOWL statement block maps."
-  [arrows predicate-iri object-map]
-  (concat
-   [(render-statement arrows predicate-iri (first object-map))]
-   (render-predicates (str arrows ">") (second object-map))))
+(defn annotation-nquads
+  "Given a subject (blank node label) and a vector for the annotation target,
+   return four NQuads representing the OWL annotation axiom
+   without its content."
+  [subject [source property target target-datatype]]
+  [[nil subject rdf:type owl:Axiom "LINK"]
+   [nil subject annSource source "LINK"]
+   [nil subject annProperty property "LINK"]
+   [nil subject annTarget (format-object target) target-datatype]])
 
-(defn render-predicate
-  "Given an arrow string (for depth),
-   a predicate IRI, and a sequence of object maps,
-   return a sequence of HOWL statement block maps."
-  [arrows predicate-iri object-list]
-  (mapcat (partial render-statements arrows predicate-iri) object-list))
+(defmulti object->nquads
+  "Given a format IRI and the :object of a block,
+   return the pair of the object for this NQuad
+   and a sequence of zero or more NQuad vectors."
+  (fn [graph datatypes object] (vec (take 2 datatypes))))
 
-(def predicate-sort-list
-  [(str rdfs "label")
-   (str rdf "type")
-   (str obo "IAO_0000115") ; definition
-   (str obo "IAO_0000119") ; definition source
-   (str obo "IAO_0000112") ; example of usage
-   (str owl "equivalentClass")
-   (str rdfs "subClassOf")
-   (str obo "IAO_0000118") ; alternative term
-   ])
+(defmethod object->nquads :default
+  [graph datatypes object]
+  [(format-object object) []])
 
-(def predicate-sort
-  (->> predicate-sort-list
-       (map-indexed (fn [i v] [v i]))
-       (into {})))
+(defmethod object->nquads ["LINK"]
+  [graph datatypes object]
+  [object []])
 
-(defn render-predicates
-  "Given an arrow string (for depth), and a predicate map,
-   return a sequence of HOWL statement block maps."
-  [arrows predicate-map]
-  (->> predicate-map
-       keys
-       (map (juxt #(get predicate-sort % 100) identity))
-       sort
-       (map second)
-       (mapcat #(render-predicate arrows % (get predicate-map %)))))
+(defmulti block->nquads
+  "Given a (fully expanded) block,
+   return a sequence of zero or more NQuad vectors."
+  :block-type)
 
-(defn render-subject
-  "Given a subject IRI, and a predicate map for that subject,
-   return a sequence of HOWL block maps."
-  [subject-iri predicate-map]
-  (concat
-   [{:block-type :SUBJECT_BLOCK
-     :subject [:ABSOLUTE_IRI subject-iri]
-     :eol "\n"}]
-   (render-predicates "" predicate-map)))
+(defmethod block->nquads :default
+  [block]
+  [])
 
+(defmethod block->nquads :STATEMENT_BLOCK
+  [{:keys [annotation-target graph subject predicate object datatypes]}]
+  (let [datatype (first datatypes)
+        [object nquads] (object->nquads graph datatypes object)]
+    (vec
+     (concat
+      (when annotation-target (annotation-nquads subject annotation-target))
+      [[graph subject predicate object datatype]]
+      nquads))))
 
-(defn expression-deps
-  "Given a subject map,
-   return a map from OWL annotation IRIs to sets of their dependencies."
-  [subject-map]
-  (->> subject-map
-       keys
-       (filter #(get-in subject-map [% (str rdf "type") (str owl "Restriction")]))
-       (filter #(get-in subject-map [% (str owl "onProperty")]))
-       (filter #(get-in subject-map [% (str owl "someValuesFrom")]))
-       (map
-        (fn [node]
-          [node
-           #{(ffirst (get-in subject-map [node (str owl "onProperty")]))}
-           (ffirst (get-in subject-map [node (str owl "someValuesFrom")]))]))
-       (into {})))
+; ## Nquads to Blocks
+;
+; The Nquads to Block conversion is a little trickier.
+; One NQuad more-or-less corresponds to one HOWL statement block.
+; We also have to make sure to add graph and subject blocks.
+; The hardest part is handling OWL annotations.
 
-(defn get-expression
-  "Given a subject map and a node,
-   if that node exactly matches an OWL pattern,
-   return the subject map with that node's contents replaced
-   by an OWL logic vector."
-  [predicate-map]
-  (cond
-   ; some
-   (and
-    (get-in predicate-map [(str rdf "type") (str owl "Restriction")])
-    (get-in predicate-map [(str owl "onProperty")])
-    (get-in predicate-map [(str owl "someValuesFrom")])
-    (= 3 (count predicate-map)))
-   [:CLASS_EXPRESSION
-    "("
-    [:SOME
-     [:OBJECT_PROPERTY_EXPRESSION
-      (ffirst (get predicate-map (str owl "onProperty")))]
-     [:SPACE " "]
-     "some"
-     [:SPACE " "]
-     (ffirst (get predicate-map (str owl "someValuesFrom")))]
-     ")"]
+(defn nquad->block
+  "Given an NQuad, return a HOWL statement block."
+  [[graph subject predicate object datatype]]
+  {:block-type :STATEMENT_BLOCK
+   :graph graph
+   :subject subject
+   :predicate predicate
+   :object object
+   :datatypes [datatype]})
 
-   ; only
-   (and
-    (get-in predicate-map [(str rdf "type") (str owl "Restriction")])
-    (get-in predicate-map [(str owl "onProperty")])
-    (get-in predicate-map [(str owl "allValuesFrom")])
-    (= 3 (count predicate-map)))
-   [:CLASS_EXPRESSION
-    "("
-    [:ONLY
-     [:OBJECT_PROPERTY_EXPRESSION
-      (ffirst (get predicate-map (str owl "onProperty")))]
-     [:SPACE " "]
-     "only"
-     [:SPACE " "]
-     (ffirst (get predicate-map (str owl "allValuesFrom")))]
-     ")"]
+; ### Annotations
+;
+; The hardest part of NQuads to HOWL conversion is handling OWL Annotations.
+; An OWL annotation has a blank node as subject and five nquads:
+;
+; - the rdf:type is owl:Axiom
+; - the owl:annotatedSource is the subject of the annotated NQuad
+; - the owl:annotatedProperty is the predicate of the annotated NQuad
+; - the owl:annotatedTarget is the object (with datatype) of the annotated NQuad
+; - then there's one normal NQuad that is the content of the annotation.
+;
+; We can't assume that these NQuads occur in any particular order,
+; so we end up collecting all the NQuads into a nested data structure
+; (see below).
+;
+; We try to collapse the five NQuads into a single HOWL STATEMENT_BLOCK
+; that we insert after the target statement.
+; We don't collapse annotations that are referred to by non-annotations.
+; we apply all these rules to determine
+; whether we will collapse the annotation into a single HOWL statement:
+;
+; - subject is a blank node
+; - the annotatedSource is a subject in this graph
+; - subject only occurs as the object of other annotations
+; - all the annotations on this subject are collapsible (WARN: recursive)
+; - subject has exactly five NQuads
+; - the rdf:type is owl:Axiom
+; - three predicates are present: annotatedSource, annotatedProperty, annotatedTarget
+;
+; Otherwise we treat the annotation as a normal subject
+; with a HOWL subject block
+; and five HOWL statement blocks for its five NQuads.
 
-   ; not
-   (and
-    (get-in predicate-map [(str rdf "type") (str owl "Class")])
-    (get-in predicate-map [(str owl "complementOf")])
-    (= 2 (count predicate-map)))
-   [:CLASS_EXPRESSION
-    "("
-    [:NEGATION
-     "not"
-     [:SPACE " "]
-     (ffirst (get predicate-map (str owl "complementOf")))]
-    ")"]
+(defn is-collapsible-annotation?
+  "Given a subject map and a subject to check,
+   return true only if we can safely collapse this annotation
+   into a single HOWL statement block."
+  [subject-map subject]
+  (let [predicate-map (get subject-map subject)]
+    (and
+     (link/blank? subject)
+     (contains? subject-map (get-in predicate-map [annSource 0 :object]))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          (map second)
+          (remove #(= annSource %))
+          count
+          (= 0))
+     (->> (get-in subject-map [:blank-object-uses subject])
+          (map first)
+          (map (partial is-collapsible-annotation? subject-map))
+          and)
+     (= 5 (count predicate-map))
+     (->> predicate-map vals (apply concat) count (= 5))
+     (= owl:Axiom (get-in predicate-map [rdf:type 0 :object]))
+     (clojure.set/subset? annPredicates (set (keys predicate-map))))))
 
-   ; and
-   (and
-    (get-in predicate-map [(str rdf "type") (str owl "Class")])
-    (get-in predicate-map [(str owl "intersectionOf")])
-    (= 2 (count predicate-map)))
-   [:CLASS_EXPRESSION
-    "("
-    [:CONJUNCTION
-     (ffirst (get predicate-map (str owl "intersectionOf")))]
-    ")"]
-
-   ; or
-   (and
-    (get-in predicate-map [(str rdf "type") (str owl "Class")])
-    (get-in predicate-map [(str owl "unionOf")])
-    (= 2 (count predicate-map)))
-   [:CLASS_EXPRESSION
-    "("
-    [:DISJUNCTION
-     (ffirst (get predicate-map (str owl "unionOf")))]
-    ")"]
-
-   ; RDF list
-   (and
-    (get-in predicate-map [(str rdf "first")])
-    (get-in predicate-map [(str rdf "rest")])
-    (= 2 (count predicate-map)))
-   (if (= (ffirst (get-in predicate-map [(str rdf "rest")]))
-          "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")
-     [(ffirst (get-in predicate-map [(str rdf "first")]))]
-     [(ffirst (get-in predicate-map [(str rdf "first")]))
-      " AND "
-      (ffirst (get-in predicate-map [(str rdf "rest")]))])
-
-   :else
-   nil))
-
-(defn merge-expression
-  "Given a subject map and a node,
-   if the value of that node is a vector (OWL expression)
-   walk the subject map and replace the node with its value."
-  [subject-map [node value]]
-  (if (vector? value)
-    (->> subject-map
-         (map
-          (fn [[k v]]
-            [k (clojure.walk/postwalk-replace {node value} v)]))
-         (into {}))
-    subject-map))
-
-(defn process-expressions
-  [subject-map]
-  (let [expressions
-        (->> subject-map
-             (map (fn [[k v]] [k (get-expression v)]))
-             (remove (comp nil? second))
-             (into {}))]
-    (->> (apply dissoc subject-map (keys expressions))
-         (map
-          (fn [[k v]]
-            [k
-             (clojure.walk/prewalk
-              (fn [x] (get expressions x x))
-              v)]))
-         (into {}))))
-
-(defn get-annotation-deps
-  "Given a subject map,
-   return a map from OWL annotation IRIs to sets of their annotatedSource IRIs."
-  [subject-map]
-  (->> subject-map
-       keys
-       (filter #(get-in subject-map [% (str rdf "type") (str owl "Axiom")]))
-       (filter #(get-in subject-map [% (str owl "annotatedSource")]))
-       (filter #(get-in subject-map [% (str owl "annotatedProperty")]))
-       (filter #(get-in subject-map [% (str owl "annotatedTarget")]))
-       (map
-        (fn [node]
-          [node
-           #{(ffirst (get-in subject-map [node (str owl "annotatedSource")]))}]))
-       (into {})))
-
-(defn render-annotation
-  "Given a subject map and the IRI of an OWL annotation,
-   return an updated subject map with the OWL annotation
-   'folded in' to the object map of the appropriate annotatedSource."
-  [subject-map node]
-  (assoc-in
-   (dissoc subject-map node)
-   [(ffirst (get-in subject-map [node (str owl "annotatedSource")]))
-    (ffirst (get-in subject-map [node (str owl "annotatedProperty")]))
-    (ffirst (get-in subject-map [node (str owl "annotatedTarget")]))]
-   (dissoc
-    (get subject-map node)
-    (str rdf "type")
-    (str owl "annotatedSource")
-    (str owl "annotatedProperty")
-    (str owl "annotatedTarget"))))
-
-(defn depth
-  "Given a map from node to node, and target node,
-   return the 'depth' of the target in the collection,
-   i.e. the number of steps before no further ancestor can be found."
-  [coll node]
-  (loop [ancestry #{node}]
-    (let [expanded (apply clojure.set/union ancestry (vals (select-keys coll ancestry)))]
-      (if (= expanded ancestry)
-        (count ancestry)
-        (recur expanded)))))
+(defn process-annotation
+  "Given a graph IRI, a subject map, and a subject,
+   return a HOWL annotation statement block."
+  [graph subject-map subject]
+  (let [predicate-map (get subject-map subject)
+        predicate
+        (-> predicate-map
+            (dissoc rdf:type annSource annProperty annTarget)
+            keys
+            first)
+        {:keys [object datatype]} (get-in predicate-map [predicate 0])]
+    (assoc
+     (nquad->block [graph subject predicate object datatype])
+     :annotation-target
+     [(get-in predicate-map [annSource   0 :object])
+      (get-in predicate-map [annProperty 0 :object])
+      (get-in predicate-map [annTarget   0 :object])
+      (get-in predicate-map [annTarget   0 :datatype])])))
 
 (defn process-annotations
-  [subject-map]
-  (let [annotation-deps (get-annotation-deps subject-map)]
-    (->> annotation-deps
-         keys
-         (sort-by (partial depth annotation-deps) >)
-         (reduce render-annotation subject-map))))
+  "Given a graph IRI, and a subject map,
+   return sequence of HOWL annotation statement blocks."
+  [graph subject-map]
+  (->> subject-map
+       keys
+       (filter (partial is-collapsible-annotation? subject-map))
+       (map (partial process-annotation graph subject-map))))
 
-(defn render-subjects
-  "Given a subject map,
-   return a sequnce of HOWL block maps for the subjects."
-  [subject-map]
-  (let [subject-map
-        (->> subject-map
-             process-annotations
-             process-expressions)]
-    (->> subject-map
-         keys
-         ; TODO: better subject sorting
-         (map (juxt #(if (.startsWith % "_:") 2 1) identity))
-         sort
-         (map second)
-         (mapcat #(render-subject % (get subject-map %))))))
+(defn insert-annotations
+  "Given depth integer, the annotation-map, and a block,
+   return a sequence starting with
+   the block with the :arrows key updated for the depth,
+   and recursively including any annotations on that block."
+  [depth annotation-map {:keys [subject predicate object datatypes] :as block}]
+  (let [annotations (get annotation-map [subject predicate object (first datatypes)])]
+    (concat
+     [(assoc block :arrows (apply str (repeat depth ">")))]
+     (->> annotations
+          (sort-by :object)
+          (mapcat (partial insert-annotations (inc depth) annotation-map))))))
 
-(def arq-default-graph
- "urn:x-arq:DefaultGraphNode")
+; ### Expressions
+;
+; In addition to annotations, HOWL allows for other complex RDF constructs,
+; such as RDF lists and OWL class expressions.
+; Each of these is handled in a separate module.
+; Each of the modules registers a handler function
+; that is given the full graph map and must return a graph map.
+; The registered functions are stored in an atom.
 
-(defn render-named-graph
-  "Given a named graph IRI, and the subject map for that named graph,
-   return a sequence of HOWL block maps for that named graph."
-  [graph-iri subject-map]
-  (concat
-   [{:block-type :GRAPH_BLOCK
-     :graph [:ABSOLUTE_IRI graph-iri]
-     :eol "\n"}]
-   (render-predicates "" (get subject-map graph-iri))
-   (render-subjects (dissoc subject-map graph-iri))))
+(def handlers (atom []))
 
-(defn render-labels
-  [quads]
-  (->> quads
-       (filter (fn [[g s p o d l]] (= p (str rdfs "label"))))
-       (filter (fn [[g s p o d l]] (map? o)))
-       (remove (fn [[g s p o d l]] (.startsWith s "_:")))
-       (map (fn [[g s p o d l]]
-              {:block-type :LABEL_BLOCK
-               :identifier [:ABSOLUTE_IRI s]
-               :label (:value o)
-               :eol "\n"}))))
+(defn register-handler
+  [f]
+  (swap! handlers conj f))
 
-(defn render-graphs
-  "Given a graph map,
-   return a sequence of HOWL block maps for those graphs."
-  [graph-map]
-  (concat
-   ; TODO: better way to get default graph
-   (render-subjects (get graph-map nil))
-   (->> graph-map
-        keys
-        (remove nil?)
-        sort
-        (mapcat #(render-named-graph % (get graph-map %))))))
-
-(defn graphify
-  "Given a sequence of Quads, return a GraphMap."
-  [quads]
+(defn apply-handlers
+  [env graph-map]
   (reduce
-   (fn [coll [graph subject predicate object datatype lang]]
-     (assoc-in
-      coll
-      [graph
-       subject
-       predicate
-       (if datatype
-         (edn-ld/literal object datatype lang)
-         object)]
-      {}))
-   nil
-   quads))
+   (fn [coll handler] (handler env coll))
+   graph-map
+   @handlers))
 
-(defn triplify
-  "Given a sequence of Triples, return a SubjectMap."
-  [triples]
-  (reduce
-   (fn [coll [subject predicate object datatype lang]]
-     (assoc-in
-      coll
-      [subject
-       predicate
-       (if datatype
-         (edn-ld/literal object datatype lang)
-         object)]
-      {}))
-   nil
-   triples))
+; ### Processing NQuads
+;
+; Now that annotations are out of the way,
+; converting NQUads to HOWL is pretty straightforward.
+; We start by reducing the sequence of NQuad strings
+; to a nested map:
+;
+; 1. a graph-map maps graph IRI strings to subject-maps
+; 2. a subject-map maps subject IRI strings to predicate-maps
+; 3. a predicate-map maps predicate-IRIs to object-lists
+; 4. an object-list is a sequence of object-maps
+; 5. an object-map contains :object and :datatype IRI strings,
+;    and other information about the source, line, string, etc.
+;
+; Then we iterate over graphs, subjects, predicates, and objects,
+; generating a concatenated sequence of HOWL blocks.
 
-(defn quads-to-howl
-  "Given a sequence of quads,
-   return a sequence of HOWL block maps."
-  [quads]
+(defn make-graph-map
+  "Given a source file name and a sequence of NQuad lines,
+   parse the lines and return a nested map:
+   graph, subject, predicate, to sequence of object maps
+   with line and source information.
+   Each graph map will also have a special :blank-object-uses map
+   from blank nodes to lists of the subject-predicate pairs for which
+   that blank node occurs in object position."
+  [source lines]
+  (reduce-kv
+   (fn [coll line string]
+     (let [[graph subject predicate object datatype] (nquad-string->nquad string)]
+       (update-in
+        (if (link/blank? object)
+          (update-in
+           coll
+           [graph :blank-object-uses object]
+           (fnil conj [])
+           [subject predicate])
+          coll)
+        [graph subject predicate]
+        (fnil conj [])
+        {:object object
+         :datatype datatype
+         :source source
+         :line line
+         :string string})))
+   (sorted-map)
+   (vec lines)))
+
+(defn find-object
+  "Given a subject-map, a subject, a predicate, an object, and a datatype,
+   return the first index at which the object-datatype occur
+   in the object sequence,
+   or nil."
+  [subject-map subject predicate find-object find-datatype]
+  (->> (get-in subject-map [subject predicate])
+       (map-indexed vector)
+       (filter
+        (fn [[i {:keys [object datatype]}]]
+          (and
+           (= object find-object)
+           (= datatype find-datatype))))
+       first
+       first))
+
+(defn nquad->blocks
+  "Given the annotation-map and an nquad vector,
+   return a sequence of HOWL statement blocks."
+  [annotation-map nquad]
+  (insert-annotations 0 annotation-map (nquad->block nquad)))
+
+(defn process-object
+  [annotation-map graph subject predicate {:keys [object datatype processed-object]}]
+  (let [blocks (nquad->blocks annotation-map [graph subject predicate object datatype])]
+    (if processed-object
+      (assoc-in (vec blocks) [(dec (count blocks)) :object] processed-object)
+      blocks)))
+
+(defn process-predicate
+  [annotation-map graph subject predicate objects]
+  (mapcat
+   (partial process-object annotation-map graph subject predicate)
+   objects))
+
+(defn process-subject
+  [annotation-map graph subject predicate-map]
   (concat
-   (render-labels quads)
-   (render-graphs (graphify quads))))
+   [{:block-type :SUBJECT_BLOCK
+     :subject subject}]
+   (->> predicate-map
+        (mapcat
+         (partial apply process-predicate annotation-map graph subject))
+        (remove nil?))))
 
-(defn triples-to-howl
-  "Given a sequence of triples,
+(defn process-graph
+  [graph subject-map]
+  (let [annotations (process-annotations graph subject-map)
+        annotation-subjects (set (map :subject annotations))
+        annotation-map
+        (->> annotations
+             (map (juxt :annotation-target identity))
+             (reduce (fn [c [t b]] (update-in c [t] (fnil conj #{}) b)) {}))]
+    (concat
+     (when graph
+       [{:block-type :GRAPH_BLOCK
+         :graph graph}])
+     (->> subject-map
+          (remove #(keyword? (key %)))
+          (remove #(contains? annotation-subjects (key %)))
+          (mapcat (partial apply process-subject annotation-map graph))))))
+
+(defn update-datatypes
+  "Given an environment and a block,
+   try to update the :datatypes."
+  [env {:keys [block-type predicate datatypes] :as block}]
+  (if (= :STATEMENT_BLOCK block-type)
+    (let [predicate-label (get-in env [:iri-label predicate])
+          predicate-datatypes (get-in env [:labels predicate-label :datatypes] ["PLAIN"])
+          use-default-datatypes (= (first datatypes) (first predicate-datatypes))]
+      (assoc
+       block
+       :use-default-datatypes use-default-datatypes
+       :datatypes (if use-default-datatypes predicate-datatypes datatypes)))
+    block))
+
+(defn lines->blocks
+  "Given an environment and a sequence of lines,
    return a sequence of HOWL block maps."
-  [quads]
-  (concat
-   (render-labels quads)
-   (render-subjects (triplify quads))))
+  [{:keys [source] :or {source "interactive"} :as env} lines]
+  (->> lines
+       (make-graph-map source)
+       (apply-handlers env)
+       (mapcat (partial apply process-graph))
+       (map (partial update-datatypes env))
+       (map (partial core/block-iris->names env))))
