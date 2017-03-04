@@ -266,7 +266,6 @@ LABEL = \"'\" #\"[^']+\" \"'\" | #'' #'\\w+' #''
 
 (defmethod make-processed-object :manchester-conjunction
   [env subject-map subject]
-  (println "Processing conjunction...")
   (combination->processed-object env "and" rdf/intersection-of subject-map subject))
 
 (defmethod make-processed-object :manchester-disjunction

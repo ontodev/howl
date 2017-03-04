@@ -11,6 +11,11 @@
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/test.check "0.9.0"]
+
+                 ;; profiling functions
+                 [criterium "0.4.4"]
+                 [goat "0.1.0-SNAPSHOT"]
+
                  [edn-ld "0.2.2"]
                  [doo "0.1.7-SNAPSHOT"]]
   :plugins [[lein-cljsbuild "1.1.3"]

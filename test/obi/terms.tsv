@@ -1,4 +1,4 @@
-SUBJECT	label:	type:>
+SUBJECT	label:	type:
 <http://purl.obolibrary.org/obo/iao/2015-02-23/iao.owl>	IAO Release 2015-02-23	owl:NamedIndividual
 <http://purl.obolibrary.org/obo/obi/2015-12-07/obi.owl>	OBI Release 2015-12-07	owl:NamedIndividual
 <http://www.geneontology.org/formats/oboInOwl#ObsoleteClass>	Obsolete Class	owl:Class

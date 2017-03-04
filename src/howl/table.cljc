@@ -13,7 +13,7 @@
   [env header cell]
   (howl/process-block
    env
-   (if (= header "SUBJECT") cell (str header ": " cell))))
+   (if (= header "SUBJECT") cell (str header " " cell))))
 
 (defn process-lines!
   "Given an environment, a sequence of tab-separated lines,
