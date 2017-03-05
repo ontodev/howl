@@ -35,6 +35,53 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
+(defn line-group->basic-parse
+  "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
+Where the origin string is the input joined by \\newline the :block-type is a symbol designating the specific block and the :parse tree is a basic, un-processed vector tree representing a Howl block."
+  [line-group]
+  (let [first-line (first line-group)
+        first-word (re-find #"\w+" first-line)
+        basic-parse
+        (cond (util/starts-with? first-line "#")
+              {:block-type :COMMENT
+               :parse-tree (cons :COMMENT (map (fn [ln] [:LINE ln]) line-group))}
+
+              (= first-word "PREFIX")
+              {:block-type :PREFIX
+               :parse-tree (cons
+                            :PREFIX
+                            (mapcat
+                             #(let [[name iriref] (rest (re-find #"(?:PREFIX)?\W+(\w+):\W+(.*)" %))]
+                                [[:NAME name] [:IRIREF-STRING iriref]])
+                             line-group))}
+
+              (= first-word "LABEL")
+              {:block-type :LABEL
+               :parse-tree (cons :LABEL
+                                 (map
+                                  #(let [[name datatypes iri-or-prefixed]
+                                         (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
+                                     [[:NAME name] [:TYPES-STRING datatypes] [:TARGET-STRING iri-or-prefixed]])
+                                  line-group))}
+
+              (= first-word "BASE")
+              {:block-type :BASE
+               :parse-tree [:BASE
+                            [:IRIREF-STRING
+                             (second (re-find #"BASE\W+(.*)" first-line))]]}
+
+              (= first-word "GRAPH")
+              {:block-type :GRAPH
+               :parse-tree [:GRAPH
+                            (if-let [match (second (re-find #"GRAPH\W+(.*)" first-line))]
+                              [:TARGET-STRING match]
+                              [:DEFAULT-GRAPH])]}
+
+              :else {:block-type :UNPARSED})]
+    (assoc basic-parse
+           :origin-string (string/join \newline line-group)
+           :parse-tree (vec (get basic-parse :parse-tree)))))
+
 (defmulti block->parse
   "Given a block, return a new parse-tree."
   :block-type)
