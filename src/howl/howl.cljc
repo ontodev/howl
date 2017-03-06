@@ -35,11 +35,17 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
-(defn line-group->name-or-blank [line-group]
-  :TODO)
+(defn line->name-or-blank [line]
+  (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
+    [:BLANK blank]
+    (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
+      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
+      (if-let [label (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)]
+        [:LABEL name]
+        nil))))
 
 (defn line-group->statement [line-group]
-  :TODO)
+  [:TODO-statement])
 
 (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
@@ -88,7 +94,8 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                               [:TARGET-STRING match]
                               [:DEFAULT-GRAPH])]}
 
-              :else (if-let [name-parse (line-group->name-or-blank line-group)]
+              :else (if-let [name-parse (and (empty? (rest line-group))
+                                             (line->name-or-blank first-line))]
                       {:block-type :SUBJECT :parse-tree [:SUBJECT name-parse]}
                       (if-let [[arrows datatypes iri-or-prefixed] (line-group->statement line-group)]
                         {:block-type :STATEMENT
