@@ -35,6 +35,12 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
+(defn line-group->name-or-blank [line-group]
+  :TODO)
+
+(defn line-group->statement [line-group]
+  :TODO)
+
 (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
 Where the origin string is the input joined by \\newline the :block-type is a symbol designating the specific block and the :parse tree is a basic, un-processed vector tree representing a Howl block."
@@ -44,13 +50,18 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
         basic-parse
         (cond (util/starts-with? first-line "#")
               {:block-type :COMMENT
-               :parse-tree (cons :COMMENT (map (fn [ln] [:LINE ln]) line-group))}
+               :parse-tree (cons
+                            :COMMENT
+                            (cons
+                             [:LINE first-line]
+                             (map (fn [ln] [:LINE (subs ln 2)])
+                                  (rest line-group))))}
 
               (= first-word "PREFIX")
               {:block-type :PREFIX
                :parse-tree (cons
                             :PREFIX
-                            (mapcat
+                            (map
                              #(let [[name iriref] (rest (re-find #"(?:PREFIX)?\W+(\w+):\W+(.*)" %))]
                                 [[:NAME name] [:IRIREF-STRING iriref]])
                              line-group))}
@@ -77,7 +88,15 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                               [:TARGET-STRING match]
                               [:DEFAULT-GRAPH])]}
 
-              :else {:block-type :UNPARSED})]
+              :else (if-let [name-parse (line-group->name-or-blank line-group)]
+                      {:block-type :SUBJECT :parse-tree [:SUBJECT name-parse]}
+                      (if-let [[arrows datatypes iri-or-prefixed] (line-group->statement line-group)]
+                        {:block-type :STATEMENT
+                         :parse-tree [:STATEMENT
+                                      [:ARROWS arrows]
+                                      [:TYPES-STRING datatypes]
+                                      [:TARGET-STRING iri-or-prefixed]]}
+                        {:block-type :UNPARSED})))]
     (assoc basic-parse
            :origin-string (string/join \newline line-group)
            :parse-tree (vec (get basic-parse :parse-tree)))))
