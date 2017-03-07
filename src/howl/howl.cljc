@@ -36,16 +36,18 @@ ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
 (defn line->name-or-blank [line]
-  (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
-    [:BLANK blank]
-    (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
-      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
-      (if-let [label (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)]
-        [:LABEL name]
-        nil))))
+  (if-let [[_ iriref] (re-find #"^<([^\u0000-\u0020<>\"{}|^`\\\\]*)>" line)]
+    [:IRIREF iriref]
+    (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
+      [:BLANK blank]
+      (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
+        [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
+        (if-let [label (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)]
+          [:LABEL name]
+          nil)))))
 
 (defn line-group->statement [line-group]
-  [:TODO-statement])
+  [:TODO-arrows :TODO-name :TODO-datatyes :TODO-statement-line])
 
 (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
