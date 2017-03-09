@@ -35,19 +35,32 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
-(defn line->name-or-blank [line]
+(defn string->name [line]
   (if-let [[_ iriref] (re-find #"^<([^\u0000-\u0020<>\"{}|^`\\\\]*)>" line)]
     [:IRIREF iriref]
-    (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
-      [:BLANK blank]
-      (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
-        [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
-        (if-let [label (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)]
-          [:LABEL name]
-          nil)))))
+    (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
+      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
+      (when (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)
+        [:LABEL line]))))
+
+(defn string->name-or-blank [line]
+  (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
+    [:BLANK blank]
+    (string->name (subs line 1 (- (count line) 1)))))
+
+(defn string->datatype [line]
+  (when line
+    (or (second (re-find #"(PLAIN|LINK)" line))
+        (if-let [lang (re-find #"@(.*?)" line)]
+          [:LANGUAGE_TAG lang]
+          (string->name line)))))
 
 (defn line-group->statement [line-group]
-  [:TODO-arrows :TODO-name :TODO-datatyes :TODO-statement-line])
+  (if-let [[_ arrows name-string datatypes statement] (re-find #"(>*)\s*(.*?)\s*(\[.*?\])?:\s+(.*)" (first line-group))]
+    (if-let [name (string->name name-string)]
+      (concat [[:ARROWS arrows] name [:TYPE (string->datatype datatypes)]]
+              (cons [:LINE statement]
+                    (map (fn [ln] [:LINE (subs ln 2)]) (rest line-group)))))))
 
 (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
@@ -80,7 +93,7 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                                  (map
                                   #(let [[name datatypes iri-or-prefixed]
                                          (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
-                                     [[:NAME name] [:TYPES-STRING datatypes] [:TARGET-STRING iri-or-prefixed]])
+                                     [[:NAME name] [:TYPE (string->datatype datatypes)] [:TARGET-STRING iri-or-prefixed]])
                                   line-group))}
 
               (= first-word "BASE")
@@ -97,14 +110,11 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                               [:DEFAULT-GRAPH])]}
 
               :else (if-let [name-parse (and (empty? (rest line-group))
-                                             (line->name-or-blank first-line))]
+                                             (string->name-or-blank first-line))]
                       {:block-type :SUBJECT :parse-tree [:SUBJECT name-parse]}
-                      (if-let [[arrows datatypes iri-or-prefixed] (line-group->statement line-group)]
+                      (if-let [result (line-group->statement line-group)]
                         {:block-type :STATEMENT
-                         :parse-tree [:STATEMENT
-                                      [:ARROWS arrows]
-                                      [:TYPES-STRING datatypes]
-                                      [:TARGET-STRING iri-or-prefixed]]}
+                         :parse-tree [:STATEMENT (vec result)]}
                         {:block-type :UNPARSED})))]
     (assoc basic-parse
            :origin-string (string/join \newline line-group)
