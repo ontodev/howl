@@ -35,13 +35,23 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
+(defn string->iriref [line]
+  (let [[_ iriref] (re-find #"^<([^\u0000-\u0020<>\"{}|^`\\\\]*)>" line)]
+    (when iriref [:IRIREF iriref])))
+
+(defn string->prefixed-name [line]
+  (let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
+    (when (and prefix name)
+      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]])))
+
+(defn string->label [line]
+  (when (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)
+    [:LABEL line]))
+
 (defn string->name [line]
-  (if-let [[_ iriref] (re-find #"^<([^\u0000-\u0020<>\"{}|^`\\\\]*)>" line)]
-    [:IRIREF iriref]
-    (if-let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
-      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]]
-      (when (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)
-        [:LABEL line]))))
+  (or (string->iriref line)
+      (string->prefixed-name line)
+      (string->label line)))
 
 (defn string->name-or-blank [line]
   (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
@@ -55,14 +65,19 @@ ARROWS      = #'>*' #'\\s*'"
           [:LANGUAGE_TAG lang]
           (string->name line)))))
 
+(defn sdrop [ct string]
+  (if (>= (count string) ct)
+    (subs string 2)
+    string))
+
 (defn line-group->statement [line-group]
   (if-let [[_ arrows name-string datatypes statement] (re-find #"(>*)\s*(.*?)\s*(\[.*?\])?:\s+(.*)" (first line-group))]
     (if-let [name (string->name name-string)]
       (concat [[:ARROWS arrows] name [:TYPE (string->datatype datatypes)]]
               (cons [:LINE statement]
-                    (map (fn [ln] [:LINE (subs ln 2)]) (rest line-group)))))))
+                    (map (fn [ln] [:LINE (sdrop 2 ln)]) (rest line-group)))))))
 
-(defn line-group->basic-parse
+ (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
 Where the origin string is the input joined by \\newline the :block-type is a symbol designating the specific block and the :parse tree is a basic, un-processed vector tree representing a Howl block."
   [line-group]
@@ -75,7 +90,7 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                             :COMMENT
                             (cons
                              [:LINE first-line]
-                             (map (fn [ln] [:LINE (subs ln 2)])
+                             (map (fn [ln] [:LINE (sdrop 2 ln)])
                                   (rest line-group))))}
 
               (= first-word "PREFIX")
@@ -84,7 +99,7 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                             :PREFIX
                             (map
                              #(let [[name iriref] (rest (re-find #"(?:PREFIX)?\W+(\w+):\W+(.*)" %))]
-                                [[:NAME name] [:IRIREF-STRING iriref]])
+                                [[:NAME name] (string->iriref iriref)])
                              line-group))}
 
               (= first-word "LABEL")
@@ -93,20 +108,19 @@ Where the origin string is the input joined by \\newline the :block-type is a sy
                                  (map
                                   #(let [[name datatypes iri-or-prefixed]
                                          (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
-                                     [[:NAME name] [:TYPE (string->datatype datatypes)] [:TARGET-STRING iri-or-prefixed]])
+                                     [[:NAME name] [:TYPE (string->datatype datatypes)] (or (string->iriref iri-or-prefixed)
+                                                                                            (string->prefixed-name iri-or-prefixed))])
                                   line-group))}
 
               (= first-word "BASE")
               {:block-type :BASE
-               :parse-tree [:BASE
-                            [:IRIREF-STRING
-                             (second (re-find #"BASE\W+(.*)" first-line))]]}
+               :parse-tree [:BASE (string->iriref (second (re-find #"BASE\W+(.*)" first-line)))]}
 
               (= first-word "GRAPH")
               {:block-type :GRAPH
                :parse-tree [:GRAPH
                             (if-let [match (second (re-find #"GRAPH\W+(.*)" first-line))]
-                              [:TARGET-STRING match]
+                              (string->name match)
                               [:DEFAULT-GRAPH])]}
 
               :else (if-let [name-parse (and (empty? (rest line-group))
