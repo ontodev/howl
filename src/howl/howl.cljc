@@ -77,9 +77,9 @@ ARROWS      = #'>*' #'\\s*'"
               (cons [:LINE statement]
                     (map (fn [ln] [:LINE (sdrop 2 ln)]) (rest line-group)))))))
 
- (defn line-group->basic-parse
+(defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
-Where the origin string is the input joined by \\newline the :block-type is a symbol designating the specific block and the :parse tree is a basic, un-processed vector tree representing a Howl block."
+  Where the origin string is the input joined by \\newline the :block-type is a symbol designating the specific block and the :parse tree is a basic, un-processed vector tree representing a Howl block."
   [line-group]
   (let [first-line (first line-group)
         first-word (re-find #"\w+" first-line)
