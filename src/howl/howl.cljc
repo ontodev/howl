@@ -104,13 +104,16 @@ ARROWS      = #'>*' #'\\s*'"
 
               (= first-word "LABEL")
               {:block-type :LABEL
-               :parse-tree (cons :LABEL
-                                 (map
-                                  #(let [[name datatypes iri-or-prefixed]
-                                         (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
-                                     [[:NAME name] [:TYPE (string->datatype datatypes)] (or (string->iriref iri-or-prefixed)
-                                                                                            (string->prefixed-name iri-or-prefixed))])
-                                  line-group))}
+               :parse-tree (cons
+                            :LABEL
+                            (map
+                             #(let [[name datatypes iri-or-prefixed]
+                                    (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
+                                [[:NAME name]
+                                 [:TYPE (string->datatype datatypes)]
+                                 (or (string->iriref iri-or-prefixed)
+                                     (string->prefixed-name iri-or-prefixed))])
+                             line-group))}
 
               (= first-word "BASE")
               {:block-type :BASE
@@ -123,8 +126,9 @@ ARROWS      = #'>*' #'\\s*'"
                               (string->name match)
                               [:DEFAULT-GRAPH])]}
 
-              :else (if-let [name-parse (and (empty? (rest line-group))
-                                             (string->name-or-blank first-line))]
+              :else (if-let [name-parse
+                             (and (empty? (rest line-group))
+                                  (string->name-or-blank first-line))]
                       {:block-type :SUBJECT :parse-tree [:SUBJECT name-parse]}
                       (if-let [result (line-group->statement line-group)]
                         {:block-type :STATEMENT
