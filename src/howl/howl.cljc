@@ -375,7 +375,7 @@ ARROWS      = #'>*' #'\\s*'"
 
 (defn parse-block
   [block]
-  (let [result (line-group->basic-parse (string/split-lines block))]
+  (let [result (block-parser block)]
     (when (insta/failure? result)
       (println result)
       (throw (Exception. "Parse failure")))
