@@ -35,14 +35,31 @@ COLON       = #' *' ':'  #'(\n| )+'
 ARROWS      = #'>*' #'\\s*'"
        link/link-grammar))
 
+;; (def grouped
+;;   (howl/group-lines
+;;    (concat
+;;     (line-seq (io/reader "test/typed-context/context.howl"))
+;;     (line-seq (io/reader "test/typed-context/test1.howl")))))
+
+;; (map #(howl/block-parser (string/join \newline %)) grouped)
+;; (map howl/line-group->basic-parse grouped)
+
+;; (map
+;;  #(if (= %1 %2)
+;;     (println "k")
+;;     (do (println (str %1))
+;;         (println " ==>" (str %2))))
+;;  (map #(howl/block-parser (string/join \newline %)) grouped)
+;;  (map howl/line-group->basic-parse grouped))
+
 (defn string->iriref [line]
-  (let [[_ iriref] (re-find #"^<([^\u0000-\u0020<>\"{}|^`\\\\]*)>" line)]
-    (when iriref [:IRIREF iriref])))
+  (let [iriref (re-find #"^<[^\u0000-\u0020<>\"{}|^`\\\\]*>" line)]
+    (when iriref (vec (cons :IRIREF (map str iriref))))))
 
 (defn string->prefixed-name [line]
   (let [[_ prefix name] (re-find #"^(\w+):([^\s:/][^\s:\\]*)$" line)]
     (when (and prefix name)
-      [:PREFIXED-NAME [:PREFIX prefix] [:NAME name]])))
+      [:PREFIXED_NAME prefix ":" name])))
 
 (defn string->label [line]
   (when (re-find #"^[^<>\[\]#|\s][^<>\[\]#|\s:]+$" line)
@@ -56,14 +73,16 @@ ARROWS      = #'>*' #'\\s*'"
 (defn string->name-or-blank [line]
   (if-let [blank (re-find #"^_:[-0-9\u00B7\u0300-\u036F\u203F-\u2040A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]+$" line)]
     [:BLANK blank]
-    (string->name (subs line 1 (- (count line) 1)))))
+    (string->name line)))
 
 (defn string->datatype [line]
   (when line
-    (or (second (re-find #"(PLAIN|LINK)" line))
-        (if-let [lang (re-find #"@(.*?)" line)]
-          [:LANGUAGE_TAG lang]
-          (string->name line)))))
+    (if-let [[_ a word] (re-find #"(\s*\[)(PLAIN|LINK)" line)]
+      (list a word "]")
+      (if-let [[_ a lang] (re-find #"(\s*\[)@(.*)\]" line)]
+        (list a [:LANGUAGE_TAG "@" lang] "]")
+        (let [[_ a name] (re-find #"(\s*\[)(.*?)\]" line)]
+          (list a (string->name name) "]"))))))
 
 (defn sdrop [ct string]
   (if (>= (count string) ct)
@@ -71,11 +90,16 @@ ARROWS      = #'>*' #'\\s*'"
     string))
 
 (defn line-group->statement [line-group]
-  (if-let [[_ arrows name-string datatypes statement] (re-find #"(>*)\s*(.*?)\s*(\[.*?\])?:\s+(.*)" (first line-group))]
+  (if-let [[_ a arrows name-string datatypes b statement] (re-find #"(\s*)(>*)\s*(.*?)(\s*\[.*?\])?:(\s+)(.*)" (first line-group))]
     (if-let [name (string->name name-string)]
-      (concat [[:ARROWS arrows] name [:TYPE (string->datatype datatypes)]]
-              (cons [:LINE statement]
-                    (map (fn [ln] [:LINE (sdrop 2 ln)]) (rest line-group)))))))
+      (list
+       [:WHITESPACE a]
+       [:STATEMENT_BLOCK
+        [:ARROWS a arrows] name
+        (vec (cons :DATATYPES (string->datatype datatypes)))
+        [:COLON "" ":" b]
+        (string/join \newline (cons statement (rest line-group)))]
+       [:WHITESPACE ""]))))
 
 (defn line-group->basic-parse
   "Takes a line group and returns a { :origin-string, :block-type, :parse-tree }
@@ -85,58 +109,74 @@ ARROWS      = #'>*' #'\\s*'"
         first-word (re-find #"\w+" first-line)
         basic-parse
         (cond (util/starts-with? first-line "#")
-              {:block-type :COMMENT
-               :parse-tree (cons
-                            :COMMENT
-                            (cons
-                             [:LINE first-line]
-                             (map (fn [ln] [:LINE (sdrop 2 ln)])
-                                  (rest line-group))))}
+              (list
+               [:WHITESPACE ""]
+               [:COMMENT_BLOCK
+                (string/join
+                 \newline
+                 (cons first-line
+                       (map #(sdrop 2 %)
+                            (rest line-group))))]
+               [:WHITESPACE ""])
 
               (= first-word "PREFIX")
-              {:block-type :PREFIX
-               :parse-tree (cons
-                            :PREFIX
-                            (map
-                             #(let [[name iriref] (rest (re-find #"(?:PREFIX)?\W+(\w+):\W+(.*)" %))]
-                                [[:NAME name] (string->iriref iriref)])
-                             line-group))}
+              (let [[_ a b name c iriref] (re-find #"(\s*)PREFIX(\W+)(\w+):( +)(.*)" first-line)]
+                (list
+                 [:WHITESPACE a]
+                 [:PREFIX_BLOCK
+                  "PREFIX"
+                  [:SPACES b]
+                  [:PREFIX name]
+                  [:COLON "" ":" c]
+                  (string->iriref iriref)]
+                 [:WHITESPACE ""]))
 
               (= first-word "LABEL")
-              {:block-type :LABEL
-               :parse-tree (cons
-                            :LABEL
-                            (map
-                             #(let [[name datatypes iri-or-prefixed]
-                                    (rest (re-find #"(?:LABEL)?\W+(\w+)\W*(\[.*\])?:\W+(.*)" %))]
-                                [[:NAME name]
-                                 [:TYPE (string->datatype datatypes)]
-                                 (or (string->iriref iri-or-prefixed)
-                                     (string->prefixed-name iri-or-prefixed))])
-                             line-group))}
+              (let [[_ a b name datatypes c iri-or-prefixed]
+                    (re-find #"(\s*)LABEL( +)(\w+)(\W*\[.*\])?:(\W+)(.*)" first-line)]
+                (list
+                 [:WHITESPACE a]
+                 [:LABEL_BLOCK
+                  "LABEL"
+                  [:SPACES b]
+                  [:LABEL name]
+                  (vec (cons :DATATYPES (string->datatype datatypes)))
+                  [:COLON "" ":" c]
+                  (or (string->iriref iri-or-prefixed)
+                      (string->prefixed-name iri-or-prefixed))]
+                 [:WHITESPACE ""]))
 
               (= first-word "BASE")
-              {:block-type :BASE
-               :parse-tree [:BASE (string->iriref (second (re-find #"BASE\W+(.*)" first-line)))]}
+              (let [[_ a b iriref] (re-find #"(\s*)BASE( +)(.*)" first-line)]
+                (list
+                 [:WHITESPACE a]
+                 [:BASE_BLOCK
+                  "BASE"
+                  [:SPACES b]
+                  (string->iriref iriref)]
+                 [:WHITESPACE "\n"]))
 
               (= first-word "GRAPH")
-              {:block-type :GRAPH
-               :parse-tree [:GRAPH
-                            (if-let [match (second (re-find #"GRAPH\W+(.*)" first-line))]
-                              (string->name match)
-                              [:DEFAULT-GRAPH])]}
+              (let [[_ a b name] (re-find #"(\s*)GRAPH( +)(.*)" first-line)]
+                (list
+                 [:WHITESPACE a]
+                 [:GRAPH_BLOCK
+                  "GRAPH"
+                  [:SPACES b]
+                  (string->name name)]
+                 [:WHITESPACE "\n"]))
 
               :else (if-let [name-parse
                              (and (empty? (rest line-group))
                                   (string->name-or-blank first-line))]
-                      {:block-type :SUBJECT :parse-tree [:SUBJECT name-parse]}
-                      (if-let [result (line-group->statement line-group)]
-                        {:block-type :STATEMENT
-                         :parse-tree [:STATEMENT (vec result)]}
-                        {:block-type :UNPARSED})))]
-    (assoc basic-parse
-           :origin-string (string/join \newline line-group)
-           :parse-tree (vec (get basic-parse :parse-tree)))))
+                      (let [[_ leading-whitespace] (re-find #"^(\s*)" first-line)]
+                        (list [:WHITESPACE leading-whitespace]
+                              [:SUBJECT_BLOCK
+                               name-parse]
+                              [:WHITESPACE ""]))
+                      (or (line-group->statement line-group)
+                          [:UNPARSED_BLOCK (string/join \newline line-group)])))]
+    basic-parse))
 
 (defmulti block->parse
   "Given a block, return a new parse-tree."
@@ -321,18 +361,6 @@ ARROWS      = #'>*' #'\\s*'"
      :annotation-target
      (get statement-stack (dec (count arrows))))))
 
-(def block-parser (insta/parser block-grammar))
-
-(defn parse-block
-  [block]
-  (let [result (block-parser block)]
-    (when (insta/failure? result)
-      (println result)
-      (throw (Exception. "Parse failure")))
-    (->> result
-         (insta/transform link/link-transformations)
-         vec)))
-
 (defn group-lines
   "Given a sequence of lines, returns a lazy sequence of grouped lines"
   [lines]
@@ -342,6 +370,18 @@ ARROWS      = #'>*' #'\\s*'"
             (vswap! ct inc))
           @ct))
    lines))
+
+(def block-parser (insta/parser block-grammar))
+
+(defn parse-block
+  [block]
+  (let [result (line-group->basic-parse (string/split-lines block))]
+    (when (insta/failure? result)
+      (println result)
+      (throw (Exception. "Parse failure")))
+    (->> result
+         (insta/transform link/link-transformations)
+         vec)))
 
 (defn process-block
   "Given an environment a source, a line number, and a block string,
